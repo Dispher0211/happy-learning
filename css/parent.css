@@ -396,6 +396,16 @@
   background: #F0F2F5;
 }
 
+/* 側邊欄：手機版預設隱藏，桌面才顯示 */
+.parent-sidebar {
+  display: none;
+}
+
+/* 桌面版右欄頁首：手機版預設隱藏 */
+.parent-main-header {
+  display: none;
+}
+
 /* ── 桌面版：切換為左右兩欄 ── */
 @media (min-width: 1024px) {
   .parent-layout {
@@ -403,12 +413,12 @@
     align-items: stretch;
   }
 
-  /* 左欄：固定寬度選單側邊欄 */
+  /* 左欄：固定寬度選單側邊欄（桌面才顯示） */
   .parent-sidebar {
+    display: flex;
     width: 260px;
     flex-shrink: 0;
     background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
-    display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
@@ -433,6 +443,11 @@
     overflow-y: auto;
     min-height: 100vh;
     background: #F0F2F5;
+  }
+
+  /* 桌面版右欄頁首顯示 */
+  .parent-main-header {
+    display: flex;
   }
 
   /* 手機版頁首在桌面隱藏（由側邊欄取代） */
