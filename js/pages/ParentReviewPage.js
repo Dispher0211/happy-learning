@@ -68,19 +68,12 @@ export class ParentReviewPage {
         this._reviews = []
         return
       }
-      // 讀取 users/{uid}/pending_reviews 集合，JS 端過濾 status=pending
-      // （FirestoreAPI 無 queryCollection，改用 readCollection + filter）
-      const allDocs = await FirestoreAPI.readCollection(
-        `users/${uid}/pending_reviews`
+      // 讀取 users/{uid}/pending_reviews 集合中 status=pending 的文件
+      const docs = await FirestoreAPI.queryCollection(
+        `users/${uid}/pending_reviews`,
+        [{ field: 'status', op: '==', value: 'pending' }],
+        { orderBy: 'created_at', direction: 'asc' }
       )
-      const docs = (allDocs || [])
-        .filter(d => d.status === 'pending')
-        .sort((a, b) => {
-          // 依 created_at 升冪排列（serverTimestamp 物件或毫秒數皆可比較）
-          const ta = a.created_at?.seconds ?? a.created_at ?? 0
-          const tb = b.created_at?.seconds ?? b.created_at ?? 0
-          return ta - tb
-        })
       this._reviews = docs || []
     } catch (e) {
       console.error('[ParentReviewPage] 讀取審核資料失敗', e)

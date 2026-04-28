@@ -54,7 +54,7 @@ export class ParentPokedexPage {
 
     try {
       // 讀取 Firestore users/{uid} 中的 pokedex 設定
-      const userData = await FirestoreAPI.read(`users/${uid}`)
+      const userData = await FirestoreAPI.getUser(uid)
       this._pokedexSettings = userData?.pokedex || {
         active_series: 'pokemon',
         reveal_by_sentence: 10,
@@ -167,7 +167,7 @@ export class ParentPokedexPage {
 
     try {
       const uid = AppState.uid
-      await FirestoreAPI.update(`users/${uid}`, {
+      await FirestoreAPI.updateUser(uid, {
         'pokedex.active_series': seriesId,
       })
 
@@ -203,7 +203,7 @@ export class ParentPokedexPage {
 
     try {
       const uid = AppState.uid
-      await FirestoreAPI.update(`users/${uid}`, {
+      await FirestoreAPI.updateUser(uid, {
         'pokedex.reveal_by_sentence': clamped,
       })
 
@@ -238,7 +238,7 @@ export class ParentPokedexPage {
       const uid = AppState.uid
       const settings = this._pokedexSettings
 
-      await FirestoreAPI.update(`users/${uid}`, {
+      await FirestoreAPI.updateUser(uid, {
         'pokedex.active_series': settings.active_series,
         'pokedex.reveal_by_sentence': settings.reveal_by_sentence,
       })

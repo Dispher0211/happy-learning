@@ -89,14 +89,12 @@ body {
 
 /* ── 整體 App 容器 ── */
 #app {
-  /* 手機優先：全寬 */
-  width: 100%;
-  max-width: 100%;
+  max-width: 480px;         /* 手機優先 */
   margin: 0 auto;
   min-height: 100vh;
   background: var(--bg-main);
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
   /* 遮蓋底紋讓中間乾淨 */
   background-image: none;
   box-shadow: 0 0 40px rgba(0,0,0,0.08);
@@ -397,62 +395,16 @@ body {
   }
 }
 
-/* ── 響應式：平板（600px–1023px）置中窄版 ── */
-@media (min-width: 600px) and (max-width: 1023px) {
+/* ── 響應式：平板以上置中 ── */
+@media (min-width: 520px) {
   body {
     display: flex;
     justify-content: center;
-    background-color: #D9D3CA;
+    background-color: #F0EDE8;
   }
   #app {
-    max-width: 680px;
-    width: 100%;
     border-radius: var(--radius-lg);
     margin: var(--spacing-lg) auto;
     min-height: calc(100vh - var(--spacing-2xl));
-    max-height: calc(100vh - var(--spacing-2xl));
-    overflow-y: auto;
-    /* 平板外框陰影 */
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
-    border: 1px solid rgba(0,0,0,0.07);
-  }
-}
-
-/* ── 響應式：桌面（≥1024px）全寬 ── */
-@media (min-width: 1024px) {
-  body {
-    /* 桌面維持底紋背景 */
-    background-color: var(--bg-main);
-  }
-  #app {
-    max-width: 100%;
-    width: 100%;
-    border-radius: 0;
-    margin: 0;
-    min-height: 100vh;
-    max-height: none;
-    overflow-y: auto;
-    box-shadow: none;
-    border: none;
-  }
-
-  /* 桌面版 .page 內容區最大寬度限制，避免超寬螢幕過度拉伸 */
-  .page {
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
-  }
-
-  /* 桌面版頂部導覽列配合 .page 同寬 */
-  .top-bar {
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  /* 桌面版字體略放大，對兒童眼睛友善 */
-  html {
-    font-size: 18px;
   }
 }
