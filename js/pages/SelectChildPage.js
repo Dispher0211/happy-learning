@@ -559,7 +559,7 @@ export class SelectChildPage {
     try {
       // 使用 arrayUnion 附加子帳號（防重複由 id 唯一性保證）
       const { arrayUnion } = await import('../firebase.js');
-      await FirestoreAPI.update(`users/${uid}`, {
+      await FirestoreAPI.write(`users/${uid}`, {
         children: arrayUnion({ id: childId, name, avatar })
       });
 
