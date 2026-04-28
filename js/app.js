@@ -42,7 +42,7 @@ async function initServiceWorker() {
     return
   }
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js')
+    const registration = await navigator.serviceWorker.register('./sw.js')
     console.log('[App] Service Worker 已註冊，scope：', registration.scope)
   } catch (err) {
     // 開發環境或本機測試時可能失敗，不影響主流程
