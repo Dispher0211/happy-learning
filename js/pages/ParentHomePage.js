@@ -27,8 +27,8 @@ export class ParentHomePage {
     let pendingCount = AppState.pendingReviewCount ?? 0
 
     try {
-      // 嘗試從 Firestore 取得最新數量
-      const userData = await FirestoreAPI.getUser(AppState.uid)
+      // 嘗試從 Firestore 取得最新數量（使用通用 read 介面）
+      const userData = await FirestoreAPI.read(`users/${AppState.uid}`)
       pendingCount = userData?.pendingReviewCount ?? pendingCount
       // 同步回 AppState
       AppState.pendingReviewCount = pendingCount
@@ -46,71 +46,120 @@ export class ParentHomePage {
 
   // ─────────────────────────────────────
   // _render：輸出家長首頁 innerHTML
+  // 桌面版（≥1024px）使用兩欄佈局：
+  //   左欄 .parent-sidebar 為固定選單
+  //   右欄 .parent-main 為現有 section 內容
+  // 手機版維持原有單欄垂直排列
   // ─────────────────────────────────────
   _render (pendingCount) {
     const app = document.getElementById('app')
 
     // 待審核徽章：有待審核時顯示紅色數字
     const badgeHTML = pendingCount > 0
+      ? `<span class="parent-sidebar__badge">${pendingCount}</span>`
+      : ''
+
+    // 手機版待審核徽章（行內按鈕用）
+    const mobileBadgeHTML = pendingCount > 0
       ? `<span class="parent-home__badge">${pendingCount}</span>`
       : ''
 
     app.innerHTML = `
-      <div class="parent-home">
+      <div class="parent-layout">
 
-        <!-- 頁首 -->
-        <div class="parent-home__header">
-          <button class="parent-home__back-btn" id="parentHomeBack">← 返回</button>
-          <h1 class="parent-home__title">👨‍👩‍👧 家長設定</h1>
-        </div>
+        <!-- ══ 左欄：側邊欄（桌面版顯示）══ -->
+        <aside class="parent-sidebar">
 
-        <!-- 待審核區塊 -->
-        <section class="parent-home__section">
-          <h2 class="parent-home__section-title">📝 作業審核</h2>
-          <button class="parent-home__btn parent-home__btn--review" id="btnReview">
-            查看待審核
+          <!-- 品牌區 -->
+          <div class="parent-sidebar__brand">
+            <div class="parent-sidebar__app-name">📚 快樂學習</div>
+            <div class="parent-sidebar__subtitle">家長設定面板</div>
+          </div>
+
+          <!-- 返回兒童模式 -->
+          <button class="parent-sidebar__back" id="sidebarBack">
+            ← 返回兒童模式
+          </button>
+
+          <!-- 作業審核 -->
+          <div class="parent-sidebar__section-label">作業</div>
+          <button class="parent-sidebar__item" id="sidebarReview">
+            <span class="parent-sidebar__item__icon">📝</span>
+            作業審核
             ${badgeHTML}
           </button>
-        </section>
 
-        <!-- 學習內容管理 -->
-        <section class="parent-home__section">
-          <h2 class="parent-home__section-title">📚 學習內容</h2>
-          <div class="parent-home__btn-grid">
+          <!-- 學習內容 -->
+          <div class="parent-sidebar__section-label">學習內容</div>
+          <button class="parent-sidebar__item" id="sidebarChars">
+            <span class="parent-sidebar__item__icon">🈶</span>
+            生字簿
+          </button>
+          <button class="parent-sidebar__item" id="sidebarWords">
+            <span class="parent-sidebar__item__icon">📋</span>
+            詞語簿
+          </button>
+          <button class="parent-sidebar__item" id="sidebarIdioms">
+            <span class="parent-sidebar__item__icon">🀄</span>
+            成語簿
+          </button>
 
-            <!-- 生字簿 -->
-            <button class="parent-home__btn" id="btnChars">
-              🈶 生字簿
-            </button>
+          <!-- 進階設定 -->
+          <div class="parent-sidebar__section-label">進階設定</div>
+          <button class="parent-sidebar__item" id="sidebarPokedex">
+            <span class="parent-sidebar__item__icon">🎴</span>
+            圖鑑設定
+          </button>
+          <button class="parent-sidebar__item" id="sidebarApi">
+            <span class="parent-sidebar__item__icon">🔑</span>
+            API 金鑰
+          </button>
 
-            <!-- 詞語簿（v4 新增） -->
-            <button class="parent-home__btn" id="btnWords">
-              📋 詞語簿
-            </button>
+        </aside>
 
-            <!-- 成語簿（v4 新增） -->
-            <button class="parent-home__btn" id="btnIdioms">
-              🀄 成語簿
-            </button>
+        <!-- ══ 右欄：主內容區 ══ -->
+        <main class="parent-main">
 
+          <!-- 桌面版右欄頁首 -->
+          <div class="parent-main-header">
+            <span class="parent-main-header__title">👨‍👩‍👧 家長設定</span>
           </div>
-        </section>
 
-        <!-- 圖鑑與 API 設定 -->
-        <section class="parent-home__section">
-          <h2 class="parent-home__section-title">⚙️ 進階設定</h2>
-          <div class="parent-home__btn-grid">
-
-            <button class="parent-home__btn" id="btnPokedex">
-              🎴 圖鑑設定
-            </button>
-
-            <button class="parent-home__btn" id="btnApi">
-              🔑 API 金鑰
-            </button>
-
+          <!-- 手機版頁首（桌面版由 CSS 隱藏） -->
+          <div class="parent-home__header parent-header--mobile">
+            <button class="parent-home__back-btn" id="parentHomeBack">← 返回</button>
+            <h1 class="parent-home__title">👨‍👩‍👧 家長設定</h1>
           </div>
-        </section>
+
+          <!-- 待審核區塊 -->
+          <section class="parent-home__section">
+            <h2 class="parent-home__section-title">📝 作業審核</h2>
+            <button class="parent-home__btn parent-home__btn--review" id="btnReview">
+              查看待審核
+              ${mobileBadgeHTML}
+            </button>
+          </section>
+
+          <!-- 學習內容管理 -->
+          <section class="parent-home__section">
+            <h2 class="parent-home__section-title">📚 學習內容</h2>
+            <div class="parent-home__btn-grid">
+              <button class="parent-home__btn" id="btnChars">🈶 生字簿</button>
+              <button class="parent-home__btn" id="btnWords">📋 詞語簿</button>
+              <button class="parent-home__btn" id="btnIdioms">🀄 成語簿</button>
+            </div>
+          </section>
+
+          <!-- 圖鑑與 API 設定 -->
+          <section class="parent-home__section">
+            <h2 class="parent-home__section-title">⚙️ 進階設定</h2>
+            <div class="parent-home__btn-grid">
+              <button class="parent-home__btn" id="btnPokedex">🎴 圖鑑設定</button>
+              <button class="parent-home__btn" id="btnApi">🔑 API 金鑰</button>
+            </div>
+          </section>
+
+        </main>
 
       </div>
     `
@@ -118,42 +167,42 @@ export class ParentHomePage {
 
   // ─────────────────────────────────────
   // _bindEvents：綁定所有按鈕，並記錄供 destroy 移除
+  // 包含手機版（btnXxx）與桌面側邊欄版（sidebarXxx）
   // ─────────────────────────────────────
   _bindEvents () {
-    // 返回按鈕
-    this._addListener('parentHomeBack', 'click', () => {
-      UIManager.back()
-    })
+    // ── 返回按鈕（手機版頁首 & 桌面側邊欄）──
+    this._addListener('parentHomeBack', 'click', () => UIManager.back())
+    this._addListener('sidebarBack',    'click', () => UIManager.back())
 
-    // 待審核
-    this._addListener('btnReview', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_REVIEW)
-    })
+    // ── 待審核（手機 + 側邊欄）──
+    const goReview = () => UIManager.navigate(PAGES.PARENT_REVIEW)
+    this._addListener('btnReview',    'click', goReview)
+    this._addListener('sidebarReview','click', goReview)
 
-    // 生字簿
-    this._addListener('btnChars', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_CHARS)
-    })
+    // ── 生字簿 ──
+    const goChars = () => UIManager.navigate(PAGES.PARENT_CHARS)
+    this._addListener('btnChars',    'click', goChars)
+    this._addListener('sidebarChars','click', goChars)
 
-    // 詞語簿（v4 新增）
-    this._addListener('btnWords', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_WORDS)
-    })
+    // ── 詞語簿（v4 新增）──
+    const goWords = () => UIManager.navigate(PAGES.PARENT_WORDS)
+    this._addListener('btnWords',    'click', goWords)
+    this._addListener('sidebarWords','click', goWords)
 
-    // 成語簿（v4 新增）
-    this._addListener('btnIdioms', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_IDIOMS)
-    })
+    // ── 成語簿（v4 新增）──
+    const goIdioms = () => UIManager.navigate(PAGES.PARENT_IDIOMS)
+    this._addListener('btnIdioms',    'click', goIdioms)
+    this._addListener('sidebarIdioms','click', goIdioms)
 
-    // 圖鑑設定
-    this._addListener('btnPokedex', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_POKEDEX)
-    })
+    // ── 圖鑑設定 ──
+    const goPokedex = () => UIManager.navigate(PAGES.PARENT_POKEDEX)
+    this._addListener('btnPokedex',    'click', goPokedex)
+    this._addListener('sidebarPokedex','click', goPokedex)
 
-    // API 金鑰設定
-    this._addListener('btnApi', 'click', () => {
-      UIManager.navigate(PAGES.PARENT_API)
-    })
+    // ── API 金鑰設定 ──
+    const goApi = () => UIManager.navigate(PAGES.PARENT_API)
+    this._addListener('btnApi',    'click', goApi)
+    this._addListener('sidebarApi','click', goApi)
   }
 
   // ─────────────────────────────────────

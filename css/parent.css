@@ -381,3 +381,218 @@
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* ═══════════════════════════════════════════
+   桌面兩欄佈局（≥1024px）
+   左欄：固定導覽選單
+   右欄：各子頁面內容區
+   ═══════════════════════════════════════════ */
+
+/* 兩欄外容器，取代 .parent-page 在桌面的角色 */
+.parent-layout {
+  display: flex;
+  flex-direction: column;   /* 手機：單欄 */
+  min-height: 100vh;
+  background: #F0F2F5;
+}
+
+/* ── 桌面版：切換為左右兩欄 ── */
+@media (min-width: 1024px) {
+  .parent-layout {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  /* 左欄：固定寬度選單側邊欄 */
+  .parent-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    /* 彩色底邊裝飾改為右邊框 */
+    border-right: 4px solid transparent;
+    border-image: linear-gradient(
+      180deg,
+      var(--color-primary),
+      var(--color-accent),
+      var(--color-green),
+      var(--color-blue),
+      var(--color-purple)
+    ) 1;
+  }
+
+  /* 右欄：內容區，可捲動 */
+  .parent-main {
+    flex: 1;
+    min-width: 0;          /* 防止 flex 子項溢出 */
+    overflow-y: auto;
+    min-height: 100vh;
+    background: #F0F2F5;
+  }
+
+  /* 手機版頁首在桌面隱藏（由側邊欄取代） */
+  .parent-layout .parent-home__header,
+  .parent-layout .parent-header--mobile {
+    display: none;
+  }
+}
+
+/* ── 側邊欄內部元件 ── */
+
+/* 側邊欄頂部品牌區 */
+.parent-sidebar__brand {
+  padding: 28px 20px 20px;
+  color: white;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.parent-sidebar__app-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  margin-bottom: 4px;
+}
+
+.parent-sidebar__subtitle {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* 側邊欄返回按鈕 */
+.parent-sidebar__back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.88rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  width: 100%;
+  text-align: left;
+  transition: color var(--duration-fast), background var(--duration-fast);
+  margin-top: 8px;
+}
+
+.parent-sidebar__back:hover {
+  color: white;
+  background: rgba(255,255,255,0.08);
+}
+
+/* 側邊欄區塊標題 */
+.parent-sidebar__section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  padding: 20px 20px 6px;
+}
+
+/* 側邊欄選單項目 */
+.parent-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  width: 100%;
+  text-align: left;
+  border-radius: 0;
+  transition: color var(--duration-fast), background var(--duration-fast);
+  position: relative;
+}
+
+.parent-sidebar__item:hover {
+  color: white;
+  background: rgba(255,255,255,0.08);
+}
+
+/* 目前選中的側邊欄項目 */
+.parent-sidebar__item--active {
+  color: white;
+  background: rgba(255,255,255,0.12);
+}
+
+/* 選中項目左側高亮條 */
+.parent-sidebar__item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--color-accent);
+}
+
+.parent-sidebar__item__icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* 待審核數量徽章 */
+.parent-sidebar__badge {
+  margin-left: auto;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  min-width: 22px;
+  text-align: center;
+}
+
+/* ── 右欄頁首（桌面版顯示，替代手機 top-bar）── */
+.parent-main-header {
+  display: none; /* 手機不顯示 */
+}
+
+@media (min-width: 1024px) {
+  .parent-main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px 16px;
+    background: white;
+    border-bottom: 2px solid #E5E7EB;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .parent-main-header__title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  /* 子頁面的 .page 在桌面右欄時調整 padding */
+  .parent-main .page {
+    padding: var(--spacing-xl) var(--spacing-2xl);
+    max-width: none;
+    margin: 0;
+  }
+
+  /* 子頁面 top-bar 在桌面右欄隱藏（由 parent-main-header 取代） */
+  .parent-main .top-bar {
+    display: none;
+  }
+}

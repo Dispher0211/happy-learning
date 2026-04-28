@@ -144,7 +144,7 @@ export class ParentCharsPage {
       }
 
       // 從 Firestore 讀取 my_characters（陣列，每項為 { 字, zhuyin, ... }）
-      const data = await FirestoreAPI.getUser(uid)
+      const data = await FirestoreAPI.read(`users/${uid}`)
       const chars = data?.my_characters || []
 
       // 同步到 AppState（確保本地狀態最新）
@@ -270,7 +270,7 @@ export class ParentCharsPage {
         : { 字: raw, zhuyin: '' }
 
       // 寫入 Firestore（arrayUnion 防重複）
-      await FirestoreAPI.updateUser(uid, {
+      await FirestoreAPI.update(`users/${uid}`, {
         my_characters: arrayUnion(newEntry)
       })
 
@@ -324,7 +324,7 @@ export class ParentCharsPage {
       this._renderList(updated)
 
       // 寫入 Firestore
-      await FirestoreAPI.updateUser(uid, {
+      await FirestoreAPI.update(`users/${uid}`, {
         my_characters: arrayRemove(target)
       })
 
