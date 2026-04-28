@@ -84,7 +84,7 @@ const JSONLoader = {
 
     this._pending[name] = (async () => {
       try {
-        const data = await this._fetchWithRetry(`/data/${name}.json?v=${APP_VERSION}`)
+        const data = await this._fetchWithRetry(`./data/${name}.json?v=${APP_VERSION}`)
 
         // sentences 索引 → 物件
         if (name === SENTENCES_INDEX) {
