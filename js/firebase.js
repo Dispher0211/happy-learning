@@ -58,6 +58,10 @@ const FIREBASE_CONFIG = {
 // ── 初始化 Firebase App ──
 const app = initializeApp(FIREBASE_CONFIG)
 
+// ⚠️ 暴露給 auth.js 使用（auth.js 以 globalThis.__firebaseApp 取得同一個 app 實例）
+// 確保 auth.js 與 firebase.js 共用相同的 Firebase App，不會建立獨立實例
+globalThis.__firebaseApp = app
+
 // ── 初始化 Firestore（啟用本地持久化快取）──
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache(),

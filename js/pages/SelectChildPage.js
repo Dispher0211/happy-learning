@@ -35,6 +35,16 @@ export class SelectChildPage {
 
     // 事件處理器參照（destroy 時移除用）
     this._boundHandleClick = this._handleClick.bind(this);
+
+    /** @type {number|null} PIN 自動確認計時器 ID（destroy 時清除） */
+    this._pinTimer = null;
+
+    /**
+     * auth:reauthSuccess 事件處理器（v4 修正：忘記密碼流程事件接收）
+     * auth.js 在 Google 重新驗證成功後發出此事件，由此處接收並開啟設定新 PIN 流程
+     * @type {Function|null}
+     */
+    this._onReauthSuccess = null;
   }
 
   // ─────────────────────────────────────────
@@ -63,14 +73,39 @@ export class SelectChildPage {
 
     // 掛載事件（事件委派至 #app）
     this._container.addEventListener('click', this._boundHandleClick);
+
+    // 掛載 auth:reauthSuccess 監聽（v4 修正）
+    // auth.js 的 resetParentPin() 在 Google 重新驗證成功後發出此事件
+    // 此頁面接收後，進入「設定新 PIN」流程，讓使用者重新設定密碼
+    this._onReauthSuccess = (e) => {
+      if (e.detail?.type !== 'resetPin') return;
+      this._settingNewPin = true;
+      this._newPinFirst   = '';
+      this._pinValue      = '';
+      // 確保 PIN 面板可見（若使用者已關閉面板也能重新顯示）
+      this._pinVisible = true;
+      this._renderPinPanel();
+      UIManager.showToast('Google 驗證成功，請設定新的4位數密碼', 'info', 3000);
+    };
+    window.addEventListener('auth:reauthSuccess', this._onReauthSuccess);
   }
 
   /**
    * 清除事件監聽，釋放資源
    */
   destroy() {
+    // 清除 PIN 自動確認計時器（防止 destroy 後仍觸發）
+    if (this._pinTimer !== null) {
+      clearTimeout(this._pinTimer);
+      this._pinTimer = null;
+    }
     if (this._container) {
       this._container.removeEventListener('click', this._boundHandleClick);
+    }
+    // 移除 auth:reauthSuccess 監聽（v4 修正：防 destroy 後仍觸發）
+    if (this._onReauthSuccess) {
+      window.removeEventListener('auth:reauthSuccess', this._onReauthSuccess);
+      this._onReauthSuccess = null;
     }
     this._container    = null;
     this._children     = [];
@@ -162,19 +197,22 @@ export class SelectChildPage {
 
   /**
    * 忘記密碼：呼叫 Auth.resetParentPin()（v4 新增）
+   *
+   * 流程：
+   *   1. Auth.resetParentPin() 觸發 Google 重新驗證 popup
+   *   2. 驗證成功 → auth.js 發出 auth:reauthSuccess 事件
+   *   3. init() 中的監聽器接收事件 → 開啟設定新 PIN 流程
+   *   4. 使用者設定新 PIN → _processPinConfirm() 呼叫 Auth.setParentPassword()
+   *
+   * 注意：不在此處提前顯示「密碼已重設」，因為使用者尚未輸入新 PIN
    */
   async forgotPin() {
     try {
+      // 呼叫 Auth.resetParentPin()：觸發 Google 重新驗證
+      // 成功後 auth.js 發出 auth:reauthSuccess，由 init() 的監聽器接手
       await Auth.resetParentPin();
-      // Auth.resetParentPin() 成功後會引導重新驗證 Google 並設定新 PIN
-      // 若流程在 auth.js 內部已完整完成，此處顯示完成訊息即可
-      UIManager.showToast('密碼已重設，請用新密碼進入家長模式', 'success', 3000);
-      this._pinValue      = '';
-      this._settingNewPin = false;
-      this._newPinFirst   = '';
-      this._renderPinPanel();
     } catch (err) {
-      // Auth.resetParentPin() 失敗時 auth.js 內已顯示 toast，此處靜默
+      // 使用者取消 Google 驗證或驗證失敗：auth.js 內已顯示 toast，此處靜默
       console.warn('[SelectChildPage] forgotPin 由 Auth 處理', err);
     }
   }
@@ -400,9 +438,9 @@ export class SelectChildPage {
         if (this._pinValue.length < 4) {
           this._pinValue += btn.dataset.digit;
           this._updatePinDots();
-          // 滿4位自動確認（延遲200ms讓使用者看到最後一位）
+            // 滿4位自動確認（延遲200ms讓使用者看到最後一位）
           if (this._pinValue.length === 4) {
-            setTimeout(() => this._processPinConfirm(), 200);
+            this._pinTimer = setTimeout(() => this._processPinConfirm(), 200);
           }
         }
         break;
