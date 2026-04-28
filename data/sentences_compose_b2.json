@@ -1,0 +1,587 @@
+[
+  {
+    "id": "compose_8981_01",
+    "character": "要",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "需要",
+    "hint": "當你感覺缺少某種東西，必須得到它的時候。",
+    "example": "口渴的時候，我需要喝一杯溫開水。"
+  },
+  {
+    "id": "compose_8981_02",
+    "character": "要",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "不要",
+    "hint": "表示拒絕，或者是心裡不想要某個東西。",
+    "example": "我不挑食，所以不要把青菜夾給我。"
+  },
+  {
+    "id": "compose_8981_03",
+    "character": "要",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "重要",
+    "hint": "形容這件事情很有價值，絕對不能忘記。",
+    "example": "準時上學是一件很重要的事情。"
+  },
+  {
+    "id": "compose_8981_04",
+    "character": "要",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "快要",
+    "hint": "代表事情馬上就要發生了，時間很接近。",
+    "example": "天黑了，爸爸快要下班回到家了。"
+  },
+  {
+    "id": "compose_8981_05",
+    "character": "要",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "要求",
+    "hint": "希望別人達成某種標準或做某件事。",
+    "example": "老師要求我們寫字要工整又乾淨。"
+  },
+  {
+    "id": "compose_975c_06",
+    "character": "靜",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "安靜",
+    "hint": "沒有吵鬧的聲音，大家都不說話的時候。",
+    "example": "圖書館裡很安靜，大家都在看書。"
+  },
+  {
+    "id": "compose_975c_07",
+    "character": "靜",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "冷靜",
+    "hint": "遇到事情不慌張，心情平穩的思考。",
+    "example": "跌倒了要冷靜，先看看傷口在哪裡。"
+  },
+  {
+    "id": "compose_975c_08",
+    "character": "靜",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "靜坐",
+    "hint": "身體坐穩不動，讓心裡面變得舒服平靜。",
+    "example": "上課前先靜坐三分鐘，精神會更好。"
+  },
+  {
+    "id": "compose_975c_09",
+    "character": "靜",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "平靜",
+    "hint": "水面沒有波浪，或是心情沒有生氣難過。",
+    "example": "無風的湖面像鏡子一樣平靜。"
+  },
+  {
+    "id": "compose_975c_10",
+    "character": "靜",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "靜悄悄",
+    "hint": "形容環境非常沒聲音，連走路聲都聽不到。",
+    "example": "大家都睡著了，家裡變得靜悄悄的。"
+  },
+  {
+    "id": "compose_5929_11",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "天空",
+    "hint": "抬頭往上看，那片藍藍的、有雲朵的地方。",
+    "example": "藍藍的天空上，飄著幾朵白雲。"
+  },
+  {
+    "id": "compose_5929_12",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "今天",
+    "hint": "指的就是現在這一刻所在的這一天。",
+    "example": "今天是我的生日，媽媽買了蛋糕。"
+  },
+  {
+    "id": "compose_5929_13",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "天氣",
+    "hint": "外面是大太陽還是下大雨，這種自然的狀況。",
+    "example": "明天的天氣很好，我們要去郊遊。"
+  },
+  {
+    "id": "compose_5929_14",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "天亮",
+    "hint": "太陽公公出來了，黑夜變成白天的那個時候。",
+    "example": "天亮了，小鳥在樹上吱吱喳喳叫。"
+  },
+  {
+    "id": "compose_5929_15",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "天才",
+    "hint": "形容一個人非常聰明，好像天生就很厲害。",
+    "example": "哥哥是個數學天才，題目都難不倒他。"
+  },
+  {
+    "id": "compose_7a7a_16",
+    "character": "空",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "空間",
+    "hint": "指一個可以放東西，或是讓人活動的地方。",
+    "example": "教室的空間很大，可以放很多書。"
+  },
+  {
+    "id": "compose_7a7a_17",
+    "character": "空",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "空白",
+    "hint": "紙張上面什麼都沒有寫，乾乾淨淨的。",
+    "example": "我在空白的紙上畫了一隻大老虎。"
+  },
+  {
+    "id": "compose_7a7a_18",
+    "character": "空",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "空氣",
+    "hint": "我們身邊看不見，但呼吸一定要有的東西。",
+    "example": "森林裡的空氣很新鮮，聞起來很舒服。"
+  },
+  {
+    "id": "compose_7a7a_19",
+    "character": "空",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "空地",
+    "hint": "一塊沒有蓋房子，可以讓大家跑跳的地方。",
+    "example": "我家門前有一塊空地，可以玩球。"
+  },
+  {
+    "id": "compose_7a7a_20",
+    "character": "空",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "有空",
+    "hint": "代表現在沒有忙碌的事情，有時間可以玩。",
+    "example": "爸爸有空的時候，會陪我下象棋。"
+  },
+  {
+    "id": "compose_96f2_21",
+    "character": "雲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "白雲",
+    "hint": "在天上像棉花糖一樣，白白軟軟的東西。",
+    "example": "天上的白雲，看起來好像一隻小羊。"
+  },
+  {
+    "id": "compose_96f2_22",
+    "character": "雲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "烏雲",
+    "hint": "快要下雨前，天空出現黑黑、厚厚的雲。",
+    "example": "天空出現烏雲，好像快要下大雨了。"
+  },
+  {
+    "id": "compose_96f2_23",
+    "character": "雲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "雲海",
+    "hint": "在高山上往下看，雲多到像大海一樣。",
+    "example": "阿里山的雲海非常壯觀，好漂亮。"
+  },
+  {
+    "id": "compose_96f2_24",
+    "character": "雲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "雲朵",
+    "hint": "一朵一朵飄在空中的雲，形狀會一直變。",
+    "example": "我喜歡坐在草地上看著雲朵變換形狀。"
+  },
+  {
+    "id": "compose_96f2_25",
+    "character": "雲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "雲梯",
+    "hint": "可以伸得很長很長的梯子，消防員常用。",
+    "example": "消防隊員用雲梯救出困在高樓的人。"
+  },
+  {
+    "id": "compose_6c34_26",
+    "character": "水",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "喝水",
+    "hint": "把透明的液體吞進肚子裡，補充水分。",
+    "example": "跑完步後，我要多喝水才不會口渴。"
+  },
+  {
+    "id": "compose_6c34_27",
+    "character": "水",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "水果",
+    "hint": "植物結出來可以吃的部分，通常甜甜的。",
+    "example": "多吃水果對身體好，我最喜歡蘋果。"
+  },
+  {
+    "id": "compose_6c34_28",
+    "character": "水",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "水彩",
+    "hint": "畫畫時需要加水調和，有很多顏色的顏料。",
+    "example": "我用大筆刷在紙上畫出漂亮的水彩畫。"
+  },
+  {
+    "id": "compose_6c34_29",
+    "character": "水",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "水龍頭",
+    "hint": "開關一轉就會有水流出來的裝置。",
+    "example": "洗完手後，要記得把水龍頭關緊。"
+  },
+  {
+    "id": "compose_6c34_30",
+    "character": "水",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "汗水",
+    "hint": "運動後，身體排出來濕濕鹹鹹的液體。",
+    "example": "打完籃球後，哥哥全身都是汗水。"
+  },
+  {
+    "id": "compose_87f2_31",
+    "character": "蟲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "昆蟲",
+    "hint": "身體分成三節，通常有六隻腳的小生物。",
+    "example": "蝴蝶和蟬都是小朋友喜歡的昆蟲。"
+  },
+  {
+    "id": "compose_87f2_32",
+    "character": "蟲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "毛毛蟲",
+    "hint": "蝴蝶小時候的樣子，身上有很多小細毛。",
+    "example": "葉子上有一隻綠色的毛毛蟲在爬。"
+  },
+  {
+    "id": "compose_87f2_33",
+    "character": "蟲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "甲蟲",
+    "hint": "翅膀硬硬的，像穿了盔甲一樣的小蟲子。",
+    "example": "獨角仙是力量很大的一種甲蟲。"
+  },
+  {
+    "id": "compose_87f2_34",
+    "character": "蟲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "螢火蟲",
+    "hint": "在夏天晚上，屁股會發出一閃一閃光芒。",
+    "example": "夜晚的山林裡，有好多螢火蟲。"
+  },
+  {
+    "id": "compose_87f2_35",
+    "character": "蟲",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "害蟲",
+    "hint": "會讓植物生病，或是讓人生病的小蟲。",
+    "example": "農夫在田裡抓害蟲，保護蔬菜長大。"
+  },
+  {
+    "id": "compose_9ce5_36",
+    "character": "鳥",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "小鳥",
+    "hint": "長著羽毛、會拍動翅膀在天空中飛的動物。",
+    "example": "樹上有幾隻小鳥，正在開心的唱歌。"
+  },
+  {
+    "id": "compose_9ce5_37",
+    "character": "鳥",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "鳥窩",
+    "hint": "小鳥用乾草和樹枝搭起來，用來住的家。",
+    "example": "大樹上的鳥窩裡，有三顆鳥蛋。"
+  },
+  {
+    "id": "compose_9ce5_38",
+    "character": "鳥",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "候鳥",
+    "hint": "會隨著天氣變冷，飛到溫暖地方住的鳥。",
+    "example": "冬天到了，許多候鳥會飛到南方過冬。"
+  },
+  {
+    "id": "compose_9ce5_39",
+    "character": "鳥",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "鴕鳥",
+    "hint": "一種長得很巨大、腳很有力，但不會飛的鳥。",
+    "example": "鴕鳥跑得非常快，是鳥類中的短跑王。"
+  },
+  {
+    "id": "compose_9ce5_40",
+    "character": "鳥",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "鴞鳥",
+    "hint": "俗稱貓頭鷹，是晚上才出來活動的鳥。",
+    "example": "鴞鳥的眼睛大大的，晚上看得很清楚。"
+  },
+  {
+    "id": "compose_8349_41",
+    "character": "草",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "綠草",
+    "hint": "長在地面上，綠色的小型植物。",
+    "example": "公園裡有一大片綠草，踩起來軟軟的。"
+  },
+  {
+    "id": "compose_8349_42",
+    "character": "草",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "草莓",
+    "hint": "一種紅色的水果，外面有小點點，酸酸甜甜。",
+    "example": "我最喜歡吃酸酸甜甜的草莓蛋糕。"
+  },
+  {
+    "id": "compose_8349_43",
+    "character": "草",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "草原",
+    "hint": "非常廣大，放眼望去全都是小草的地方。",
+    "example": "羊群在遼闊的草原上開心的吃草。"
+  },
+  {
+    "id": "compose_8349_44",
+    "character": "草",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "雜草",
+    "hint": "亂長在花園裡，沒人照顧、不需要的植物。",
+    "example": "爸爸在庭院裡拔雜草，讓花長得更好。"
+  },
+  {
+    "id": "compose_8349_45",
+    "character": "草",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "草本",
+    "hint": "指莖比較軟，不像大樹那樣硬梆梆的植物。",
+    "example": "薄荷是一種聞起來很香的草本植物。"
+  },
+  {
+    "id": "compose_5148_46",
+    "character": "先",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "優先",
+    "hint": "想像在排隊時，排在隊伍最前面的人。",
+    "example": "小明排隊排在最領先，他是第一個。"
+  },
+  {
+    "id": "compose_5148_47",
+    "character": "先",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "祖先",
+    "hint": "指很久很久以前，我們家族裡的長輩。",
+    "example": "過年的時候，我們會跟爸爸一起祭拜祖先。"
+  },
+  {
+    "id": "compose_5148_48",
+    "character": "先",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "先生",
+    "hint": "對男生的一種禮貌稱呼，像老師或鄰居。",
+    "example": "鄰居王先生人很好，會主動幫大家開門。"
+  },
+  {
+    "id": "compose_5148_49",
+    "character": "先",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "先前",
+    "hint": "代表在剛才或者是更早之前發生的事。",
+    "example": "先前還在下大雨，現在太陽就出來了。"
+  },
+  {
+    "id": "compose_5148_50",
+    "character": "先",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "先行",
+    "hint": "在別人的前面提早去做某件事情。",
+    "example": "我先去把手洗乾淨，準備要吃晚餐了。"
+  },
+  {
+    "id": "compose_5b8c_51",
+    "character": "完",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "完成",
+    "hint": "把一件事情從開始做到結束，做好了。",
+    "example": "我已經完成功課，可以去外面玩了。"
+  },
+  {
+    "id": "compose_5b8c_52",
+    "character": "完",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "寫完",
+    "hint": "把作業或是練習題全部寫好，沒有剩下的。",
+    "example": "我把今天的生字寫完了，字很漂亮。"
+  },
+  {
+    "id": "compose_5b8c_53",
+    "character": "完",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "吃完",
+    "hint": "把盤子裡的食物全部吞進肚子裡，沒剩半點。",
+    "example": "我把碗裡的飯菜都吃完，一點都沒剩。"
+  },
+  {
+    "id": "compose_5b8c_54",
+    "character": "完",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "完美",
+    "hint": "形容這件作品非常好，沒有任何缺點。",
+    "example": "這張畫畫得真完美，老師給我一個大讚。"
+  },
+  {
+    "id": "compose_5b8c_55",
+    "character": "完",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "完工",
+    "hint": "工程或是工作已經全部做完了。",
+    "example": "學校的新操場完工了，大家都很開心。"
+  },
+  {
+    "id": "compose_518d_56",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "再見",
+    "hint": "跟朋友分開的時候，約定下次還要見面。",
+    "example": "放學時，我和老師、同學大聲說再見。"
+  },
+  {
+    "id": "compose_518d_57",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "再次",
+    "hint": "表示同樣的事情，又發生了第二次。",
+    "example": "小鳥再次飛到窗台，跟我打招呼。"
+  },
+  {
+    "id": "compose_518d_58",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "再去",
+    "hint": "代表去過一個地方，以後還要再去一次。",
+    "example": "海邊很好玩，我下次還想再去一次。"
+  },
+  {
+    "id": "compose_518d_59",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "再接再厲",
+    "hint": "這次沒成功沒關係，下次要更努力去做。",
+    "example": "比賽輸了沒關係，再接再厲就好。"
+  },
+  {
+    "id": "compose_518d_60",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "再三",
+    "hint": "形容一件事情做了很多次，反覆的叮嚀。",
+    "example": "媽媽再三提醒我，出門要帶雨傘。"
+  },
+  {
+    "id": "compose_53bb_61",
+    "character": "去",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "出去",
+    "hint": "從家裡或者是教室裡，走到外面的空間。",
+    "example": "假日時，爸爸帶我們去公園玩皮球。"
+  },
+  {
+    "id": "compose_53bb_62",
+    "character": "去",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "去年",
+    "hint": "代表已經走過的、前一年的時間。",
+    "example": "去年我還在幼兒園，現在已經上小學了。"
+  },
+  {
+    "id": "compose_53bb_63",
+    "character": "去",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "去皮",
+    "hint": "把水果外面那層不想要的部分切掉或剝掉。",
+    "example": "媽媽幫蘋果去皮，白色的果肉甜甜的。"
+  },
+  {
+    "id": "compose_53bb_64",
+    "character": "去",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "去向",
+    "hint": "指某個人往哪個方向走，或者是去了哪裡。",
+    "example": "老師正在詢問生病請假同學的去向。"
+  },
+  {
+    "id": "compose_53bb_65",
+    "character": "去",
+    "book": 2,
+    "lesson": 1,
+    "prompt_word": "進去",
+    "hint": "從外面走入一個空間，像是走進教室裡。",
+    "example": "鐘聲響了，小朋友趕快走進去教室坐好。"
+  }
+]

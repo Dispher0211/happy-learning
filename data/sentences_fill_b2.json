@@ -1,0 +1,77 @@
+[
+  {
+    "id": "fill_518d_01",
+    "character": "再",
+    "book": 2,
+    "lesson": 1,
+    "sentence": "一而再，再而三。",
+    "fill_position": [
+      2,
+      3
+    ],
+    "answer": "再",
+    "correct_orders": [
+      [
+        "一",
+        "而再",
+        "，再",
+        "而",
+        "三"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5929_01",
+    "character": "天",
+    "book": 2,
+    "lesson": 1,
+    "sentence": "蔚藍的天空飄著朵朵的白雲，好一幅美麗的景象。",
+    "fill_position": [
+      3
+    ],
+    "answer": "天空",
+    "correct_orders": [
+      [
+        "蔚",
+        "藍的",
+        "天",
+        "空",
+        "飄著",
+        "朵",
+        "朵的",
+        "白",
+        "雲",
+        "，",
+        "好",
+        "一",
+        "幅",
+        "美",
+        "麗的",
+        "景",
+        "象"
+      ]
+    ]
+  },
+  {
+    "id": "fill_767d_01",
+    "character": "白",
+    "book": 2,
+    "lesson": 1,
+    "sentence": "天上飄著朵朵白雲。",
+    "fill_position": [
+      6
+    ],
+    "answer": "白雲",
+    "correct_orders": [
+      [
+        "天",
+        "上",
+        "飄著",
+        "朵",
+        "朵",
+        "白",
+        "雲"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,341 @@
+/* =============================================
+   card.css — 生字卡畫面樣式
+   ============================================= */
+
+/* ── 生字卡頁面容器 ── */
+.card-page {
+  background: linear-gradient(160deg, #FFF0E0 0%, #E8F4FF 100%);
+  min-height: 100vh;
+  padding: var(--spacing-md);
+}
+
+/* ── 頁面頂部：年級／冊次標籤 ── */
+.card-page__grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--spacing-md);
+}
+
+/* ── 主生字卡（大卡） ── */
+.char-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  /* 彩色左邊框裝飾 */
+  border-left: 6px solid var(--color-primary);
+  margin-bottom: var(--spacing-lg);
+  /* 翻牌動畫基礎 */
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+/* 卡片翻轉狀態 */
+.char-card.flipped {
+  transform: rotateY(180deg);
+}
+
+/* 角落裝飾圖案 */
+.char-card::before {
+  content: '✦';
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  font-size: 1.2rem;
+  color: var(--color-accent);
+  opacity: 0.6;
+}
+
+/* ── 字的注音（卡片頂部小字） ── */
+.char-card__zhuyin {
+  font-family: var(--font-zhuyin);
+  font-size: 1.3rem;
+  color: var(--color-secondary);
+  letter-spacing: 0.1em;
+  margin-bottom: var(--spacing-sm);
+  display: block;
+  font-weight: 600;
+}
+
+/* ── 主字體（超大顯示） ── */
+.char-card__character {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: 1.1;
+  color: var(--text-primary);
+  display: block;
+  margin: var(--spacing-sm) 0;
+  /* 文字立體陰影 */
+  text-shadow: 3px 3px 0 rgba(255,107,53,0.15);
+  transition: transform var(--duration-normal);
+  cursor: pointer;
+}
+
+.char-card__character:active {
+  transform: scale(0.95);
+}
+
+/* ── 解釋（點擊字後翻面顯示） ── */
+.char-card__meaning {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: var(--spacing-sm) 0;
+  border-top: 2px dashed #E5E7EB;
+  margin-top: var(--spacing-sm);
+}
+
+/* ── 部首 + 筆畫資訊條 ── */
+.char-card__info-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.char-info-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-main);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  min-width: 60px;
+}
+
+.char-info-badge__label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.char-info-badge__value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── 例詞列表 ── */
+.char-card__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  margin-top: var(--spacing-md);
+}
+
+.word-chip {
+  background: linear-gradient(135deg, var(--color-accent), #FFD000);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast),
+    box-shadow var(--duration-fast);
+  /* 點擊播音效果 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.word-chip:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.12);
+}
+
+/* ── 筆順動畫區 ── */
+.stroke-order-container {
+  background: #F8F9FA;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
+  border: 2px dashed #D1D5DB;
+}
+
+/* ── 卡片導航（上一張／下一張） ── */
+.card-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.card-nav__btn {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: white;
+  border: 3px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 0 rgba(255,107,53,0.3);
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-nav__btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(255,107,53,0.3);
+}
+
+.card-nav__counter {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: center;
+  flex: 1;
+}
+
+.card-nav__counter span {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+/* ── 生字列表（家長模式 / 複習列表） ── */
+.char-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+}
+
+.char-list-item {
+  aspect-ratio: 1;
+  background: white;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  border: 2.5px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.char-list-item:active {
+  transform: scale(0.94);
+}
+
+/* 根據遺忘等級上色邊框 */
+.char-list-item--easy   { border-color: var(--color-green); }
+.char-list-item--medium { border-color: var(--color-accent); }
+.char-list-item--hard   { border-color: var(--color-primary); }
+.char-list-item--new    { border-color: var(--color-blue); }
+
+.char-list-item__char {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.char-list-item__zhuyin {
+  font-family: var(--font-zhuyin);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* ── 生字卡翻頁滑動動畫 ── */
+.card-enter {
+  animation: card-slide-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.card-exit {
+  animation: card-slide-out 0.2s ease both;
+}
+
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateX(40px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes card-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-30px); }
+}
+
+/* ── 遺忘排名頁面 ── */
+.forget-rank-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--duration-fast);
+}
+
+.forget-rank-item:active {
+  transform: scale(0.98);
+}
+
+.forget-rank-item__rank {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: center;
+}
+
+.forget-rank-item__char {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-primary);
+}
+
+.forget-rank-item__bar-wrap {
+  flex: 1;
+}
+
+.forget-rank-item__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.forget-rank-bar {
+  height: 10px;
+  background: #F3F4F6;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.forget-rank-bar__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+.forget-rank-bar__fill--hard   { background: var(--color-primary); }
+.forget-rank-bar__fill--medium { background: var(--color-accent); }
+.forget-rank-bar__fill--easy   { background: var(--color-green); }

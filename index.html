@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <!-- 禁止使用者縮放，確保遊戲操作體驗一致 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>快樂學習 Happy Learning</title>
+
+  <!-- PWA 設定 -->
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="快樂學習">
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- 應用程式圖示 -->
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <!-- 注音字體預載入（BpmfIVS），避免注音顯示閃爍 -->
+  <link rel="preload" href="/fonts/BpmfIVS.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- 全域樣式表 -->
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/card.css">
+  <link rel="stylesheet" href="/css/games.css">
+  <link rel="stylesheet" href="/css/parent.css">
+  <link rel="stylesheet" href="/css/animation.css">
+</head>
+<body>
+  <!-- 主頁面容器：所有 Page 渲染到此 -->
+  <div id="app"></div>
+
+  <!-- 覆蓋層容器：Overlay 渲染到此（z-index > #app） -->
+  <div id="overlay-root"></div>
+
+  <!-- Toast 通知容器（z-index 最高，顯示短暫提示訊息） -->
+  <div id="toast-root"></div>
+
+  <!-- 主程式進入點（ES Module，不可使用 defer 或 async） -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

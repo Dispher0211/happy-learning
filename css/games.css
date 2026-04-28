@@ -1,0 +1,438 @@
+/* =============================================
+   games.css — 遊戲共用樣式
+   ============================================= */
+
+/* ── 遊戲頁面容器 ── */
+.game-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #E8F4FF 0%, #FFF0E0 100%);
+  padding-bottom: var(--spacing-xl);
+}
+
+/* ── 遊戲頂部 HUD（血量/星星/進度）── */
+.game-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: white;
+  border-bottom: 3px solid var(--color-accent);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: var(--spacing-sm);
+}
+
+.game-hud__lives {
+  display: flex;
+  gap: 4px;
+}
+
+.game-hud__heart {
+  font-size: 1.2rem;
+  transition: transform var(--duration-fast);
+}
+
+.game-hud__heart.lost {
+  filter: grayscale(1);
+  opacity: 0.35;
+  animation: heart-break 0.3s ease;
+}
+
+.game-hud__progress {
+  flex: 1;
+  margin: 0 var(--spacing-sm);
+}
+
+.game-hud__stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-main);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* ── 題目展示區 ── */
+.question-area {
+  padding: var(--spacing-lg) var(--spacing-md);
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+}
+
+.question-char {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 3px 3px 0 rgba(255,107,53,0.12);
+  /* 動畫進場 */
+  animation: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.question-text {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  line-height: 1.7;
+  max-width: 300px;
+}
+
+/* 題目句子（含填空格）*/
+.question-sentence {
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 2;
+  color: var(--text-primary);
+}
+
+.question-sentence__blank {
+  display: inline-block;
+  min-width: 40px;
+  border-bottom: 3px solid var(--color-primary);
+  margin: 0 4px;
+  text-align: center;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ── 選項區（4選1）── */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  width: 100%;
+}
+
+.option-btn {
+  background: white;
+  border: 3px solid #E5E7EB;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-sm);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: 0 4px 0 #D1D5DB;
+  transition:
+    transform var(--duration-fast),
+    box-shadow var(--duration-fast),
+    background var(--duration-fast),
+    border-color var(--duration-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 80px;
+  justify-content: center;
+}
+
+.option-btn__zhuyin {
+  font-family: var(--font-zhuyin);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.option-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #D1D5DB;
+}
+
+/* 答對 */
+.option-btn--correct {
+  background: linear-gradient(135deg, #DCFCE7, #BBF7D0);
+  border-color: var(--color-green);
+  box-shadow: 0 4px 0 #16A34A;
+  color: #15803D;
+  animation: correct-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 答錯 */
+.option-btn--wrong {
+  background: linear-gradient(135deg, #FEE2E2, #FECACA);
+  border-color: var(--color-pink);
+  box-shadow: 0 4px 0 #DC2626;
+  color: #DC2626;
+  animation: wrong-shake 0.4s ease;
+}
+
+/* 正確答案揭示 */
+.option-btn--reveal {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 0 #D97706;
+  color: #92400E;
+}
+
+.option-btn:disabled {
+  opacity: 0.5;
+}
+
+/* ── 提示按鈕區 ── */
+.hint-area {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-md);
+  justify-content: center;
+}
+
+.hint-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 2px solid var(--color-purple);
+  color: var(--color-purple);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--duration-fast), transform var(--duration-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hint-btn:active {
+  transform: scale(0.95);
+  background: #EDE9FE;
+}
+
+.hint-btn--used {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.hint-cost {
+  font-size: 0.75rem;
+  color: var(--star-yellow);
+}
+
+/* ── 提示顯示框 ── */
+.hint-box {
+  background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+  border: 2px solid var(--color-purple);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin: 0 var(--spacing-md);
+  font-size: 0.95rem;
+  color: #4C1D95;
+  font-weight: 600;
+  line-height: 1.6;
+  animation: fade-up 0.3s ease both;
+}
+
+/* ── 答題結果覆蓋層 ── */
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.result-overlay__emoji {
+  font-size: 4rem;
+  animation: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.result-overlay__text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: white;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  animation: fade-up 0.3s ease 0.1s both;
+}
+
+/* ── 星星獎勵彈出 ── */
+.star-popup {
+  position: fixed;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--star-yellow);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  pointer-events: none;
+  z-index: 999;
+  animation: star-fly 0.8s ease forwards;
+}
+
+/* ── 遊戲列表頁 ── */
+.game-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.game-list-item {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition:
+    transform var(--duration-fast),
+    box-shadow var(--duration-fast),
+    border-color var(--duration-fast);
+  -webkit-tap-highlight-color: transparent;
+  text-align: center;
+}
+
+.game-list-item:active {
+  transform: translateY(3px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 各遊戲配色 */
+.game-list-item--writing    { border-color: var(--color-primary); }
+.game-list-item--stroke     { border-color: var(--color-secondary); }
+.game-list-item--zhuyin     { border-color: var(--color-purple); }
+.game-list-item--polyphone  { border-color: var(--color-blue); }
+.game-list-item--radical    { border-color: var(--color-green); }
+.game-list-item--strokes    { border-color: var(--color-pink); }
+.game-list-item--typo       { border-color: #F59E0B; }
+.game-list-item--idiom      { border-color: #10B981; }
+.game-list-item--words      { border-color: #6366F1; }
+.game-list-item--listen     { border-color: #EC4899; }
+.game-list-item--sentence   { border-color: #8B5CF6; }
+.game-list-item--random     {
+  background: linear-gradient(135deg, #FFF0E0, #E8F4FF);
+  border-color: var(--color-primary);
+}
+
+.game-list-item__icon {
+  font-size: 2.2rem;
+}
+
+.game-list-item__name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.game-list-item__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── 手寫 canvas ── */
+.handwriting-canvas-wrap {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: white;
+  box-shadow: var(--shadow-md);
+  border: 3px solid var(--color-secondary);
+}
+
+.handwriting-canvas {
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.handwriting-tools {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  padding: var(--spacing-sm) 0;
+}
+
+/* ── 遊戲結算頁 ── */
+.game-result {
+  padding: var(--spacing-xl) var(--spacing-lg);
+  text-align: center;
+  animation: fade-up 0.4s ease both;
+}
+
+.game-result__title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.game-result__stars-earned {
+  font-size: 3rem;
+  margin: var(--spacing-lg) 0;
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.game-result__summary {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  justify-content: space-around;
+}
+
+.result-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-stat__value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--color-primary);
+}
+
+.result-stat__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Keyframes 遊戲專用 ── */
+@keyframes correct-bounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12) translateY(-4px); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+
+@keyframes heart-break {
+  0%   { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes star-fly {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  80%  { opacity: 1; transform: translateY(-80px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-100px) scale(0.8); }
+}

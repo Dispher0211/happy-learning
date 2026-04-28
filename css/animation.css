@@ -1,0 +1,442 @@
+/* =============================================
+   animation.css — 動畫與過場效果
+   ============================================= */
+
+/* ══════════════════════════════════════════
+   一、答題回饋動畫
+   ══════════════════════════════════════════ */
+
+/* 答對：綠色圓圈爆炸 */
+@keyframes correct-explode {
+  0%   { transform: scale(0); opacity: 0.9; }
+  60%  { transform: scale(1.4); opacity: 0.5; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.fx-correct-ring {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 4px solid var(--color-green);
+  pointer-events: none;
+  animation: correct-explode 0.5s ease forwards;
+}
+
+/* 答錯：紅色搖晃 */
+@keyframes wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-10px) rotate(-3deg); }
+  35%       { transform: translateX(10px) rotate(3deg); }
+  55%       { transform: translateX(-7px) rotate(-2deg); }
+  75%       { transform: translateX(7px) rotate(2deg); }
+}
+
+.fx-wrong-shake {
+  animation: wrong-shake 0.45s ease;
+}
+
+/* ══════════════════════════════════════════
+   二、星星動畫
+   ══════════════════════════════════════════ */
+
+/* 星星飛出並收到計數器 */
+@keyframes star-launch {
+  0%   {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  70%  {
+    opacity: 1;
+    transform: translate(var(--tx, -80px), var(--ty, -120px)) scale(1.3) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx-end, -120px), var(--ty-end, -200px)) scale(0.5) rotate(360deg);
+  }
+}
+
+.fx-star-particle {
+  position: fixed;
+  font-size: 1.4rem;
+  pointer-events: none;
+  z-index: 1000;
+  animation: star-launch 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* 星星計數器跳動 */
+@keyframes counter-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.fx-counter-pop {
+  animation: counter-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 星星合成光芒 */
+@keyframes star-merge-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.7); }
+  50%  { box-shadow: 0 0 30px 20px rgba(251,191,36,0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+}
+
+.fx-merge-glow {
+  animation: star-merge-glow 0.8s ease;
+}
+
+/* ══════════════════════════════════════════
+   三、頁面過場
+   ══════════════════════════════════════════ */
+
+/* 頁面進入 */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 頁面離開 */
+@keyframes page-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+}
+
+.page-exit {
+  animation: page-exit 0.2s ease both;
+}
+
+/* 從右側滑入 */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.page-slide-in {
+  animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ══════════════════════════════════════════
+   四、圖鑑揭曉動畫
+   ══════════════════════════════════════════ */
+
+/* 精靈球搖晃 */
+@keyframes pokeball-shake {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-18deg); }
+  40%       { transform: rotate(18deg); }
+  60%       { transform: rotate(-12deg); }
+  80%       { transform: rotate(12deg); }
+}
+
+.fx-pokeball-shake {
+  animation: pokeball-shake 0.6s ease infinite;
+}
+
+/* 圖片從上往下逐漸顯示（reveal） */
+@keyframes reveal-down {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0 0 0% 0); }
+}
+
+.fx-reveal-down {
+  animation: reveal-down 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* 光芒四射 */
+@keyframes burst-rays {
+  0%   { transform: scale(0) rotate(0deg); opacity: 1; }
+  80%  { opacity: 0.6; }
+  100% { transform: scale(3) rotate(90deg); opacity: 0; }
+}
+
+.fx-burst {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    transparent 10deg, rgba(255,230,109,0.4) 20deg,
+    transparent 30deg, rgba(255,230,109,0.4) 40deg,
+    transparent 50deg, rgba(255,230,109,0.4) 60deg,
+    transparent 70deg, rgba(255,230,109,0.4) 80deg,
+    transparent 90deg, rgba(255,230,109,0.4) 100deg,
+    transparent 110deg, rgba(255,230,109,0.4) 120deg,
+    transparent 130deg, rgba(255,230,109,0.4) 140deg,
+    transparent 150deg, rgba(255,230,109,0.4) 160deg,
+    transparent 170deg, rgba(255,230,109,0.4) 180deg,
+    transparent 190deg, rgba(255,230,109,0.4) 200deg,
+    transparent 210deg, rgba(255,230,109,0.4) 220deg,
+    transparent 230deg, rgba(255,230,109,0.4) 240deg,
+    transparent 250deg, transparent 360deg
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: burst-rays 1s ease forwards;
+}
+
+/* ══════════════════════════════════════════
+   五、遊戲專用動畫
+   ══════════════════════════════════════════ */
+
+/* 賽車加速 */
+@keyframes car-zoom {
+  0%   { transform: translateX(0) scaleX(1); }
+  50%  { transform: translateX(8px) scaleX(1.08); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+
+.fx-car-zoom {
+  animation: car-zoom 0.3s ease;
+}
+
+/* 飛機飛行搖晃 */
+@keyframes plane-fly {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%       { transform: translateY(-6px) rotate(2deg); }
+}
+
+.fx-plane-fly {
+  animation: plane-fly 1.5s ease infinite;
+}
+
+/* 火車行駛震動 */
+@keyframes train-chug {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(2px); }
+  75%       { transform: translateX(-2px); }
+}
+
+.fx-train-chug {
+  animation: train-chug 0.2s linear infinite;
+}
+
+/* 魚游動 */
+@keyframes fish-swim {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+
+.fx-fish-swim {
+  animation: fish-swim 2s ease infinite;
+}
+
+/* 蓋房子逐層出現 */
+@keyframes build-up {
+  from { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+  to   { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+}
+
+.fx-build-up {
+  animation: build-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 射箭靶心 */
+@keyframes bullseye-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,107,53,0.6); }
+  70%  { box-shadow: 0 0 0 15px rgba(255,107,53,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,107,53,0); }
+}
+
+.fx-bullseye {
+  animation: bullseye-pulse 0.7s ease;
+}
+
+/* 連勝 COMBO 文字 */
+@keyframes combo-pop {
+  0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.fx-combo {
+  animation: combo-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ══════════════════════════════════════════
+   六、登入/教學頁動畫
+   ══════════════════════════════════════════ */
+
+/* Logo 彈入 */
+@keyframes logo-bounce {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.fx-logo-bounce {
+  animation: logo-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 文字逐個出現（用 animation-delay 搭配） */
+@keyframes letter-drop {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.fx-letter-drop {
+  display: inline-block;
+  animation: letter-drop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 背景彩點浮動 */
+@keyframes dot-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%       { transform: translateY(-12px) rotate(120deg); }
+  66%       { transform: translateY(6px) rotate(240deg); }
+}
+
+.fx-dot-float {
+  animation: dot-float 4s ease infinite;
+}
+
+/* ══════════════════════════════════════════
+   七、載入畫面
+   ══════════════════════════════════════════ */
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  z-index: 9999;
+}
+
+.loading-screen__logo {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  animation: logo-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 三點跳動載入指示 */
+.loading-dots {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.loading-dots span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: dot-jump 0.8s ease infinite;
+}
+
+.loading-dots span:nth-child(2) {
+  background: var(--color-secondary);
+  animation-delay: 0.15s;
+}
+
+.loading-dots span:nth-child(3) {
+  background: var(--color-accent);
+  animation-delay: 0.3s;
+}
+
+@keyframes dot-jump {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%            { transform: translateY(-12px); }
+}
+
+/* ══════════════════════════════════════════
+   八、Overlay 覆蓋層動畫
+   ══════════════════════════════════════════ */
+
+/* 覆蓋層背景淡入 */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: 200;
+  animation: overlay-in 0.25s ease both;
+}
+
+/* 彈窗從下彈出 */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.overlay-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: white;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--spacing-lg);
+  z-index: 201;
+  animation: sheet-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* 彈窗把手 */
+.overlay-sheet::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: #D1D5DB;
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--spacing-md);
+}
+
+/* 星星合成覆蓋層 */
+.merge-overlay {
+  background: linear-gradient(160deg, #0F0C29, #302B63, #24243E);
+  color: white;
+}
+
+/* ══════════════════════════════════════════
+   九、無障礙：使用者偏好減少動畫
+   ══════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .fx-correct-ring,
+  .fx-wrong-shake,
+  .fx-star-particle,
+  .fx-burst,
+  .fx-car-zoom,
+  .fx-plane-fly,
+  .fx-train-chug,
+  .fx-fish-swim,
+  .fx-combo,
+  .fx-logo-bounce,
+  .fx-dot-float,
+  .loading-dots span,
+  .page-enter,
+  .page-exit,
+  .page-slide-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}

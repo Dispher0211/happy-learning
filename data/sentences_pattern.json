@@ -1,0 +1,74 @@
+[
+  {
+    "id": "pattern_001",
+    "template": "有時……有時……有時……",
+    "description": "",
+    "example": "放學後，他有時趕著去參加社團，有時趕著去學鋼琴，有時趕著回家寫作業。",
+    "example_alt": "春天的天氣多變化，有時像夏天一樣炎熱，有時像冬天一樣寒冷，有時像颱風天一樣下大雨。",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_002",
+    "template": "一邊……一邊……",
+    "description": "",
+    "example": "爺爺一邊觀察對手的棋路，一邊調整策略迎戰，最後終於戰勝對方，贏得棋局。",
+    "example_alt": "",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_003",
+    "template": "不但……還……",
+    "description": "",
+    "example": "這位慈善家不但捐贈了許多的物資到育幼院，還定期陪伴孩子們一同學習、遊戲。",
+    "example_alt": "",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_004",
+    "template": "除了……還……",
+    "description": "",
+    "example": "地球暖化除了會對環境產生劇烈的影響，還威脅無數生物的生存，已是全球最嚴峻的考驗。",
+    "example_alt": "",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_005",
+    "template": "是……也是……",
+    "description": "",
+    "example": "這項肝病的治療研究，是臺灣醫學界劃時代的創舉，也是所有病患的福祉。",
+    "example_alt": "這次四年級的戶外教育，是中年級最遠的參觀行程，也是近幾年最有趣的活動。",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_006",
+    "template": "是……還是……",
+    "description": "",
+    "example": "最近圖書館放映的影片都很精采，大家究竟是要觀賞動物奇觀，還是要觀賞太空尋奇影片？",
+    "example_alt": "面對這麼多美食，我究竟是要品嘗冰冰涼涼的芒果冰沙，還是要享受香氣濃郁的草莓鬆餅？",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_007",
+    "template": "無論……始終……",
+    "description": "",
+    "example": "無論未來的道路有多崎嶇難行，我們始終懷抱著樂觀的心情來面對，絕不能輕易被擊敗。",
+    "example_alt": "無論這項實驗有多複雜困難，哥哥始終抱持著不屈不撓的信念，一次次面對問題與挑戰。",
+    "source": "4上語句練習",
+    "grade": 4
+  },
+  {
+    "id": "pattern_008",
+    "template": "沒想到……竟然……",
+    "description": "",
+    "example": "沒想到充滿臭味的藍起司，竟然是法國料理當中的高檔食材。",
+    "example_alt": "",
+    "source": "4上語句練習",
+    "grade": 4
+  }
+]

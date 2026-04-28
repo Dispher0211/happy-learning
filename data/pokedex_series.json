@@ -1,0 +1,20 @@
+{
+  "series": [
+    {
+      "id": "pokemon",
+      "name": "寶可夢圖鑑",
+      "icon": "🐾",
+      "source": "api",
+      "api": {
+        "provider": "pokeapi",
+        "base_url": "https://pokeapi.co/api/v2/pokemon/",
+        "image_field": "sprites.other.official-artwork.front_default",
+        "total": 898
+      },
+      "reveal_by_sentence": 10,
+      "reveal_by_star": 100,
+      "default_enabled": true,
+      "order": 1
+    }
+  ]
+}
