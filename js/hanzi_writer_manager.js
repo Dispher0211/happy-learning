@@ -127,6 +127,22 @@ export const HanziWriterManager = {
       return false
     }
 
+    // ── 防止 stale instance：若 container DOM 已被重建，清除舊快取 ──
+    // renderCharCard 重建 innerHTML 後 container 是全新 DOM 節點，
+    // 舊的 HanziWriter instance 仍綁定到已脫離 DOM 的舊節點，
+    // 呼叫 setCharacter() 不會顯示。必須先刪除快取，讓 getWriter 重新建立。
+    if (this._instances[containerId]) {
+      const el = document.getElementById(containerId)
+      const instanceEl = this._instances[containerId]?.el ||
+                         this._instances[containerId]?._svg?.parentElement
+      // 若 DOM 節點已不存在或不是目前的 container，清除快取
+      if (!el || (instanceEl && instanceEl !== el && !el.contains(instanceEl))) {
+        console.log(`[HanziWriterManager] 偵測到 DOM 重建，清除舊 instance: #${containerId}`)
+        delete this._instances[containerId]
+        delete this._requestIds[containerId]
+      }
+    }
+
     const writer = await this.getWriter(containerId, options)
     if (!writer) return false
 

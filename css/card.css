@@ -215,7 +215,7 @@
 }
 
 .char-card__char-fallback {
-  font-family: var(--font-display);
+  font-family: var(--font-zhuyin);
   font-size: clamp(3.5rem, 14vw, 7rem);
   font-weight: 700;
   color: #1E1B4B;
@@ -417,8 +417,8 @@
   background: white;
   border: 2px solid #FCD34D;
   border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 0.92rem;
+  padding: 5px 14px;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1E293B;
   cursor: pointer;
@@ -428,6 +428,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-family: var(--font-zhuyin);
 }
 .char-card__word:active { transform: translateY(2px); box-shadow: none; }
 .word-sound-icon { font-size: 0.75rem; opacity: 0.6; }
@@ -435,14 +436,15 @@
 
 /* 字義 */
 .char-card__definition {
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   color: #475569;
-  line-height: 1.8;
+  line-height: 1.9;
   background: #F1F5F9;
   border-radius: 12px;
   padding: 10px 12px;
   margin-bottom: 14px;
   border-left: 4px solid #6366F1;
+  font-family: var(--font-zhuyin);
 }
 
 /* 翻面挑戰按鈕 */
@@ -485,8 +487,8 @@
   border-radius: 24px 24px 0 0;
 }
 .word-card__title {
-  font-family: var(--font-display);
-  font-size: 2rem;
+  font-family: var(--font-zhuyin);
+  font-size: 2.8rem;
   font-weight: 700;
   color: #0E7490;
   text-align: center;
@@ -504,10 +506,24 @@
   background: #ECFEFF;
   border-radius: 12px;
   padding: 10px 12px;
-  font-size: 0.88rem;
+  font-size: 1.1rem;
   color: #164E63;
-  line-height: 1.8;
+  line-height: 1.9;
   border-left: 4px solid #06B6D4;
+  margin-bottom: 14px;
+  font-family: var(--font-zhuyin);
+}
+.word-card__ex {
+  background: #F0FDF4;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 1.05rem;
+  color: #065F46;
+  line-height: 1.9;
+  border-left: 4px solid #34D399;
+  margin-bottom: 14px;
+  font-family: var(--font-zhuyin);
+}
   margin-bottom: 14px;
 }
 
@@ -533,7 +549,7 @@
   border-radius: 24px 24px 0 0;
 }
 .idiom-card__title {
-  font-family: var(--font-display);
+  font-family: var(--font-zhuyin);
   font-size: 2rem;
   font-weight: 700;
   color: #065F46;
@@ -542,8 +558,30 @@
   letter-spacing: 0.1em;
 }
 
-/* ══════════════════════════════════════════
-   六、空狀態
+/* 成語主字（大字，注音體） */
+.idiom-card__idiom {
+  font-family: var(--font-zhuyin);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #065F46;
+  text-align: center;
+  letter-spacing: 0.15em;
+  margin: 14px 0 10px;
+  line-height: 1.2;
+}
+
+/* 成語意思 / 例句 */
+.idiom-card__meaning,
+.idiom-card__example,
+.idiom-card__origin {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  margin-bottom: 10px;
+  font-family: var(--font-zhuyin);
+}
+.idiom-card__meaning { color: #064E3B; background: #ECFDF5; border-left: 4px solid #10B981; border-radius: 10px; padding: 8px 12px; }
+.idiom-card__example { color: #065F46; background: #F0FDF4; border-left: 4px solid #34D399; border-radius: 10px; padding: 8px 12px; }
+.idiom-card__origin  { color: #6B7280; font-size: 0.9rem; padding: 4px 12px; }
    ══════════════════════════════════════════ */
 
 .card-page__empty {
@@ -594,7 +632,7 @@
 .char-list-item--medium { border-color:#FDE047; background:#FEFCE8; }
 .char-list-item--hard   { border-color:#FCA5A5; background:#FFF5F5; }
 .char-list-item--new    { border-color:#C4B5FD; background:#F5F3FF; }
-.char-list-item__char   { font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:#1E293B; }
+.char-list-item__char   { font-family:var(--font-zhuyin); font-size:1.5rem; font-weight:700; color:#1E293B; }
 .char-list-item__zhuyin { font-family:var(--font-zhuyin); font-size:0.65rem; color:#94A3B8; }
 
 /* ══════════════════════════════════════════
@@ -612,7 +650,7 @@
 }
 .forget-rank-item:active { transform:scale(0.98); }
 .forget-rank-item__rank  { font-size:1.3rem; font-weight:900; color:#CBD5E1; min-width:26px; text-align:center; }
-.forget-rank-item__char  { font-family:var(--font-display); font-size:1.8rem; color:#1E293B; }
+.forget-rank-item__char  { font-family:var(--font-zhuyin); font-size:1.8rem; color:#1E293B; }
 .forget-rank-item__bar-wrap { flex:1; }
 .forget-rank-item__label { font-size:0.72rem; color:#94A3B8; margin-bottom:4px; }
 .forget-rank-bar { height:10px; background:#F1F5F9; border-radius:99px; overflow:hidden; }

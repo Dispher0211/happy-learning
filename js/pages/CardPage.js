@@ -403,21 +403,29 @@ export class CardPage {
 
   /** renderWordCard(wordObj) — 渲染詞語卡
    * wordObj 可能是純字串（my_words）或物件（含解釋）
-   * 純字串時嘗試從 idioms.json 查詢，找不到則只顯示詞語本身
+   * 純字串時從 characters.json 反查詞義
    */
   renderWordCard(wordObj) {
     if (!wordObj) return
 
-    // 相容純字串格式（my_words 存的是字串）
     let word, definition, example, pron
     if (typeof wordObj === 'string') {
       word = wordObj
-      // 嘗試從 idioms.json 查詢（詞語可能也在成語庫）
-      const idiomsDict = JSONLoader.get('idioms') || []
-      const found = idiomsDict.find(e => e.idiom === word || e['成語'] === word)
-      definition = found?.meaning || found?.['意思'] || ''
-      example    = found?.example || found?.['例句'] || ''
-      pron       = found?.zhuyin || found?.['注音'] || ''
+      // 從 characters.json 反查：找哪個字的 pronunciations.words 包含此詞語
+      const allChars = JSONLoader.get('characters') || []
+      let found = null
+      for (const c of allChars) {
+        for (const p of (c.pronunciations || [])) {
+          if ((p.words || []).includes(word)) {
+            found = p
+            break
+          }
+        }
+        if (found) break
+      }
+      definition = found?.meaning || ''
+      example    = ''
+      pron       = found?.zhuyin || ''
     } else {
       word       = wordObj['詞語'] || wordObj.word || ''
       definition = wordObj['解釋'] || wordObj.definition || ''
@@ -480,10 +488,8 @@ export class CardPage {
     wrap.innerHTML = `
       <div class="idiom-card">
         <div class="idiom-card__main">
-          <div class="idiom-card__idiom">
-            ${AppState.zhuyinOn && pron
-              ? `<ruby class="bpmf-font">${this._escapeHtml(idiom)}<rt>${this._escapeHtml(pron)}</rt></ruby>`
-              : this._escapeHtml(idiom)}
+          <div class="idiom-card__idiom bpmf-font">
+            ${this._escapeHtml(idiom)}
           </div>
         </div>
         ${meaning ? `<div class="idiom-card__meaning">【意思】${this._escapeHtml(meaning)}</div>` : ''}
@@ -793,6 +799,13 @@ export class CardPage {
   _initHanziWriter(char) {
     const container = document.getElementById(WRITER_CONTAINER_ID)
     if (!container) return
+
+    // renderCharCard 每次重建 innerHTML → container 是新 DOM 節點
+    // 強制清除舊快取，確保 HanziWriter 綁定到新節點
+    if (HanziWriterManager._instances?.[WRITER_CONTAINER_ID]) {
+      delete HanziWriterManager._instances[WRITER_CONTAINER_ID]
+      delete HanziWriterManager._requestIds?.[WRITER_CONTAINER_ID]
+    }
 
     HanziWriterManager.switchChar?.(char, WRITER_CONTAINER_ID, {
       width:  140,
