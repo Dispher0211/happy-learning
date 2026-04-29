@@ -147,20 +147,24 @@ export class SelectChildPage {
       // 不阻擋進入主頁，使用預設值
     }
 
-    // 修正：從 Firestore 讀取家長設定的 my_characters，更新 AppState.characters
-    // 原因：頁面關閉重開後 localStorage 快取的 characters 可能是空陣列
-    //       （AppState.reset() 會清空 characters，且 save() 不保證在登出前完成）
-    //       必須在每次選完子帳號後從 Firestore 重新載入最新生字表
+    // 修正：從 Firestore 讀取家長設定的 my_characters / my_words / my_idioms
+    // 原因：頁面關閉重開後 localStorage 快取可能是空陣列
     try {
       const uid      = AppState.uid;
       const userData = await FirestoreAPI.read(`users/${uid}`);
       AppState.characters = Array.isArray(userData?.my_characters)
-        ? userData.my_characters
-        : [];
-      console.log('[SelectChildPage] my_characters 已載入，共', AppState.characters.length, '字');
+        ? userData.my_characters : [];
+      AppState.words  = Array.isArray(userData?.my_words)
+        ? userData.my_words  : [];
+      AppState.idioms = Array.isArray(userData?.my_idioms)
+        ? userData.my_idioms : [];
+      console.log('[SelectChildPage] 資料已載入 — 生字:', AppState.characters.length,
+        '詞語:', AppState.words.length, '成語:', AppState.idioms.length);
     } catch (err) {
-      console.error('[SelectChildPage] 讀取 my_characters 失敗，使用空陣列', err);
+      console.error('[SelectChildPage] 讀取資料失敗，使用空陣列', err);
       AppState.characters = [];
+      AppState.words      = [];
+      AppState.idioms     = [];
     }
 
     // 導航到卡片主頁

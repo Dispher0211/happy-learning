@@ -297,8 +297,8 @@ export class CardPage {
           <div class="char-card__char-box">
             <!-- HanziWriter 容器 -->
             <div id="${WRITER_CONTAINER_ID}" class="char-card__writer"></div>
-            <!-- 大字顯示（HanziWriter 未載入時的 fallback）-->
-            <div class="char-card__char-fallback" id="char-fallback">${this._escapeHtml(char)}</div>
+            <!-- 大字顯示（HanziWriter CDN 失敗時的 fallback，預設隱藏）-->
+            <div class="char-card__char-fallback" id="char-fallback" style="display:none">${this._escapeHtml(char)}</div>
           </div>
 
           <!-- 注音直式（右側）-->
@@ -401,13 +401,29 @@ export class CardPage {
   // 3b. 詞語卡
   // ─────────────────────────────────────────
 
-  /** renderWordCard(wordObj) — 渲染詞語卡 */
+  /** renderWordCard(wordObj) — 渲染詞語卡
+   * wordObj 可能是純字串（my_words）或物件（含解釋）
+   * 純字串時嘗試從 idioms.json 查詢，找不到則只顯示詞語本身
+   */
   renderWordCard(wordObj) {
     if (!wordObj) return
-    const word       = wordObj['詞語'] || wordObj.word || ''
-    const definition = wordObj['解釋'] || wordObj.definition || ''
-    const example    = wordObj['例句'] || wordObj.example || ''
-    const pron       = wordObj['注音'] || wordObj.pronunciation || ''
+
+    // 相容純字串格式（my_words 存的是字串）
+    let word, definition, example, pron
+    if (typeof wordObj === 'string') {
+      word = wordObj
+      // 嘗試從 idioms.json 查詢（詞語可能也在成語庫）
+      const idiomsDict = JSONLoader.get('idioms') || []
+      const found = idiomsDict.find(e => e.idiom === word || e['成語'] === word)
+      definition = found?.meaning || found?.['意思'] || ''
+      example    = found?.example || found?.['例句'] || ''
+      pron       = found?.zhuyin || found?.['注音'] || ''
+    } else {
+      word       = wordObj['詞語'] || wordObj.word || ''
+      definition = wordObj['解釋'] || wordObj.definition || ''
+      example    = wordObj['例句'] || wordObj.example || ''
+      pron       = wordObj['注音'] || wordObj.pronunciation || ''
+    }
 
     const wrap = document.getElementById('card-wrap')
     if (!wrap) return
@@ -433,14 +449,30 @@ export class CardPage {
   // 3c. 成語卡
   // ─────────────────────────────────────────
 
-  /** renderIdiomCard(idiomObj) — 渲染成語卡 */
+  /** renderIdiomCard(idiomObj) — 渲染成語卡
+   * idiomObj 可能是純字串（my_idioms）或物件（含意思）
+   * 純字串時從 idioms.json 查詢完整資料
+   */
   renderIdiomCard(idiomObj) {
     if (!idiomObj) return
-    const idiom      = idiomObj['成語'] || idiomObj.idiom || ''
-    const meaning    = idiomObj['意思'] || idiomObj.meaning || ''
-    const example    = idiomObj['例句'] || idiomObj.example || ''
-    const origin     = idiomObj['出處'] || idiomObj.origin || ''
-    const pron       = idiomObj['注音'] || idiomObj.pronunciation || ''
+
+    // 相容純字串格式（my_idioms 存的是字串）
+    let idiom, meaning, example, origin, pron
+    if (typeof idiomObj === 'string') {
+      idiom = idiomObj
+      const idiomsDict = JSONLoader.get('idioms') || []
+      const found = idiomsDict.find(e => e.idiom === idiom || e['成語'] === idiom)
+      meaning = found?.meaning || found?.['意思'] || ''
+      example = found?.example || found?.['例句'] || ''
+      origin  = found?.origin  || found?.['出處'] || ''
+      pron    = found?.zhuyin  || found?.['注音'] || ''
+    } else {
+      idiom   = idiomObj['成語'] || idiomObj.idiom || ''
+      meaning = idiomObj['意思'] || idiomObj.meaning || ''
+      example = idiomObj['例句'] || idiomObj.example || ''
+      origin  = idiomObj['出處'] || idiomObj.origin || ''
+      pron    = idiomObj['注音'] || idiomObj.pronunciation || ''
+    }
 
     const wrap = document.getElementById('card-wrap')
     if (!wrap) return
@@ -770,12 +802,12 @@ export class CardPage {
       strokeColor: '#3d5a80',
       outlineColor: '#e8eaf0',
     }).then(() => {
-      // HanziWriter 載入成功：隱藏 fallback 文字
-      const fallback = document.getElementById('char-fallback')
-      if (fallback) fallback.style.display = 'none'
+      // HanziWriter 載入成功：fallback 保持隱藏
       this._writerReady = true
     }).catch(() => {
-      // CDN 失敗：保留 fallback 文字顯示
+      // CDN 失敗：顯示 fallback 大字
+      const fallback = document.getElementById('char-fallback')
+      if (fallback) fallback.style.display = ''
       this._writerReady = false
     })
   }

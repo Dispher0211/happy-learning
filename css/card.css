@@ -246,6 +246,8 @@
   font-family: var(--font-zhuyin);
 }
 
+/* 注音字元（JS 產生 class="zhuyin-char"，同時支援 char-card__zhuyin-char）*/
+.zhuyin-char,
 .char-card__zhuyin-char {
   font-family: var(--font-zhuyin);
   font-size: 1.25rem;

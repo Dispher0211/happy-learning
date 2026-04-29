@@ -117,8 +117,8 @@ async function main() {
   // ── 步驟 3：載入基礎 JSON 資料 ─────────────────────────────────────────────
   // 只載入 characters 與 radicals，其他 JSON 由各遊戲模組按需載入
   try {
-    await JSONLoader.loadMultiple(['characters', 'radicals'])
-    console.log('[App] Step 3 完成：JSONLoader.loadMultiple([characters, radicals])')
+    await JSONLoader.loadMultiple(['characters', 'radicals', 'idioms'])
+    console.log('[App] Step 3 完成：JSONLoader.loadMultiple([characters, radicals, idioms])')
   } catch (err) {
     // JSON 載入失敗記錄警告，不中止啟動（各模組有空陣列 fallback）
     console.warn('[App] JSON 載入部分失敗（各模組有空陣列 fallback）：', err)

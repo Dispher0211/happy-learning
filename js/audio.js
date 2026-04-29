@@ -53,7 +53,7 @@ export const AudioManager = {
    * v4：soundOn=false 時立即 return
    */
   async play(zhuyin) {
-    if (!AppState.settings?.soundOn) return Promise.resolve()
+    if (AppState.settings?.soundOn === false) return Promise.resolve()
     if (!zhuyin) return
 
     const playId = ++this._voicePlayId
@@ -81,7 +81,7 @@ export const AudioManager = {
    *       防止 onerror / onended / play().catch 重複觸發導致負數
    */
   async playEffect(name) {
-    if (!AppState.settings?.soundOn) return Promise.resolve()
+    if (AppState.settings?.soundOn === false) return Promise.resolve()
     if (this._effectCount >= this._maxEffects) return
 
     const audio = new Audio(`${_pathPrefix}/audio/effects/${name}.ogg`)
