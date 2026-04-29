@@ -391,8 +391,8 @@
 
 /* 詞語區（仿圖二「字義解釋與應用」） */
 .char-card__words-section {
-  background: #FFFBEB;
-  border: 2px solid #FDE68A;
+  background: #EFF6FF;
+  border: 2px solid #BFDBFE;
   border-radius: 16px;
   padding: 12px 12px 10px;
   margin-bottom: 14px;
@@ -400,13 +400,41 @@
 .char-card__words-title {
   font-size: 0.8rem;
   font-weight: 800;
-  color: #92400E;
+  color: #1D4ED8;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 4px;
 }
-.char-card__words-title::before { content: '💡'; font-size: 0.9rem; }
+
+/* 字義說明行：序號圓圈 + 文字 */
+.char-card__meaning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.char-card__meaning-num {
+  background: #3B82F6;
+  color: white;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.char-card__meaning-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  line-height: 1.6;
+  font-family: var(--font-zhuyin);
+}
 
 .char-card__words {
   display: flex;
@@ -415,14 +443,14 @@
 }
 .char-card__word {
   background: white;
-  border: 2px solid #FCD34D;
+  border: 2px solid #93C5FD;
   border-radius: 20px;
   padding: 5px 14px;
   font-size: 1.1rem;
   font-weight: 700;
   color: #1E293B;
   cursor: pointer;
-  box-shadow: 0 2px 0 #F59E0B;
+  box-shadow: 0 2px 0 #3B82F6;
   transition: transform 0.1s, box-shadow 0.1s;
   -webkit-tap-highlight-color: transparent;
   display: inline-flex;

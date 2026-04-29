@@ -252,6 +252,8 @@ export class CardPage {
         })() : []),
       // 解釋
       '解釋': charObj['解釋'] || dictEntry.pronunciations?.[0]?.meaning || '',
+      // 各讀音完整資料（含 meaning）
+      'pronunciations': charObj['pronunciations'] || dictEntry.pronunciations || [],
     } : charObj
 
     this._currentChar = enriched
@@ -273,12 +275,14 @@ export class CardPage {
     // 取當前音的詞語
     const words = this._getWordsForPron(enriched, this._pronIdx)
 
+    // 取當前音的字義說明
+    const meaning = this._getMeaningForPron(enriched, this._pronIdx)
+
     // 部首
     const radical     = enriched['部首'] || enriched.radical || ''
     const radicalPron = this._getRadicalPron(radical)
     const strokesAll  = enriched['總筆畫數'] || enriched.totalStrokes || ''
     const strokesRad  = enriched['部首外筆畫'] || enriched.radicalStrokes || ''
-    const definition  = enriched['解釋'] || enriched.definition || ''
     const isPolyphonic = this._pronunciations.length > 1
 
     const wrap = document.getElementById('card-wrap')
@@ -344,16 +348,13 @@ export class CardPage {
           </div>
         </div>
 
-        <!-- 詞語區（仿圖二字義解釋區） -->
+        <!-- 字義解釋與詞語區（仿圖二：字義說明 + 詞語 chips） -->
         <div class="char-card__words-section">
-          <div class="char-card__words-title">詞語應用</div>
-          <div class="char-card__words" id="card-words">
-            ${words.map(w => `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`).join('')}
+          <div class="char-card__words-title">💡 字義解釋與應用</div>
+          <div id="card-words-section">
+            ${this._renderMeaningAndWords(meaning, words, char)}
           </div>
         </div>
-
-        <!-- 字義 -->
-        ${definition ? `<div class="char-card__definition" id="card-def">${this._escapeHtml(definition)}</div>` : ''}
 
         <!-- 挑戰按鈕 -->
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
@@ -370,7 +371,7 @@ export class CardPage {
     this._addListener('level-bar',        'click', (e) => this._onLevelBarClick(e, char))
 
     // 詞語點擊播音（事件委派）
-    this._addListener('card-words', 'click', (e) => {
+    this._addListener('card-words-section', 'click', (e) => {
       const wordEl = e.target.closest('.char-card__word')
       if (!wordEl) return
       // 取詞語純文字（去除音標 span）
@@ -570,15 +571,14 @@ export class CardPage {
         '<div class="char-card__poly-badge">ⓜ</div>'
     }
 
-    // 更新詞語
+    // 更新詞語 + 字義
     if (this._currentChar) {
       const words = this._getWordsForPron(this._currentChar, idx)
-      const wordsEl = document.getElementById('card-words')
-      if (wordsEl) {
+      const meaning = this._getMeaningForPron(this._currentChar, idx)
+      const sectionEl = document.getElementById('card-words-section')
+      if (sectionEl) {
         const char = this._currentChar['字'] || ''
-        wordsEl.innerHTML = words.map(w =>
-          `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`
-        ).join('')
+        sectionEl.innerHTML = this._renderMeaningAndWords(meaning, words, char)
       }
     }
 
@@ -736,6 +736,45 @@ export class CardPage {
     // fallback：取第一個讀音的詞語
     const firstKey = Object.keys(raw)[0]
     return firstKey ? (raw[firstKey] || []).slice(0, 5) : []
+  }
+
+  /**
+   * _getMeaningForPron(charObj, pronIdx) — 取得指定讀音的字義說明
+   * 優先從 pronunciations[pronIdx].meaning 取，fallback 到 '解釋' 字串
+   */
+  _getMeaningForPron(charObj, pronIdx) {
+    const prons = charObj['pronunciations'] || charObj.pronunciations || []
+    if (prons.length > 0 && prons[pronIdx]) {
+      return prons[pronIdx].meaning || ''
+    }
+    // fallback：使用 '解釋' 字串
+    return charObj['解釋'] || charObj.definition || ''
+  }
+
+  /**
+   * _renderMeaningAndWords(meaning, words, char) — 渲染字義說明 + 詞語 chips
+   * 仿舊 APP 格式：序號圓圈 + 字義說明文字 + 詞語按鈕列
+   */
+  _renderMeaningAndWords(meaning, words, char) {
+    // 清理字義說明（去除尾部多餘句號/空白）
+    const cleanMeaning = (meaning || '').trim()
+
+    const meaningHtml = cleanMeaning
+      ? `<div class="char-card__meaning-row">
+           <span class="char-card__meaning-num">1</span>
+           <p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p>
+         </div>`
+      : ''
+
+    const wordsHtml = words.length > 0
+      ? `<div class="char-card__words" id="card-words">
+           ${words.map(w =>
+             `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`
+           ).join('')}
+         </div>`
+      : ''
+
+    return meaningHtml + wordsHtml
   }
 
   /** 取得部首的注音 */
