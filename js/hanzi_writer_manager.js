@@ -296,6 +296,14 @@ export const HanziWriterManager = {
    *     2. 不存在 → 動態插入 <script> tag，等待 onload 後回傳
    *     3. 使用 _loadPromise 確保多次呼叫只注入一次 script
    */
+  /**
+   * ensureLoaded() — 確保 HanziWriter CDN 已載入
+   * StrokeOrderOverlay 等外部模組呼叫的公開別名
+   */
+  ensureLoaded() {
+    return this._loadHanziWriter()
+  },
+
   _loadHanziWriter() {
     // 已載入，直接回傳
     if (typeof HanziWriter !== 'undefined') {

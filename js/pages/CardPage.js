@@ -11,6 +11,7 @@ import { ForgettingCurve }      from '../forgetting.js'
 import { HanziWriterManager }   from '../hanzi_writer_manager.js'
 import { UIManager }            from '../ui/ui_manager.js'
 import { PAGES }                from '../ui/pages.js'
+import { JSONLoader }           from '../json_loader.js'
 
 // ─────────────────────────────────────────
 // 常數定義
@@ -224,8 +225,40 @@ export class CardPage {
 
     const char = charObj['字'] || charObj.char || ''
 
+    // ── 從 characters.json 全字典補全資料 ──────────────────────────
+    // AppState.characters（my_characters）只有 {字, zhuyin}，
+    // 部首、筆畫、詞語、解釋等需從 JSONLoader 快取的全字典查詢
+    const allCharsDict = JSONLoader.get('characters') || []
+    const dictEntry = allCharsDict.find(c => c['字'] === char || c.char === char)
+
+    // 合併：優先用 charObj 本身的值，缺少的從字典補
+    const enriched = dictEntry ? {
+      ...charObj,
+      // 部首（characters.json 用 radical）
+      '部首': charObj['部首'] || dictEntry.radical || '',
+      // 總筆畫（characters.json 用 total_strokes）
+      '總筆畫數': charObj['總筆畫數'] || dictEntry.total_strokes || '',
+      // 部首外筆畫（characters.json 用 radical_strokes）
+      '部首外筆畫': charObj['部首外筆畫'] || dictEntry.radical_strokes || '',
+      // 注音：my_characters 存 zhuyin 字串，字典存 pronunciations 陣列
+      '注音': charObj['注音'] || charObj.zhuyin ||
+        (dictEntry.pronunciations?.[0]?.zhuyin) || '',
+      // 詞語：字典中每個 pronunciation 條目有 words 陣列
+      '詞語': charObj['詞語'] ||
+        (dictEntry.pronunciations ? (() => {
+          const obj = {}
+          dictEntry.pronunciations.forEach(p => { obj[p.zhuyin] = p.words || [] })
+          return obj
+        })() : []),
+      // 解釋
+      '解釋': charObj['解釋'] || dictEntry.pronunciations?.[0]?.meaning || '',
+    } : charObj
+
+    this._currentChar = enriched
+    // ──────────────────────────────────────────────────────────────
+
     // 解析注音（支援多音字 array 或 string）
-    const rawPron = charObj['注音'] || charObj.pronunciation || ''
+    const rawPron = enriched['注音'] || enriched.pronunciation || enriched.zhuyin || ''
     this._pronunciations = Array.isArray(rawPron)
       ? rawPron
       : rawPron.split('/').map(p => p.trim()).filter(Boolean)
@@ -238,14 +271,14 @@ export class CardPage {
     const levelInfo = await this._getLevelInfo(char)
 
     // 取當前音的詞語
-    const words = this._getWordsForPron(charObj, this._pronIdx)
+    const words = this._getWordsForPron(enriched, this._pronIdx)
 
     // 部首
-    const radical     = charObj['部首'] || charObj.radical || ''
+    const radical     = enriched['部首'] || enriched.radical || ''
     const radicalPron = this._getRadicalPron(radical)
-    const strokesAll  = charObj['總筆畫數'] || charObj.totalStrokes || ''
-    const strokesRad  = charObj['部首外筆畫'] || charObj.radicalStrokes || ''
-    const definition  = charObj['解釋'] || charObj.definition || ''
+    const strokesAll  = enriched['總筆畫數'] || enriched.totalStrokes || ''
+    const strokesRad  = enriched['部首外筆畫'] || enriched.radicalStrokes || ''
+    const definition  = enriched['解釋'] || enriched.definition || ''
     const isPolyphonic = this._pronunciations.length > 1
 
     const wrap = document.getElementById('card-wrap')
@@ -335,6 +368,17 @@ export class CardPage {
     this._addListener('card-stroke-btn',  'click', () => this.showStrokeOrder())
     this._addListener('card-game-btn',    'click', () => this._goToGame())
     this._addListener('level-bar',        'click', (e) => this._onLevelBarClick(e, char))
+
+    // 詞語點擊播音（事件委派）
+    this._addListener('card-words', 'click', (e) => {
+      const wordEl = e.target.closest('.char-card__word')
+      if (!wordEl) return
+      // 取詞語純文字（去除音標 span）
+      const word = wordEl.innerText.replace('🔊', '').trim()
+      if (word && AppState.settings?.soundOn !== false) {
+        AudioManager.playQueue?.(word.split(''))
+      }
+    })
 
     // 多音字切換按鈕
     if (isPolyphonic) {
@@ -760,7 +804,7 @@ export class CardPage {
 
     const pron = this._pronunciations[this._pronIdx] || ''
     try {
-      AudioManager.playZhuyin?.(pron)
+      AudioManager.play?.(pron)
     } catch (e) {
       console.warn('播放注音失敗', e)
     }
@@ -918,10 +962,14 @@ export class CardPage {
         </div>
       </div>
     `
-    this._addListener('card-back-btn', 'click', () => UIManager.back())
-  }
-
-  /** HTML 轉義，防止 XSS */
+    this._addListener('card-back-btn', 'click', () => {
+      // 若目前是詞語或成語空頁，返回生字卡；否則正常回上頁
+      if (this._cardType !== CARD_TYPES.CHARACTER) {
+        this._switchCardType(CARD_TYPES.CHARACTER)
+      } else {
+        UIManager.back()
+      }
+    })
   _escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
