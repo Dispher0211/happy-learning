@@ -222,7 +222,8 @@ export class ParentIdiomsPage {
 
     try {
       // 寫入 Firestore（arrayUnion 自動防重複）
-      await FirestoreAPI.write(`users/${uid}`, { my_idioms: arrayUnion(raw) }, true);
+      // ⚠️ 必須用 update() 而非 write()，write() 內部 spread {...data} 會破壞 arrayUnion FieldValue
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: arrayUnion(raw) });
 
       // 同步 AppState（本機去重）
       if (!AppState.idioms) AppState.idioms = [];
@@ -253,7 +254,8 @@ export class ParentIdiomsPage {
 
     try {
       // 從 Firestore 移除
-      await FirestoreAPI.write(`users/${uid}`, { my_idioms: arrayRemove(idiom) }, true);
+      // ⚠️ 必須用 update() 而非 write()，write() 內部 spread {...data} 會破壞 arrayRemove FieldValue
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: arrayRemove(idiom) });
 
       // 同步 AppState
       AppState.idioms = (AppState.idioms || []).filter((i) => i !== idiom);
