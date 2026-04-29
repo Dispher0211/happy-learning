@@ -60,8 +60,10 @@ export const AudioManager = {
     this._stopVoice()
 
     try {
+      // 音檔命名格式：#U{hex}（非 encodeURIComponent）
+      const filename = [...zhuyin].map(c => `#U${c.codePointAt(0).toString(16).padStart(4,'0')}`).join('')
       await this._playAudioFile(
-        `${_pathPrefix}/audio/zhuyin/${encodeURIComponent(zhuyin)}.ogg`,
+        `${_pathPrefix}/audio/zhuyin/${filename}.ogg`,
         playId
       )
     } catch (_err) {

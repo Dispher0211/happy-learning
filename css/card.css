@@ -454,9 +454,24 @@
   transition: transform 0.1s, box-shadow 0.1s;
   -webkit-tap-highlight-color: transparent;
   display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-zhuyin);
+}
+.char-card__word .word-text {
+  display: flex;
   align-items: center;
   gap: 4px;
+}
+/* 破音字注音文字（小字，只在多音字時顯示） */
+.char-card__word .word-pron-text {
+  font-size: 0.65rem;
+  color: #E11D48;
   font-family: var(--font-zhuyin);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 .char-card__word:active { transform: translateY(2px); box-shadow: none; }
 .word-sound-icon { font-size: 0.75rem; opacity: 0.6; }

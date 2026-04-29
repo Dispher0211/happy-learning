@@ -758,11 +758,11 @@ export class CardPage {
 
   /**
    * _renderMeaningAndWords(meaning, words, char) — 渲染字義說明 + 詞語 chips
-   * 仿舊 APP 格式：序號圓圈 + 字義說明文字 + 詞語按鈕列
+   * 破音字時在詞語下方顯示文字注音（從字典查每個字的注音）
    */
   _renderMeaningAndWords(meaning, words, char) {
-    // 清理字義說明（去除尾部多餘句號/空白）
     const cleanMeaning = (meaning || '').trim()
+    const isPolyphonic = this._pronunciations.length > 1
 
     const meaningHtml = cleanMeaning
       ? `<div class="char-card__meaning-row">
@@ -773,13 +773,34 @@ export class CardPage {
 
     const wordsHtml = words.length > 0
       ? `<div class="char-card__words" id="card-words">
-           ${words.map(w =>
-             `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`
-           ).join('')}
+           ${words.map(w => {
+             // 破音字才顯示注音，普通字維持 IVS 字型
+             const pronLine = isPolyphonic ? this._getWordPron(w, char) : ''
+             return `<span class="char-card__word">
+               <span class="word-text">${this._renderWord(w, char)}</span>
+               ${pronLine ? `<span class="word-pron-text">${this._escapeHtml(pronLine)}</span>` : ''}
+               <span class="word-sound-icon">🔊</span>
+             </span>`
+           }).join('')}
          </div>`
       : ''
 
     return meaningHtml + wordsHtml
+  }
+
+  /**
+   * _getWordPron(word, targetChar) — 查詞語每個字的注音，拼成字串
+   * targetChar 的注音用當前選中的讀音（_pronunciations[_pronIdx]）
+   */
+  _getWordPron(word, targetChar) {
+    const allChars = JSONLoader.get('characters') || []
+    return [...word].map(c => {
+      if (c === targetChar) {
+        return this._pronunciations[this._pronIdx] || ''
+      }
+      const entry = allChars.find(x => x['字'] === c || x.char === c)
+      return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
+    }).join(' ')
   }
 
   /** 取得部首的注音 */
