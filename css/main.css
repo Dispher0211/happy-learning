@@ -346,7 +346,7 @@ body {
 /* ── 注音字體 ── */
 @font-face {
   font-family: 'BpmfIVS';
-  src: url('/fonts/BpmfIVS.woff2') format('woff2');
+  src: url('../fonts/BpmfIVS.woff2') format('woff2');
   font-display: swap;
 }
 
@@ -454,11 +454,14 @@ body {
     width: 100%;
   }
 
-  /* 桌面版頂部導覽列配合 .page 同寬 */
+  /* 桌面版頂部導覽列：全寬白色背景，內容用 padding 限制在 1200px 內置中
+     使用 calc 動態算出左右 padding，確保內容與 .page 對齊，白底延伸至全寬 */
   .top-bar {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left:  max(var(--spacing-md), calc((100% - 1200px) / 2 + var(--spacing-md)));
+    padding-right: max(var(--spacing-md), calc((100% - 1200px) / 2 + var(--spacing-md)));
   }
 
   /* 桌面版字體略放大，對兒童眼睛友善 */

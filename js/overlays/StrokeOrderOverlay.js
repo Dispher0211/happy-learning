@@ -70,10 +70,11 @@ function _injectStyle() {
       letter-spacing: 2px;
     }
 
-    /* HanziWriter 容器 */
+    /* HanziWriter 容器：響應式，最大 260px
+       min(72vw, 260px) 確保 320px 螢幕也不 overflow */
     .so-writer-wrap {
-      width: 260px;
-      height: 260px;
+      width: min(72vw, 260px);
+      height: min(72vw, 260px);
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       background: #fafafa;
@@ -265,9 +266,10 @@ class _StrokeOrderOverlay {
           <div class="so-writer-wrap">
             <svg id="so-writer-svg"
                  xmlns="http://www.w3.org/2000/svg"
-                 width="260"
-                 height="260"
-                 viewBox="0 0 260 260">
+                 width="100%"
+                 height="100%"
+                 viewBox="0 0 260 260"
+                 style="display:block">
             </svg>
           </div>
 

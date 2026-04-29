@@ -887,15 +887,17 @@ function injectWritingStyles() {
     /* ── Canvas 及米字格 ── */
     .writing-canvas-wrapper {
       position: relative;
-      width: 240px;
-      height: 240px;
+      /* 響應式：小螢幕縮小，最大 240px
+         canvas DOM 屬性 240×240 不變，scaleX/scaleY 由 getBoundingClientRect 動態補償 */
+      width: min(72vw, 240px);
+      height: min(72vw, 240px);
     }
 
     .writing-canvas {
       position: absolute;
       top: 0; left: 0;
-      width: 240px;
-      height: 240px;
+      width: 100%;
+      height: 100%;
       cursor: crosshair;
       border-radius: 8px;
       background: #fff;
@@ -906,8 +908,8 @@ function injectWritingStyles() {
     .writing-grid-overlay {
       position: absolute;
       top: 0; left: 0;
-      width: 240px;
-      height: 240px;
+      width: 100%;
+      height: 100%;
       pointer-events: none; /* 不擋手寫事件 */
       z-index: 1;
     }

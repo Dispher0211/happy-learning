@@ -3,6 +3,7 @@
   "short_name": "快樂學習",
   "description": "台灣國小生字學習 App，含筆順、注音、成語等 11 種遊戲",
   "start_url": "/happy-learning/",
+  "scope": "/happy-learning/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",

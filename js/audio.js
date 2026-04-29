@@ -16,6 +16,13 @@
 
 import { AppState } from './state.js'
 
+// ── GitHub Pages 子目錄相容：自動偵測路徑前綴 ──
+// GitHub Pages 部署後 pathname 為 /happy-learning/...，需加前綴
+// 本機開發（localhost）pathname 為 /，前綴為空字串
+const _pathPrefix = location.pathname.startsWith('/happy-learning')
+  ? '/happy-learning'
+  : ''
+
 export const AudioManager = {
 
   // ── 語音通道（互斥）──
@@ -54,7 +61,7 @@ export const AudioManager = {
 
     try {
       await this._playAudioFile(
-        `/audio/zhuyin/${encodeURIComponent(zhuyin)}.ogg`,
+        `${_pathPrefix}/audio/zhuyin/${encodeURIComponent(zhuyin)}.ogg`,
         playId
       )
     } catch (_err) {
@@ -77,7 +84,7 @@ export const AudioManager = {
     if (!AppState.settings?.soundOn) return Promise.resolve()
     if (this._effectCount >= this._maxEffects) return
 
-    const audio = new Audio(`/audio/effects/${name}.ogg`)
+    const audio = new Audio(`${_pathPrefix}/audio/effects/${name}.ogg`)
     this._effectCount++
 
     return new Promise((resolve) => {
