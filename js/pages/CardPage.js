@@ -259,11 +259,16 @@ export class CardPage {
     this._currentChar = enriched
     // ──────────────────────────────────────────────────────────────
 
-    // 解析注音（支援多音字 array 或 string）
-    const rawPron = enriched['注音'] || enriched.pronunciation || enriched.zhuyin || ''
-    this._pronunciations = Array.isArray(rawPron)
-      ? rawPron
-      : rawPron.split('/').map(p => p.trim()).filter(Boolean)
+    // 解析注音（優先從 pronunciations 陣列取所有讀音，支援多音字）
+    const pronArr = enriched['pronunciations'] || []
+    if (pronArr.length > 0) {
+      this._pronunciations = pronArr.map(p => p.zhuyin).filter(Boolean)
+    } else {
+      const rawPron = enriched['注音'] || enriched.pronunciation || enriched.zhuyin || ''
+      this._pronunciations = Array.isArray(rawPron)
+        ? rawPron
+        : rawPron.split('/').map(p => p.trim()).filter(Boolean)
+    }
     if (this._pronunciations.length === 0) this._pronunciations = ['']
 
     // 確保 pronIdx 合法
