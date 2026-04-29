@@ -1002,6 +1002,8 @@ export class CardPage {
         UIManager.back()
       }
     })
+  }
+
   _escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
