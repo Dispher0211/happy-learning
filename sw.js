@@ -17,7 +17,7 @@
  *   - 修正：只快取完整的 200 回應，206 讓瀏覽器直接使用，不存快取
  */
 
-const APP_VERSION = '1.0.1'
+const APP_VERSION = '1.0.0'
 const CACHE_NAME  = `happylearn-v${APP_VERSION}`
 
 // ── 預快取清單 ──
@@ -108,7 +108,9 @@ self.addEventListener('fetch', (event) => {
   const pathname = url.pathname
 
   // ── /data/*.json → Stale-While-Revalidate ──
-  if (pathname.startsWith('/data/') && pathname.endsWith('.json')) {
+  // 使用 includes 而非 startsWith，相容 GitHub Pages 子目錄路徑
+  // 本機：/data/characters.json；GitHub Pages：/happy-learning/data/characters.json
+  if (pathname.includes('/data/') && pathname.endsWith('.json')) {
     event.respondWith(staleWhileRevalidate(request))
     return
   }
@@ -117,6 +119,7 @@ self.addEventListener('fetch', (event) => {
   if (
     request.headers.get('accept')?.includes('text/html') ||
     pathname === '/' ||
+    pathname === '/happy-learning/' ||   // GitHub Pages 子目錄根路徑
     pathname.endsWith('.html')
   ) {
     event.respondWith(networkFirstWithFallback(request))
@@ -201,8 +204,11 @@ async function networkFirstWithFallback(request) {
     const cached = await caches.match(request)
     if (cached) return cached
 
-    // SPA fallback
-    const indexFallback = await caches.match('/index.html')
+    // SPA fallback：用 registration.scope 相容本機與 GitHub Pages 子目錄
+    // self.registration.scope = 'https://domain/happy-learning/'
+    // 直接 match scope 根路徑（即 index.html 所在位置）
+    const indexFallback = await caches.match(self.registration.scope) ||
+                          await caches.match(self.registration.scope + 'index.html')
     if (indexFallback) return indexFallback
 
     return new Response('', { status: 503, statusText: 'Offline' })
