@@ -147,6 +147,22 @@ export class SelectChildPage {
       // 不阻擋進入主頁，使用預設值
     }
 
+    // 修正：從 Firestore 讀取家長設定的 my_characters，更新 AppState.characters
+    // 原因：頁面關閉重開後 localStorage 快取的 characters 可能是空陣列
+    //       （AppState.reset() 會清空 characters，且 save() 不保證在登出前完成）
+    //       必須在每次選完子帳號後從 Firestore 重新載入最新生字表
+    try {
+      const uid      = AppState.uid;
+      const userData = await FirestoreAPI.read(`users/${uid}`);
+      AppState.characters = Array.isArray(userData?.my_characters)
+        ? userData.my_characters
+        : [];
+      console.log('[SelectChildPage] my_characters 已載入，共', AppState.characters.length, '字');
+    } catch (err) {
+      console.error('[SelectChildPage] 讀取 my_characters 失敗，使用空陣列', err);
+      AppState.characters = [];
+    }
+
     // 導航到卡片主頁
     UIManager.navigate(PAGES.CARD);
   }

@@ -114,7 +114,7 @@ export class ParentIdiomsPage {
    * 從 Firestore 讀取 my_idioms，同步至 AppState 並渲染清單
    */
   async _loadIdioms() {
-    const uid = AppState.currentUser?.uid;
+    const uid = AppState.uid;
     if (!uid) return;
 
     const doc = await FirestoreAPI.read(`users/${uid}`);
@@ -213,7 +213,7 @@ export class ParentIdiomsPage {
       return;
     }
 
-    const uid = AppState.currentUser?.uid;
+    const uid = AppState.uid;
     if (!uid) return;
 
     // 防止 UI 重複點擊
@@ -248,7 +248,7 @@ export class ParentIdiomsPage {
    * @param {string} idiom - 要刪除的成語
    */
   async _deleteIdiom(idiom) {
-    const uid = AppState.currentUser?.uid;
+    const uid = AppState.uid;
     if (!uid) return;
 
     try {
