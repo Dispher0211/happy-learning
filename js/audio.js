@@ -200,6 +200,47 @@ export const AudioManager = {
     })
   },
 
+  /**
+   * playWord(text) — 直接以 TTS 播放整個詞語（自然、不拆字）
+   * 適用於詞語、成語等多字詞，rate 使用正常語速
+   */
+  async playWord(text) {
+    if (AppState.settings?.soundOn === false) return Promise.resolve()
+    if (!text) return
+
+    const playId = ++this._voicePlayId
+    this._stopVoice()
+
+    return new Promise((resolve) => {
+      try { speechSynthesis.cancel() } catch (_e) {}
+
+      setTimeout(() => {
+        if (playId !== this._voicePlayId) { resolve(); return }
+
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang  = 'zh-TW'
+        utterance.rate  = 1.0   // 正常語速，不拆字所以自然流暢
+        const voice = this._getTTSVoice()
+        if (voice) utterance.voice = voice
+
+        const watchdog = setTimeout(() => {
+          try { speechSynthesis.cancel() } catch (_e) {}
+          resolve()
+        }, 4000)
+
+        utterance.onend   = () => { clearTimeout(watchdog); resolve() }
+        utterance.onerror = () => { clearTimeout(watchdog); resolve() }
+
+        try {
+          speechSynthesis.speak(utterance)
+        } catch (_e) {
+          clearTimeout(watchdog)
+          resolve()
+        }
+      }, 100)
+    })
+  },
+
   _stopVoice() {
     if (this._currentVoice) {
       try { this._currentVoice.pause(); this._currentVoice.currentTime = 0 } catch (_e) {}

@@ -370,14 +370,13 @@ export class CardPage {
     this._addListener('card-game-btn',    'click', () => this._goToGame())
     this._addListener('level-bar',        'click', (e) => this._onLevelBarClick(e, char))
 
-    // 詞語點擊播音（事件委派）
+    // 詞語點擊播音（事件委派）— 整詞 TTS，自然流暢
     this._addListener('card-words-section', 'click', (e) => {
       const wordEl = e.target.closest('.char-card__word')
       if (!wordEl) return
-      // 取詞語純文字（去除音標 span）
       const word = wordEl.innerText.replace('🔊', '').trim()
       if (word && AppState.settings?.soundOn !== false) {
-        AudioManager.playQueue?.(word.split(''))
+        AudioManager.playWord?.(word)
       }
     })
 
@@ -409,7 +408,7 @@ export class CardPage {
   renderWordCard(wordObj) {
     if (!wordObj) return
 
-    let word, definition, example, pron
+    let word, definition, example
     if (typeof wordObj === 'string') {
       word = wordObj
       // 從 characters.json 反查：找哪個字的 pronunciations.words 包含此詞語
@@ -426,12 +425,10 @@ export class CardPage {
       }
       definition = found?.meaning || ''
       example    = ''
-      pron       = found?.zhuyin || ''
     } else {
       word       = wordObj['詞語'] || wordObj.word || ''
       definition = wordObj['解釋'] || wordObj.definition || ''
       example    = wordObj['例句'] || wordObj.example || ''
-      pron       = wordObj['注音'] || wordObj.pronunciation || ''
     }
 
     const wrap = document.getElementById('card-wrap')
@@ -441,9 +438,9 @@ export class CardPage {
       <div class="word-card">
         <div class="word-card__main">
           <div class="word-card__word bpmf-font">${this._escapeHtml(word)}</div>
-          ${pron && AppState.zhuyinOn
-            ? `<div class="word-card__pron bpmf-font">${this._escapeHtml(pron)}</div>`
-            : ''}
+          <button class="word-card__sound-btn" id="word-sound-btn" aria-label="播放詞語">
+            ${AppState.settings?.soundOn !== false ? '🔊' : '🔇'}
+          </button>
         </div>
         ${definition ? `<div class="word-card__def">【意思】${this._escapeHtml(definition)}</div>` : ''}
         ${example    ? `<div class="word-card__ex">【例句】${this._escapeHtml(example)}</div>` : ''}
@@ -451,7 +448,10 @@ export class CardPage {
       </div>
     `
 
-    this._addListener('card-game-btn', 'click', () => this._goToGame())
+    this._addListener('card-game-btn',  'click', () => this._goToGame())
+    this._addListener('word-sound-btn', 'click', () => {
+      if (AppState.settings?.soundOn !== false) AudioManager.playWord?.(word)
+    })
   }
 
   // ─────────────────────────────────────────

@@ -522,6 +522,39 @@
   text-align: center;
   margin: 12px 0 8px;
 }
+/* 詞語主字（大字，對齊成語卡 2.8rem） */
+.word-card__main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 14px;
+}
+.word-card__word {
+  font-family: var(--font-zhuyin);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #0E7490;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+}
+.word-card__sound-btn {
+  background: #ECFEFF;
+  border: 2px solid #06B6D4;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #0891B2;
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.word-card__sound-btn:active { transform: translateY(2px); box-shadow: none; }
 .word-card__pron {
   text-align: center;
   font-family: var(--font-zhuyin);
@@ -551,8 +584,6 @@
   border-left: 4px solid #34D399;
   margin-bottom: 14px;
   font-family: var(--font-zhuyin);
-}
-  margin-bottom: 14px;
 }
 
 /* ══════════════════════════════════════════
