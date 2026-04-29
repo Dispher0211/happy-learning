@@ -17,7 +17,7 @@
  *   - 修正：只快取完整的 200 回應，206 讓瀏覽器直接使用，不存快取
  */
 
-const APP_VERSION = '1.0.4'
+const APP_VERSION = '1.0.5'
 const CACHE_NAME  = `happylearn-v${APP_VERSION}`
 
 // ── 預快取清單 ──

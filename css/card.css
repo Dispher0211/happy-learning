@@ -240,18 +240,19 @@
   font-family: var(--font-zhuyin);
 }
 
-/* 注音直式排列容器：writing-mode 設在容器層，不在 span */
+/* 注音直式排列容器
+   關鍵：不使用 flex（flex + writing-mode 衝突會導致橫排）
+   改為 inline-block + writing-mode:vertical-rl 讓注音符號自然直式排列 */
 .zhuyin-vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: var(--font-zhuyin);
+  display: inline-block;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  gap: 0;
+  font-family: var(--font-zhuyin);
+  vertical-align: middle;
 }
 
-/* 注音字元（JS 產生 class="zhuyin-char"，同時支援 char-card__zhuyin-char）*/
+/* 注音字元（JS 產生 class="zhuyin-char"，同時支援 char-card__zhuyin-char）
+   display:inline 繼承父層 writing-mode，讓每個注音符號直式排列 */
 .zhuyin-char,
 .char-card__zhuyin-char {
   font-family: var(--font-zhuyin);
@@ -259,8 +260,7 @@
   color: #E11D48;
   font-weight: 700;
   line-height: 1.3;
-  /* writing-mode 繼承自 .zhuyin-vertical，此處不重複設定避免衝突 */
-  display: inline-block;
+  display: inline;
 }
 
 .char-card__poly-badge {
