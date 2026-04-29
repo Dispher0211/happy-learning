@@ -44,6 +44,39 @@ async function initServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.register('./sw.js')
     console.log('[App] Service Worker 已註冊，scope：', registration.scope)
+
+    // ── 自動更新機制 ──────────────────────────────────────────────
+    // 偵測到新版 SW 進入 waiting 狀態時，自動發送 SKIP_WAITING
+    // 讓新 SW 立即接管，下次 fetch 就用新快取
+    // 開發時只需重新整理一次，不需要每次手動升版本號
+
+    const autoUpdate = (reg) => {
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+        // SW 接管後重新載入頁面
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload()
+        }, { once: true })
+      }
+    }
+
+    // 新版 SW 正在安裝
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing
+      newWorker?.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' || registration.waiting) {
+          autoUpdate(registration)
+        }
+      })
+    })
+
+    // 頁面已有 waiting 的新 SW（例如前次 skipWaiting 未完成）
+    autoUpdate(registration)
+
+    // 定期檢查更新（每 30 分鐘）
+    setInterval(() => registration.update(), 30 * 60 * 1000)
+    // ─────────────────────────────────────────────────────────────
+
   } catch (err) {
     // 開發環境或本機測試時可能失敗，不影響主流程
     console.warn('[App] Service Worker 註冊失敗（不影響主流程）：', err.message)

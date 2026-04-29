@@ -350,6 +350,13 @@ body {
   font-display: swap;
 }
 
+/* ── 注音字型輔助 class（全站通用）── */
+/* 所有需要顯示注音符號的元素加上此 class 即可套用 BpmfIVS 字型 */
+.bpmf-font {
+  font-family: var(--font-zhuyin);
+}
+
+/* 注音文字色（直式注音、注音旁標）*/
 .zhuyin-text {
   font-family: var(--font-zhuyin);
 }

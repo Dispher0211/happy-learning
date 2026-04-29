@@ -233,3 +233,14 @@ async function cacheFirstWithFallback(request) {
     return new Response('', { status: 503, statusText: 'Offline' })
   }
 }
+
+// ════════════════════════════════════════════
+// message — 接受頁面主動觸發 SW 更新
+// ════════════════════════════════════════════
+// 頁面可發送 postMessage({type:'SKIP_WAITING'}) 讓新 SW 立即接管
+// 這樣開發時不需要每次升版本號，只需重新整理一次即可
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
