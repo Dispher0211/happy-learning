@@ -116,12 +116,8 @@ export const Auth = {
     } catch (err) {
       console.error('auth: signOut 失敗', err)
     } finally {
-      // 清除 AppState（不論 signOut 是否成功）
-      AppState.uid = null
-      AppState.userEmail = null
-      AppState.displayName = null
-      AppState.currentChildId = null
-      AppState.currentChild = null
+      // 重置全部 AppState（不論 signOut 是否成功）
+      AppState.reset()
 
       const { PAGES } = await import('./ui/pages.js')
       globalThis.UIManager?.navigate(PAGES.LOGIN)

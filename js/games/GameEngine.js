@@ -154,6 +154,8 @@ export class GameEngine {
       console.error('GameEngine.submitAnswer 錯誤:', e.message)
       if (this.attemptCount === 1) {
         await this.onWrongFirstTime({ correct: false })
+      } else {
+        await this.onWrongSecondTime({ correct: false })
       }
     } finally {
       if (reqId === this.currentRequestId) {

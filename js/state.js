@@ -200,6 +200,49 @@ const _AppState = {
       // 無痕模式忽略
     }
   },
+
+  /**
+   * reset()
+   * 將記憶體中的 AppState 還原為預設值（登出時呼叫）。
+   * 同時呼叫 clear() 清除 localStorage 快取。
+   */
+  reset() {
+    this.uid                = null
+    this.childName          = null
+    this.childAvatar        = null
+    this.currentMode        = 'child'
+    this.currentPage        = null
+    this.currentPageParams  = {}
+    this.cardType           = 'character'
+    this.cardIndex          = 0
+    this.zhuyinOn           = true
+    this.pendingReviewCount = 0
+    this.stars = {
+      yellow_total:       0,
+      blue_total:         0,
+      red_total:          0,
+      star_pokedex_count: 0,
+    }
+    this.pokedex      = {}
+    this.characters   = []
+    this.idioms       = []
+    this.words        = []
+    this.locks = {
+      submit_answer: false,
+      hint:          false,
+      navigation:    false,
+      handwriting:   false,
+      animation:     false,
+      card_swipe:    false,
+      star_merge:    false,
+    }
+    this.apiUsage = {
+      myScript: { todayCount: 0, lastReset: '' },
+      vision:   { todayCount: 0, lastReset: '' },
+      gemini:   { todayCount: 0, lastReset: '' },
+    }
+    this.clear()
+  },
 }
 
 // ─────────────────────────────────────────────

@@ -58,8 +58,9 @@ async function initServiceWorker() {
  */
 async function handleAuthStateChanged(user) {
   if (!user) {
-    // 未登入 → 導向登入頁面
-    console.log('[App] 未登入，導向登入頁面')
+    // 未登入 → 重置所有帳號相關狀態，再導向登入頁面
+    console.log('[App] 未登入，清除 AppState 並導向登入頁面')
+    AppState.reset()
     UIManager.navigate(PAGES.LOGIN)
     return
   }

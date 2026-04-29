@@ -397,6 +397,16 @@ body {
   }
 }
 
+/* ── 響應式：手機（<600px）480px 置中 ── */
+@media (max-width: 599px) {
+  #app {
+    width: 100%;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* ── 響應式：平板（600px–1023px）置中窄版 ── */
 @media (min-width: 600px) and (max-width: 1023px) {
   body {
@@ -438,7 +448,7 @@ body {
 
   /* 桌面版 .page 內容區最大寬度限制，避免超寬螢幕過度拉伸 */
   .page {
-    max-width: 1400px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     width: 100%;
@@ -446,7 +456,7 @@ body {
 
   /* 桌面版頂部導覽列配合 .page 同寬 */
   .top-bar {
-    max-width: 1400px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
   }

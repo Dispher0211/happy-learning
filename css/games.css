@@ -436,3 +436,22 @@
   80%  { opacity: 1; transform: translateY(-80px) scale(1.2); }
   100% { opacity: 0; transform: translateY(-100px) scale(0.8); }
 }
+
+/* ── 響應式：桌面（≥1024px）遊戲區最大寬度限制 ── */
+@media (min-width: 1024px) {
+  /* 遊戲頁面容器：對齊 .page 的 1200px 限制，超寬螢幕不過度拉伸 */
+  .game-page {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  /* 遊戲 HUD：sticky 定位仍在 #app 全寬，內容區與 .game-page 對齊 */
+  .game-hud {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}

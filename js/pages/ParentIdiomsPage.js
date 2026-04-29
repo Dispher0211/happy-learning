@@ -23,6 +23,8 @@ export class ParentIdiomsPage {
     this._onAddClick = null;
     /** 輸入框 keydown 處理器 */
     this._onInputKeydown = null;
+    /** 清單事件委派處理器 */
+    this._onListClick = null;
   }
 
   /**
@@ -158,14 +160,7 @@ export class ParentIdiomsPage {
         >🗑</button>
       </div>
     `).join('');
-
-    // 為所有刪除按鈕綁定事件（重新渲染後需重新綁定）
-    this._listEl.querySelectorAll('.idiom-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const idiom = btn.dataset.idiom;
-        this._deleteIdiom(idiom);
-      });
-    });
+    // 事件委派：由 _bindEvents() 中統一監聽，不在此重複綁定
   }
 
   /**
@@ -192,6 +187,16 @@ export class ParentIdiomsPage {
       });
     };
     backBtn.addEventListener('click', this._onBackClick);
+
+    // 刪除按鈕事件委派（統一監聽 _listEl，不在 _renderList 重複綁定）
+    this._onListClick = (e) => {
+      const btn = e.target.closest('.idiom-delete-btn');
+      if (btn) {
+        const idiom = btn.dataset.idiom;
+        if (idiom) this._deleteIdiom(idiom);
+      }
+    };
+    this._listEl.addEventListener('click', this._onListClick);
   }
 
   /**
@@ -258,6 +263,7 @@ export class ParentIdiomsPage {
 
     } catch (err) {
       console.error('[ParentIdiomsPage] 刪除成語失敗：', err);
+      this._showError('刪除失敗，請稍後再試');
     }
   }
 
@@ -294,6 +300,9 @@ export class ParentIdiomsPage {
     if (backBtn && this._onBackClick) {
       backBtn.removeEventListener('click', this._onBackClick);
     }
+    if (this._listEl && this._onListClick) {
+      this._listEl.removeEventListener('click', this._onListClick);
+    }
 
     // 清空刪除按鈕的監聽（移除 DOM 即可，GC 自動回收）
     this._container  = null;
@@ -303,5 +312,6 @@ export class ParentIdiomsPage {
     this._onAddClick = null;
     this._onInputKeydown = null;
     this._onBackClick    = null;
+    this._onListClick    = null;
   }
 }

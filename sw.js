@@ -125,8 +125,8 @@ self.addEventListener('fetch', (event) => {
 
   // ── JS / CSS / fonts / audio → Cache First ──
   if (
-    pathname.startsWith('/audio/')  ||
-    pathname.startsWith('/fonts/')  ||
+    pathname.includes('/audio/')   ||
+    pathname.includes('/fonts/')   ||
     pathname.endsWith('.js')        ||
     pathname.endsWith('.css')       ||
     pathname.endsWith('.woff2')     ||
