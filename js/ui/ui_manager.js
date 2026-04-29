@@ -335,19 +335,19 @@ const UIManager = {
 
         case PAGES.STROKE_ORDER: {
           const { StrokeOrderOverlay } = await import('../overlays/StrokeOrderOverlay.js')
-          overlay = new StrokeOrderOverlay()
+          overlay = StrokeOrderOverlay   // 單例，直接使用
           break
         }
 
         case PAGES.STAR_MERGE: {
           const { StarMergeOverlay } = await import('../overlays/StarMergeOverlay.js')
-          overlay = new StarMergeOverlay()
+          overlay = StarMergeOverlay     // 單例，直接使用
           break
         }
 
         case PAGES.POKEDEX_REVEAL: {
           const { PokedexRevealOverlay } = await import('../overlays/PokedexRevealOverlay.js')
-          overlay = new PokedexRevealOverlay()
+          overlay = PokedexRevealOverlay // 單例，直接使用
           break
         }
 

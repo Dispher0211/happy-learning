@@ -288,31 +288,41 @@ export class CardPage {
           </button>
         </div>
 
-        <!-- 部首資訊 -->
-        <div class="char-card__info-row">
-          <span class="char-card__info-item">
-            部首：${this._renderRadicalWithZhuyin(radical, radicalPron)}
-          </span>
-          <span class="char-card__info-item">
-            部首筆劃：${this._escapeHtml(String(strokesRad))}
-          </span>
-        </div>
-        <div class="char-card__info-row">
-          <span class="char-card__info-item">
-            總筆劃：${this._escapeHtml(String(strokesAll))}
-          </span>
+        <!-- 資訊四格（仿圖二：部首／總筆劃／部首筆劃／剩餘筆劃） -->
+        <div class="char-card__info-grid">
+          <div class="char-card__info-cell">
+            <span class="char-card__info-label">部首</span>
+            <span class="char-card__info-value">
+              ${this._escapeHtml(radical)}
+              <span class="bpmf-font">${this._escapeHtml(radicalPron)}</span>
+            </span>
+          </div>
+          <div class="char-card__info-cell">
+            <span class="char-card__info-label">總筆劃</span>
+            <span class="char-card__info-value">${this._escapeHtml(String(strokesAll))}</span>
+          </div>
+          <div class="char-card__info-cell">
+            <span class="char-card__info-label">部首筆劃</span>
+            <span class="char-card__info-value">${this._escapeHtml(String(strokesRad))}</span>
+          </div>
+          <div class="char-card__info-cell">
+            <span class="char-card__info-label">剩餘筆劃</span>
+            <span class="char-card__info-value">${strokesAll && strokesRad ? this._escapeHtml(String(Number(strokesAll) - Number(strokesRad))) : '—'}</span>
+          </div>
         </div>
 
-        <!-- 詞語區 -->
-        <div class="char-card__words" id="card-words">
-          <span class="char-card__words-label">【詞語】</span>
-          ${words.map(w => `<span class="char-card__word">${this._renderWord(w, char)}</span>`).join('、')}
+        <!-- 詞語區（仿圖二字義解釋區） -->
+        <div class="char-card__words-section">
+          <div class="char-card__words-title">詞語應用</div>
+          <div class="char-card__words" id="card-words">
+            ${words.map(w => `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`).join('')}
+          </div>
         </div>
 
         <!-- 字義 -->
         ${definition ? `<div class="char-card__definition" id="card-def">${this._escapeHtml(definition)}</div>` : ''}
 
-        <!-- 翻面挑戰按鈕 -->
+        <!-- 挑戰按鈕 -->
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
       </div>
     `
@@ -484,10 +494,9 @@ export class CardPage {
       const wordsEl = document.getElementById('card-words')
       if (wordsEl) {
         const char = this._currentChar['字'] || ''
-        wordsEl.innerHTML = `
-          <span class="char-card__words-label">【詞語】</span>
-          ${words.map(w => `<span class="char-card__word">${this._renderWord(w, char)}</span>`).join('、')}
-        `
+        wordsEl.innerHTML = words.map(w =>
+          `<span class="char-card__word">${this._renderWord(w, char)} <span class="word-sound-icon">🔊</span></span>`
+        ).join('')
       }
     }
 
