@@ -276,7 +276,7 @@ export const ForgettingCurve = {
       const manIdx  = LEVEL_IDX[level]
       const gap     = Math.abs(sysIdx - manIdx)
 
-      await FirestoreAPI.update(path, {
+      await FirestoreAPI.write(path, {
         manual_override:                true,
         manual_level:                   level,
         show_gap_warning:               gap >= 2,
@@ -295,7 +295,7 @@ export const ForgettingCurve = {
     const charKey = encodeURIComponent(character)
     const path    = `users/${AppState.uid}/progress/${charKey}`
     try {
-      await FirestoreAPI.update(path, {
+      await FirestoreAPI.write(path, {
         manual_override:               false,
         manual_level:                  null,
         show_gap_warning:              false,

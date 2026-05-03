@@ -142,7 +142,8 @@ export class IdiomGame extends GameEngine {
 
     // 4. 存入 _idiomPool（供 renderQuestion 參考）
     this._idiomPool = questions
-    return questions
+    this.questions = questions
+    return this.questions
   }
 
   /**

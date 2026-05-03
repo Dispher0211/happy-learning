@@ -286,7 +286,8 @@ export class ZhuyinGame extends GameEngine {
       }
     }
 
-    return questions
+    this.questions = questions
+    return this.questions
   }
 
   /**

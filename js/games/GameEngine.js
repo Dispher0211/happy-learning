@@ -64,6 +64,17 @@ export class GameEngine {
 
   async init(config = {}) {
     this.totalQuestions = config.count || 10
+
+    // ── questionChars 自動建立 ──────────────────────────────────────
+    // 若外部未傳入 config.chars，從 AppState.characters 取字元列表
+    // AppState.characters 是 my_characters Firestore 陣列，每項含 {字/char} 欄位
+    if (!this.questionChars || this.questionChars.length === 0) {
+      const src = config.chars || globalThis.AppState?.characters || []
+      this.questionChars = src
+        .map(c => c['字'] || c.char || '')
+        .filter(Boolean)
+    }
+
     try {
       await this.loadQuestions(config)
     } catch (e) {

@@ -74,7 +74,8 @@ export class WritingGame extends GameEngine {
       return this._buildQuestion(char, dictEntry)
     }).filter(q => q !== null)
 
-    return this._questions
+    this.questions = this._questions
+    return this.questions
   }
 
   /**

@@ -146,10 +146,11 @@ export class RadicalGame extends GameEngine {
 
     // 洗牌後取前 count 題，並補上選項
     const shuffled = this._shuffle(allMapped).slice(0, count);
-    return shuffled.map(q => ({
+    this.questions = shuffled.map(q => ({
       ...q,
       options: this._buildOptions(q.correctRadical, q.correctZhuyin, allRadicals),
     }));
+    return this.questions;
   }
 
   // ──────────────────────────────────────────────

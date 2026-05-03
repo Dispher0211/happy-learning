@@ -231,6 +231,27 @@ export class CardPage {
     const allCharsDict = JSONLoader.get('characters') || []
     const dictEntry = allCharsDict.find(c => c['字'] === char || c.char === char)
 
+    // ── 從 polyphones.json 取多音字讀音順序（優先級最高）───────────
+    // polyphones.json 的讀音順序與詞語是人工校訂版本，
+    // characters.json 的讀音順序來自 MoE 字典，排序不一定符合教學需求
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const polyEntry = allPolyphones.find(p => p['字'] === char || p.char === char)
+
+    // 將 polyphones.json 的讀音與 characters.json 的 meaning 合併
+    let mergedPronunciations = null
+    if (polyEntry?.pronunciations?.length > 0) {
+      const charProns = dictEntry?.pronunciations || []
+      mergedPronunciations = polyEntry.pronunciations.map(pp => {
+        const charPron = charProns.find(cp => cp.zhuyin === pp.zhuyin)
+        return {
+          zhuyin:  pp.zhuyin,
+          label:   pp.label   || charPron?.label   || '',
+          meaning: charPron?.meaning || pp.label   || '',
+          words:   pp.words   || charPron?.words   || [],
+        }
+      })
+    }
+
     // 合併：優先用 charObj 本身的值，缺少的從字典補
     const enriched = dictEntry ? {
       ...charObj,
@@ -240,20 +261,27 @@ export class CardPage {
       '總筆畫數': charObj['總筆畫數'] || dictEntry.total_strokes || '',
       // 部首外筆畫（characters.json 用 radical_strokes）
       '部首外筆畫': charObj['部首外筆畫'] || dictEntry.radical_strokes || '',
-      // 注音：my_characters 存 zhuyin 字串，字典存 pronunciations 陣列
+      // 注音：優先 polyphones.json 第一音，再 my_characters，再 characters.json
       '注音': charObj['注音'] || charObj.zhuyin ||
+        (mergedPronunciations?.[0]?.zhuyin) ||
         (dictEntry.pronunciations?.[0]?.zhuyin) || '',
-      // 詞語：字典中每個 pronunciation 條目有 words 陣列
+      // 詞語：依整合後的 pronunciations 建立 map
       '詞語': charObj['詞語'] ||
-        (dictEntry.pronunciations ? (() => {
+        (() => {
+          const src = mergedPronunciations || dictEntry.pronunciations || []
+          if (!src.length) return []
           const obj = {}
-          dictEntry.pronunciations.forEach(p => { obj[p.zhuyin] = p.words || [] })
+          src.forEach(p => { obj[p.zhuyin] = p.words || [] })
           return obj
-        })() : []),
-      // 解釋
-      '解釋': charObj['解釋'] || dictEntry.pronunciations?.[0]?.meaning || '',
-      // 各讀音完整資料（含 meaning）
-      'pronunciations': charObj['pronunciations'] || dictEntry.pronunciations || [],
+        })(),
+      // 解釋：從整合後的第一讀音取
+      '解釋': charObj['解釋'] ||
+        (mergedPronunciations?.[0]?.meaning) ||
+        dictEntry.pronunciations?.[0]?.meaning || '',
+      // 各讀音完整資料：polyphones.json 優先（順序正確），fallback characters.json
+      'pronunciations': charObj['pronunciations'] ||
+        mergedPronunciations ||
+        dictEntry.pronunciations || [],
     } : charObj
 
     this._currentChar = enriched
