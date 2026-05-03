@@ -584,7 +584,7 @@ export class WritingGame extends GameEngine {
 
     // 播放答對音效
     if (AppState.settings?.soundOn !== false) {
-      AudioManager.play('correct')
+      AudioManager.playEffect('correct')
     }
 
     // 等待動畫完成
@@ -605,7 +605,7 @@ export class WritingGame extends GameEngine {
 
     // 播放答錯音效
     if (AppState.settings?.soundOn !== false) {
-      AudioManager.play('wrong')
+      AudioManager.playEffect('wrong')
     }
 
     await this._delay(600)

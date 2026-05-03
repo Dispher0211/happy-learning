@@ -622,7 +622,8 @@ export class CardPage {
       }
     }
 
-    // 重新讀取並更新等級列
+    // 重新讀取並更新等級列（先清快取）
+    delete this._levelCache[char]
     const levelInfo = await this._getLevelInfo(char)
     const levelBar = document.getElementById('level-bar')
     if (levelBar) {
@@ -774,13 +775,28 @@ export class CardPage {
     const wordsHtml = words.length > 0
       ? `<div class="char-card__words" id="card-words">
            ${words.map(w => {
-             // 破音字才顯示注音，普通字維持 IVS 字型
-             const pronLine = isPolyphonic ? this._getWordPron(w, char) : ''
-             return `<span class="char-card__word">
-               <span class="word-text">${this._renderWord(w, char)}</span>
-               ${pronLine ? `<span class="word-pron-text">${this._escapeHtml(pronLine)}</span>` : ''}
-               <span class="word-sound-icon">🔊</span>
-             </span>`
+             if (isPolyphonic) {
+               // 破音字：每個字直式純文字注音（不用 IVS 字型）
+               const charSpans = [...String(w)].map(c => {
+                 const pron = c === char
+                   ? this._pronunciations[this._pronIdx] || ''
+                   : this._getCharPron(c)
+                 return `<span class="poly-word-char">
+                   <span class="poly-word-han">${this._escapeHtml(c)}</span>
+                   <span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>
+                 </span>`
+               }).join('')
+               return `<span class="char-card__word char-card__word--poly">
+                 <span class="poly-word-chars">${charSpans}</span>
+                 <span class="word-sound-icon">🔊</span>
+               </span>`
+             } else {
+               // 單音字：維持 IVS 字型
+               return `<span class="char-card__word">
+                 <span class="word-text">${this._renderWord(w, char)}</span>
+                 <span class="word-sound-icon">🔊</span>
+               </span>`
+             }
            }).join('')}
          </div>`
       : ''
@@ -788,19 +804,11 @@ export class CardPage {
     return meaningHtml + wordsHtml
   }
 
-  /**
-   * _getWordPron(word, targetChar) — 查詞語每個字的注音，拼成字串
-   * targetChar 的注音用當前選中的讀音（_pronunciations[_pronIdx]）
-   */
-  _getWordPron(word, targetChar) {
+  /** 查單一字的第一個讀音注音（用於破音字詞語顯示） */
+  _getCharPron(char) {
     const allChars = JSONLoader.get('characters') || []
-    return [...word].map(c => {
-      if (c === targetChar) {
-        return this._pronunciations[this._pronIdx] || ''
-      }
-      const entry = allChars.find(x => x['字'] === c || x.char === c)
-      return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
-    }).join(' ')
+    const entry = allChars.find(x => x['字'] === char || x.char === char)
+    return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
   }
 
   /** 取得部首的注音 */
@@ -928,6 +936,13 @@ export class CardPage {
   async _toggleZhuyin() {
     AppState.zhuyinOn = !AppState.zhuyinOn
     AppState.save?.()
+    // 更新按鈕文字
+    const btn = document.getElementById('card-zhuyin-toggle')
+    if (btn) {
+      btn.innerHTML = AppState.zhuyinOn
+        ? '注音：<span class="zhuyin-on">開🔵</span>'
+        : '注音：<span class="zhuyin-off">關</span>'
+    }
     // 重新渲染當前卡片
     await this._renderCurrent()
   }
@@ -995,11 +1010,56 @@ export class CardPage {
           <button class="poly-btn ${i === this._pronIdx ? 'active' : ''}"
                   data-pron-idx="${i}"
                   aria-label="切換到${p}">
-            ${i === this._pronIdx ? '●' : '○'} <span class="bpmf-font">${this._escapeHtml(p)}</span>
+            <span class="poly-btn__indicator">${i === this._pronIdx ? '●' : '○'}</span>
+            <span class="poly-btn__zhuyin">${this._renderZhuyinVerticalInline(p)}</span>
           </button>
         `).join('')}
       </div>
     `
+  }
+
+  /** 直式注音 HTML（仿範例 APP：主符號縱排，聲調右側，輕聲頂部） */
+  _renderZhuyinVerticalInline(pron) {
+    if (!pron) return ''
+    const tones = ['ˊ', 'ˇ', 'ˋ', '˙']
+    let tone = ''
+    let main = pron
+
+    // 輕聲在開頭
+    if (main.startsWith('˙')) {
+      tone = '˙'
+      main = main.slice(1)
+    } else {
+      const chars = [...main]
+      const last = chars[chars.length - 1]
+      const first = chars[0]
+      if (tones.includes(last)) {
+        tone = last
+        main = main.slice(0, -1)
+      } else if (tones.includes(first)) {
+        // 聲調在開頭（部分資料格式）
+        tone = first
+        main = main.slice(1)
+      }
+    }
+
+    // 主符號縱排
+    const mainHtml = [...main]
+      .filter(c => c.charCodeAt(0) >= 0x3100 && c.charCodeAt(0) <= 0x312F ||
+                   c.charCodeAt(0) >= 0x02CA && c.charCodeAt(0) <= 0x02D9)
+      .map(c => `<span class="pv-char">${this._escapeHtml(c)}</span>`)
+      .join('')
+
+    const toneTop  = tone === '˙'
+      ? `<span class="pv-tone-top">${this._escapeHtml(tone)}</span>` : ''
+    const toneSide = tone && tone !== '˙'
+      ? `<span class="pv-tone-side">${this._escapeHtml(tone)}</span>` : ''
+
+    return `<span class="pv-wrap">
+      ${toneTop}
+      <span class="pv-main">${mainHtml}</span>
+      ${toneSide}
+    </span>`
   }
 
   /**

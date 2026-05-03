@@ -187,7 +187,7 @@ export class IdiomGame extends GameEngine {
     // 火車加速
     this._trainSpeed = Math.max(TRAIN_SPEED_MIN, this._trainSpeed - 400)
     this._animateTrain('correct')
-    AudioManager.play('correct')
+    AudioManager.playEffect('correct')
 
     // 若所有題目已答完，播放進站特效
     if (this.questionIndex >= this.questions.length - 1) {
@@ -203,7 +203,7 @@ export class IdiomGame extends GameEngine {
    */
   async playWrongAnimation () {
     this._animateTrain('wrong')
-    AudioManager.play('wrong')
+    AudioManager.playEffect('wrong')
     return Promise.resolve()
   }
 

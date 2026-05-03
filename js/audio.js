@@ -115,6 +115,12 @@ export const AudioManager = {
     })
   },
 
+  /** playCorrect() — 便捷方法：播放答對音效 */
+  playCorrect() { return this.playEffect('correct') },
+
+  /** playWrong() — 便捷方法：播放答錯音效 */
+  playWrong()   { return this.playEffect('wrong') },
+
   /**
    * playQueue(items) — 依序播放注音陣列
    */
@@ -278,3 +284,6 @@ export const AudioManager = {
     )
   },
 }
+
+// 掛到 window 供非 ES module 的遊戲（radical.js 等）使用
+window.AudioManager = AudioManager
