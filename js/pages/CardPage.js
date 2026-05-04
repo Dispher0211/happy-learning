@@ -413,7 +413,7 @@ export class CardPage {
     this._addListener('card-words-section', 'click', (e) => {
       const wordEl = e.target.closest('.char-card__word')
       if (!wordEl) return
-      const word = wordEl.innerText.replace('🔊', '').trim()
+      const word = wordEl.dataset.word || wordEl.innerText.replace('🔊', '').trim()
       if (word && AppState.settings?.soundOn !== false) {
         AudioManager.playWord?.(word)
       }
@@ -920,13 +920,13 @@ export class CardPage {
                    ${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}
                  </span>`
                }).join('')
-               return `<span class="char-card__word char-card__word--poly">
+               return `<span class="char-card__word char-card__word--poly" data-word="${this._escapeHtml(String(w))}">
                  <span class="poly-word-chars">${charSpans}</span>
                  <span class="word-sound-icon">🔊</span>
                </span>`
              } else {
                // 單音字：維持 IVS 字型
-               return `<span class="char-card__word">
+               return `<span class="char-card__word" data-word="${this._escapeHtml(String(w))}">
                  <span class="word-text">${this._renderWord(w, char)}</span>
                  <span class="word-sound-icon">🔊</span>
                </span>`
