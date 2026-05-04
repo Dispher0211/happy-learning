@@ -238,11 +238,17 @@ export class CardPage {
     const polyEntry = allPolyphones.find(p => p['字'] === char || p.char === char)
 
     // 將 polyphones.json 的讀音與 characters.json 的 meaning 合併
+    // normZ：統一輕聲˙到開頭，解決 polyphones「ㄓㄜ˙」與 characters「˙ㄓㄜ」不一致
+    // normZ: 統一輕聲位置（˙後→˙前）＋統一輕聲符號（U+2027‧→U+02D9˙）
+    const normZ = z => {
+      const s = z.replace(/\u2027/g, '˙')
+      return s.endsWith('˙') ? '˙' + s.slice(0, -1) : s
+    }
     let mergedPronunciations = null
     if (polyEntry?.pronunciations?.length > 0) {
       const charProns = dictEntry?.pronunciations || []
       mergedPronunciations = polyEntry.pronunciations.map(pp => {
-        const charPron = charProns.find(cp => cp.zhuyin === pp.zhuyin)
+        const charPron = charProns.find(cp => cp.zhuyin === pp.zhuyin || normZ(cp.zhuyin) === normZ(pp.zhuyin))
         return {
           zhuyin:  pp.zhuyin,
           label:   pp.label   || charPron?.label   || '',
