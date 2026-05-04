@@ -520,7 +520,7 @@ export class CardPage {
             `).join('')}
           </div>
         ` : ''}
-        ${definition ? `<div class="word-card__def">【意思】${this._escapeHtml(definition)}</div>` : ''}
+        ${definition ? `<div class="word-card__def bpmf-font">【意思】${this._renderMixedText(definition)}</div>` : ''}
         ${example    ? `<div class="word-card__ex">【例句】${this._escapeHtml(example)}</div>` : ''}
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
       </div>
@@ -562,20 +562,26 @@ export class CardPage {
    * 渲染詞語標題，破音字依選定讀音索引顯示正確注音
    */
   _renderWordWithPolyIdx(word, polyChar, polyCharProns, idx) {
-    if (!AppState.zhuyinOn) return this._escapeHtml(word)
-    // 詞語卡標題：每個字都顯示注音（包含生字簿字），使用 char-with-zhuyin 直式格式
+    if (!AppState.zhuyinOn) return `<span class="bpmf-font">${this._escapeHtml(word)}</span>`
+    // 規格2/3: non-poly字 → bpmf-font (BpmfIVS自動注音)
+    //          poly字     → word-title-poly-char + 粉紅直式注音 (置中)
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
     return [...String(word)].map(c => {
-      let zhuyin
+      if (!isPolyChar(c)) {
+        // 非破音字 → BpmfIVS 自動注音 (規格2: 機會 pure BpmfIVS)
+        return `<span class="bpmf-font">${this._escapeHtml(c)}</span>`
+      }
+      // 破音字 → 粉紅直式注音，垂直置中 (規格3: 著涼的著)
+      let zhuyin = ''
       if (polyChar && c === polyChar && polyCharProns.length > 0) {
-        // 多音字主字：使用當前選定讀音索引
         zhuyin = polyCharProns[idx]?.zhuyin || polyCharProns[0]?.zhuyin || ''
       } else {
-        // 其他字：依詞語上下文查 polyphones.json，再 fallback characters.json
         zhuyin = this._findWordCharPron(c, word)
       }
-      if (!zhuyin) return this._escapeHtml(c)
-      return `<span class="char-with-zhuyin">
-        <span>${this._escapeHtml(c)}</span><span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+      return `<span class="word-title-poly-char">
+        <span class="word-title-han">${this._escapeHtml(c)}</span>
+        ${zhuyin ? `<span class="word-title-pron">${this._renderZhuyinVerticalInline(zhuyin)}</span>` : ''}
       </span>`
     }).join('')
   }
@@ -897,7 +903,7 @@ export class CardPage {
     const meaningHtml = cleanMeaning
       ? `<div class="char-card__meaning-row">
            <span class="char-card__meaning-num">1</span>
-           <p class="char-card__meaning-text bpmf-font">${this._escapeHtml(cleanMeaning)}</p>
+           <p class="char-card__meaning-text bpmf-font">${this._renderMixedText(cleanMeaning)}</p>
          </div>`
       : ''
 
@@ -1249,6 +1255,24 @@ export class CardPage {
       <span class="bpmf-font">${this._escapeHtml(radical)}</span>
       <span class="char-zhuyin bpmf-font">${this._escapeHtml(pron)}</span>
     </span>`
+  }
+
+  /**
+   * _renderMixedText(text) — 規格5: 意思/定義文字混合渲染
+   * poly字 → font-body + 右側直式粉紅注音（small inline）
+   * 非poly字 → 原樣輸出（父層 bpmf-font 自動注音）
+   */
+  _renderMixedText(text) {
+    if (!text) return ''
+    if (!AppState.zhuyinOn) return this._escapeHtml(text)
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
+    return [...String(text)].map(c => {
+      if (!isPolyChar(c)) return this._escapeHtml(c)
+      const pron = this._findWordCharPron(c, text)
+      if (!pron) return this._escapeHtml(c)
+      return `<span class="mixed-poly-char"><span class="mixed-poly-han">${this._escapeHtml(c)}</span><span class="mixed-poly-pron">${this._renderZhuyinVerticalInline(pron)}</span></span>`
+    }).join('')
   }
 
   /**
