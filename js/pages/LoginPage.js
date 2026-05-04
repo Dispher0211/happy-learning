@@ -27,6 +27,9 @@ export class LoginPage {
   init() {
     const app = document.getElementById('app')
 
+    // 注入 CSS（防重複）
+    this._injectCSS()
+
     // 頭像陣列（輪播用）
     this._avatars = ['🐱', '🐶', '🐻', '🐼', '🦊', '🐸']
 
@@ -143,6 +146,125 @@ export class LoginPage {
       const next = row.querySelector(`[data-index="${this._avatarIndex}"]`)
       if (next) next.classList.add('login-avatar--active')
     }, 600)
+  }
+
+  /**
+   * _injectCSS() — 動態注入登入頁樣式（防重複）
+   */
+  _injectCSS() {
+    const CSS_ID = '__login_style__'
+    if (document.getElementById(CSS_ID)) return
+    const style = document.createElement('style')
+    style.id = CSS_ID
+    style.textContent = `
+      /* ── LoginPage 樣式 ── */
+      .login-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 32px 24px 40px;
+        box-sizing: border-box;
+        background: linear-gradient(160deg, #FFF5E6 0%, #E8F4FF 100%);
+        font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
+      }
+
+      /* 標題區 */
+      .login-title-area {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .login-app-name {
+        font-family: 'Noto Serif TC', 'BiauKai', '標楷體', serif;
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: #FF6B35;
+        margin: 0 0 6px;
+        text-shadow: 3px 3px 0 rgba(255,107,53,0.12);
+        animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .login-app-subtitle {
+        font-size: 1rem;
+        color: #6B7280;
+        margin: 0;
+        letter-spacing: 0.08em;
+      }
+
+      /* 頭像輪播列 */
+      .login-avatar-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 40px;
+        align-items: center;
+      }
+      .login-avatar {
+        font-size: 2rem;
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 0.25s ease;
+        cursor: default;
+        user-select: none;
+      }
+      .login-avatar--active {
+        transform: scale(1.35);
+        box-shadow: 0 6px 20px rgba(255,107,53,0.30);
+        background: #FFF0E0;
+      }
+
+      /* 登入按鈕區 */
+      .login-btn-area {
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 20px;
+      }
+      .login-google-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 24px;
+        background: #FF6B35;
+        color: white;
+        border: none;
+        border-radius: 9999px;
+        font-family: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 5px 0 #C04A1A;
+        transition: transform 0.12s, box-shadow 0.12s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .login-google-btn:active:not(:disabled) {
+        transform: translateY(3px);
+        box-shadow: 0 2px 0 #C04A1A;
+      }
+      .login-google-btn:disabled {
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      .login-google-icon {
+        font-size: 1.2rem;
+      }
+
+      /* 提示文字 */
+      .login-hint {
+        font-size: 0.85rem;
+        color: #9CA3AF;
+        text-align: center;
+        margin: 0;
+      }
+    `
+    document.head.appendChild(style)
   }
 
   /**

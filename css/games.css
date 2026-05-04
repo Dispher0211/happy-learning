@@ -439,7 +439,8 @@
 
 /* ── 響應式：桌面（≥1024px）遊戲區最大寬度限制 ── */
 @media (min-width: 1024px) {
-  /* 遊戲頁面容器：對齊 .page 的 1200px 限制，超寬螢幕不過度拉伸 */
+  /* 遊戲頁面容器：對齊 main.css .page 的 1200px 限制
+     注意：若修改此值，請同步修改 main.css 的 .page max-width */
   .game-page {
     max-width: 1200px;
     margin-left: auto;
@@ -447,12 +448,14 @@
     width: 100%;
   }
 
-  /* 遊戲 HUD：sticky 定位仍在 #app 全寬，內容區與 .game-page 對齊 */
+  /* 遊戲 HUD：sticky 全寬白底，內容 padding 動態對齊 1200px 內容區
+     與 main.css .top-bar 的桌面處理方式一致，避免白底只到內容寬 */
   .game-hud {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left:  max(var(--spacing-md), calc((100% - 1200px) / 2 + var(--spacing-md)));
+    padding-right: max(var(--spacing-md), calc((100% - 1200px) / 2 + var(--spacing-md)));
   }
 
   /* idiom.js / sentence.js 使用 .game-container 作為根容器，桌面限寬 */

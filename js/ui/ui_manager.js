@@ -150,7 +150,7 @@ const UIManager = {
           this._appEl.innerHTML = `
             <div class="loading-screen">
               <div class="loading-meteor-shower" aria-hidden="true"></div>
-              <div class="loading-logo">快樂學習</div>
+              <div class="loading-screen__logo">快樂學習</div>
               <div class="loading-spinner"></div>
             </div>`
           return
@@ -521,20 +521,20 @@ const UIManager = {
   // ────────────────────────────────────────
   async _slideTransition(direction) {
     if (!this._appEl) return
-    this._appEl.classList.add('page-slide-enter')
-    await this._wait(20) // 給瀏覽器一幀
-    this._appEl.classList.remove('page-slide-enter')
+    this._appEl.classList.add('page-slide-in')
+    await this._wait(320) // 等待 animation 完成（0.3s + buffer）
+    this._appEl.classList.remove('page-slide-in')
   },
 
   // ────────────────────────────────────────
   // _slideBackTransition(direction)
-  //   新頁從左側滑入（回退動畫）
+  //   新頁從上方淡入（回退動畫，使用 page-enter）
   // ────────────────────────────────────────
   async _slideBackTransition(direction) {
     if (!this._appEl) return
-    this._appEl.classList.add('page-slide-back-enter')
-    await this._wait(20)
-    this._appEl.classList.remove('page-slide-back-enter')
+    this._appEl.classList.add('page-enter')
+    await this._wait(380) // 等待 animation 完成（0.35s + buffer）
+    this._appEl.classList.remove('page-enter')
   },
 
   // ────────────────────────────────────────

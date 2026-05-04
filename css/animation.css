@@ -380,17 +380,17 @@
 
 /* 彈窗從下彈出 */
 @keyframes sheet-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+  from { transform: translateX(-50%) translateY(100%); }
+  to   { transform: translateX(-50%) translateY(0); }
 }
 
 .overlay-sheet {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  max-width: 480px;
-  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: min(480px, 100vw);
   background: white;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: var(--spacing-lg);
@@ -398,6 +398,7 @@
   animation: sheet-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   max-height: 85vh;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* 平板：彈窗寬度對齊 680px App 容器 */
