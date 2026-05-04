@@ -1,3 +1,4 @@
+
 /* =============================================
    card.css — 生字卡畫面樣式（兒童活潑版）
    設計參考：圖二風格 ─ 大字、圓角卡、鮮豔色塊、清楚資訊區
@@ -357,25 +358,32 @@
 .poly-word-chars {
   display: flex;
   flex-direction: row;
-  gap: 4px;
+  gap: 6px;
 }
 .poly-word-char {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;   /* 規格4: 垂直置中，不靠底 */
+  gap: 2px;
 }
 .poly-word-han {
   font-size: 1.3rem;
   font-weight: 700;
-  font-family: var(--font-zhuyin);
+  font-family: var(--font-body);  /* poly 字預設 font-body：不自動注音 */
   line-height: 1;
+  color: #1E293B;
 }
+/* 一般字（非 poly）加了 bpmf-font class 後切換為 BpmfIVS 自動注音 */
+.poly-word-han.bpmf-font {
+  font-family: var(--font-zhuyin);
+}
+/* 多音字主字：粉紅色強調 */
+.poly-word-char--main .poly-word-han { color: #E11D48; }
 .poly-word-pron {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;   /* 規格4: 垂直置中，不靠頂 */
+  min-height: 3.2em;     /* 規格4F: 固定高度，避免不同注音長度造成跳動 */
   color: #E11D48;
-  padding-bottom: 2px;
 }
 .poly-word-pron .pv-char { font-size: 0.6rem; line-height: 1.1; color: #E11D48; }
 .poly-word-pron .pv-tone-side { font-size: 0.6rem; color: #E11D48; }
@@ -392,7 +400,8 @@
 .char-with-zhuyin .char-zhuyin {
   writing-mode: vertical-rl;
   display: inline-block;
-  font-size: 0.5em;
+  /* clamp: 最小 0.55rem，隨父容器縮放但上限 0.9rem，避免大字卡的注音過大 */
+  font-size: clamp(0.55rem, 0.45em, 0.9rem);
   line-height: 1.1;
   color: #E11D48;
   margin-left: 2px;
@@ -400,64 +409,231 @@
   font-family: 'BpmfIVS', 'Noto Sans TC', sans-serif;
 }
 
-.word-sound-icon { font-size: 0.75rem; opacity: 0.6; }
+/* ── 詞語卡標題：破音字容器（置中對齊）──
+   word-title-poly-char: 漢字 + 右側直式注音，垂直置中
+   word-title-han: 漢字本身（font-body，無自動注音）
+   word-title-pron: 粉紅直式注音（用 pv-wrap 格式）                   */
+.word-title-poly-char {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+}
+.word-title-han {
+  font-family: var(--font-body);
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: 1;
+}
+.word-title-pron {
+  display: inline-flex;
+  align-items: center;
+  color: #E11D48;
+}
+.word-title-pron .pv-char   { font-size: 0.6rem; line-height: 1.1; color: #E11D48; }
+.word-title-pron .pv-tone-side { font-size: 0.6rem; color: #E11D48; }
+.word-title-pron .pv-tone-top  { font-size: 0.65rem; color: #E11D48; }
+
+/* ── 字義/定義文字中的破音字行內注音 ──
+   mixed-poly-char: inline 容器
+   mixed-poly-han: font-body（不自動注音）
+   mixed-poly-pron: 小型粉紅直式注音                                  */
+.mixed-poly-char {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1px;
+  vertical-align: middle;
+  white-space: nowrap;   /* 規格10H: poly字與注音不可斷行 */
+}
+.mixed-poly-han {
+  font-family: var(--font-body);
+  font-size: inherit;
+  color: inherit;
+}
+.mixed-poly-pron {
+  display: inline-flex;
+  align-items: center;
+  color: #E11D48;
+}
+.mixed-poly-pron .pv-char      { font-size: 0.5rem; line-height: 1.1; color: #E11D48; }
+.mixed-poly-pron .pv-tone-side { font-size: 0.5rem; color: #E11D48; }
+.mixed-poly-pron .pv-tone-top  { font-size: 0.55rem; color: #E11D48; }
+
+/* 發音 + 筆順按鈕 */
+.char-card__action-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.char-card__sound-btn {
+  flex: 1;
+  max-width: 100px;
+  padding: 10px 0;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg,#06B6D4,#0891B2);
+  color: white;
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #0E7490;
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.char-card__sound-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #0E7490; }
+
+.char-card__stroke-btn {
+  flex: 1;
+  max-width: 120px;
+  padding: 10px 0;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg,#F59E0B,#D97706);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #B45309;
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.char-card__stroke-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #B45309; }
+
+/* 資訊格（仿圖二底部四格：部首/總筆劃/部首筆劃/剩餘筆劃） */
+.char-card__info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.char-card__info-cell {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 8px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.char-card__info-label {
+  font-size: 0.62rem;
+  color: #94A3B8;
+  font-weight: 700;
+}
+.char-card__info-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1E293B;
+}
+.char-card__info-value .bpmf-font {
+  font-size: 0.7rem;
+  color: #E11D48;
+  display: block;
+  font-weight: 600;
+}
+
+/* 舊版 info-row 相容 */
+.char-card__info-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.char-card__info-item {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+/* 詞語區（仿圖二「字義解釋與應用」） */
+.char-card__words-section {
+  background: #EFF6FF;
+  border: 2px solid #BFDBFE;
+  border-radius: 16px;
+  padding: 12px 12px 10px;
+  margin-bottom: 14px;
+}
+.char-card__words-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1D4ED8;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 字義說明行：序號圓圈 + 文字 */
+.char-card__meaning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.char-card__meaning-num {
+  background: #3B82F6;
+  color: white;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 .char-card__meaning-text {
   font-size: 0.95rem;
   font-weight: 700;
   color: #1E3A5F;
   line-height: 1.6;
-  font-family: var(--font-zhuyin);
+  font-family: var(--font-body);
+  word-break: keep-all;  /* 規格10G: 手機版避免注音被截斷 */
 }
 
-
-.char-card__words-label { display: none; }
-
-.multi-tone-char {
+.char-card__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.char-card__word {
+  background: white;
+  border: 2px solid #93C5FD;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1E293B;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #3B82F6;
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 2px;
-  position: relative;
-  vertical-align: middle;
-  white-space: nowrap;
+  /* 不設字型：由子元素 .word-text.bpmf-font 或 .poly-word-han 各自決定字型 */
 }
-
-.multi-tone-base {
-  display: inline-flex;
+.char-card__word .word-text {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
 }
-
-.multi-tone-bpmf {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3.2em;
-  color: #ff4fa3;
-  font-size: 0.55em;
-  line-height: 1;
-  position: relative;
-  top: 0;
-}
-
-.word-card__word,
-.char-card__word,
-.word-card__def,
-.word-card__ex {
-  word-break: keep-all;
-}
-
-@media (max-width: 600px) {
-  .multi-tone-char {
-    flex-wrap: nowrap;
-  }
-
-  .multi-tone-bpmf {
-    min-height: 3em;
-    font-size: 0.52em;
-  }
-}
-
+/* 破音字注音已由 .poly-word-pron 處理 */
+.char-card__word:active { transform: translateY(2px); box-shadow: none; }
+.word-sound-icon { font-size: 0.75rem; opacity: 0.6; }
+.char-card__words-label { display: none; }
 
 /* 字義 */
 .char-card__definition {
