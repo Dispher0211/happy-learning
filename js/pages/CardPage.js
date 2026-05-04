@@ -871,51 +871,65 @@ export class CardPage {
   }
 
   /**
-   * _renderMeaningAndWords(meaning, words, char) — 渲染字義說明 + 詞語 chips
-   * 破音字時在詞語下方顯示文字注音（從字典查每個字的注音）
+   * _renderMeaningAndWords(meaning, words, char)
+   *
+   * 注音策略：
+   * ─ 預設：詞語中每個字用 BpmfIVS (bpmf-font) → 字型自動附加注音
+   * ─ 例外：該字出現在 polyphones.json → 改用 font-body（無自動注音）
+   *         + 右側插入粉紅色直式注音（依詞語上下文選正確讀音）
+   * 範例：著涼 → 著(font-body+ㄓㄠ直式) 涼(BpmfIVS自動注音)
    */
   _renderMeaningAndWords(meaning, words, char) {
     const cleanMeaning = (meaning || '').trim()
-    const isPolyphonic = this._pronunciations.length > 1
+    const isPolyphonic  = this._pronunciations.length > 1
+
+    // 取 polyphones 字表，用於判斷任意字是否為破音字
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
 
     const meaningHtml = cleanMeaning
       ? `<div class="char-card__meaning-row">
            <span class="char-card__meaning-num">1</span>
-           <p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p>
+           <p class="char-card__meaning-text bpmf-font">${this._escapeHtml(cleanMeaning)}</p>
          </div>`
       : ''
 
     const wordsHtml = words.length > 0
       ? `<div class="char-card__words" id="card-words">
            ${words.map(w => {
-             if (isPolyphonic) {
-               // 破音字：每個字直式純文字注音（不用 IVS 字型）
-               // 規格 SECTION 3.1：生字簿的字永遠純文字，不加注音
-               const charSpans = [...String(w)].map(c => {
-                 if (this._isMyChar(c)) {
-                   return `<span class="poly-word-char">
-                     <span class="poly-word-han">${this._escapeHtml(c)}</span>
-                   </span>`
-                 }
-                 const pron = c === char
-                   ? this._pronunciations[this._pronIdx] || ''
-                   : this._getCharPron(c)
-                 return `<span class="poly-word-char">
-                   <span class="poly-word-han">${this._escapeHtml(c)}</span>
-                   ${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}
-                 </span>`
-               }).join('')
-               return `<span class="char-card__word char-card__word--poly">
-                 <span class="poly-word-chars">${charSpans}</span>
-                 <span class="word-sound-icon">🔊</span>
-               </span>`
-             } else {
-               // 單音字：維持 IVS 字型
+             const wStr = String(w)
+             const hasPolyInWord = [...wStr].some(c => isPolyChar(c))
+
+             if (!hasPolyInWord) {
+               // ── 純 BpmfIVS：整個詞語字型自動注音 ──
                return `<span class="char-card__word">
-                 <span class="word-text">${this._renderWord(w, char)}</span>
+                 <span class="word-text bpmf-font">${this._escapeHtml(wStr)}</span>
                  <span class="word-sound-icon">🔊</span>
                </span>`
              }
+
+             // ── 混合模式：逐字判斷 ──
+             const charSpans = [...wStr].map(c => {
+               if (!isPolyChar(c)) {
+                 // 一般字 → BpmfIVS 自動注音
+                 return `<span class="poly-word-char">
+                   <span class="poly-word-han bpmf-font">${this._escapeHtml(c)}</span>
+                 </span>`
+               }
+               // 破音字 → font-body + 粉紅直式注音
+               const pron = (isPolyphonic && c === char)
+                 ? (this._pronunciations[this._pronIdx] || '')
+                 : this._findWordCharPron(c, wStr)
+               return `<span class="poly-word-char">
+                 <span class="poly-word-han">${this._escapeHtml(c)}</span>
+                 ${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}
+               </span>`
+             }).join('')
+
+             return `<span class="char-card__word char-card__word--poly">
+               <span class="poly-word-chars">${charSpans}</span>
+               <span class="word-sound-icon">🔊</span>
+             </span>`
            }).join('')}
          </div>`
       : ''
@@ -1230,22 +1244,31 @@ export class CardPage {
   }
 
   /**
-   * _renderWord(word, targetChar) — 渲染詞語（含上下文正確注音）
-   * 注音規則：生字簿的字純文字；非生字簿的字依 zhuyinOn 決定
-   * 破音字以詞語為上下文查正確讀音（如「著涼」中「著」讀 ㄓㄠ）
+   * _renderWord(word, targetChar) — 渲染詞語（用於詞語卡標題 / _renderMeaningAndWords 單音路徑）
+   *
+   * 策略（與 _renderMeaningAndWords 一致）：
+   * ─ 注音關閉：純文字
+   * ─ 注音開啟：
+   *   非 poly 字 → BpmfIVS 自動注音（回傳文字，由父容器 bpmf-font 處理）
+   *   poly 字    → font-body + 粉紅直式注音 span
    */
   _renderWord(word, targetChar) {
     if (!word) return ''
     const str = String(word)
     if (!AppState.zhuyinOn) return this._escapeHtml(str)
 
-    // 每個字分別判斷是否為生字簿字；破音字依上下文詞語找正確讀音
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
+
     return [...str].map(c => {
-      if (this._isMyChar(c)) return this._escapeHtml(c)
-      const zhuyin = this._findWordCharPron(c, str)
-      if (!zhuyin) return this._escapeHtml(c)
+      if (!isPolyChar(c)) {
+        // 一般字：直接輸出，由父層 bpmf-font 自動注音
+        return `<span class="bpmf-font">${this._escapeHtml(c)}</span>`
+      }
+      // 破音字：font-body + 粉紅直式注音
+      const pron = this._findWordCharPron(c, str)
       return `<span class="char-with-zhuyin">
-        ${this._escapeHtml(c)}<span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+        <span>${this._escapeHtml(c)}</span>${pron ? `<span class="char-zhuyin bpmf-font">${this._escapeHtml(pron)}</span>` : ''}
       </span>`
     }).join('')
   }

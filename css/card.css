@@ -562,9 +562,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  /* font-body 避免 BpmfIVS 對生字簿字自動附加注音；
-     個別 .char-zhuyin.bpmf-font span 由 JS 選擇性注入 */
-  font-family: var(--font-body);
+  /* 不設字型：由子元素 .word-text.bpmf-font 或 .poly-word-han 各自決定字型 */
 }
 .char-card__word .word-text {
   display: flex;
@@ -586,7 +584,7 @@
   padding: 10px 12px;
   margin-bottom: 14px;
   border-left: 4px solid #6366F1;
-  font-family: var(--font-body);
+  font-family: var(--font-zhuyin);
 }
 
 /* 翻面挑戰按鈕 */
