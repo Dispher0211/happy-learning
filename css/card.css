@@ -381,6 +381,25 @@
 .poly-word-pron .pv-tone-side { font-size: 0.6rem; color: #E11D48; }
 .poly-word-pron .pv-tone-top { font-size: 0.65rem; color: #E11D48; }
 
+/* ── 規格 SECTION 3.1：詞語行內注音體（非生字簿字） ──
+   .char-with-zhuyin  漢字 + 右側直式注音的容器
+   .char-zhuyin       直式注音小字（粉紅色 BpmfIVS）                   */
+.char-with-zhuyin {
+  display: inline-flex;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+.char-with-zhuyin .char-zhuyin {
+  writing-mode: vertical-rl;
+  display: inline-block;
+  font-size: 0.5em;
+  line-height: 1.1;
+  color: #E11D48;
+  margin-left: 2px;
+  letter-spacing: 0;
+  font-family: 'BpmfIVS', 'Noto Sans TC', sans-serif;
+}
+
 /* 發音 + 筆順按鈕 */
 .char-card__action-row {
   display: flex;

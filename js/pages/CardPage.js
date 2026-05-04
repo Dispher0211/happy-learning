@@ -890,13 +890,19 @@ export class CardPage {
            ${words.map(w => {
              if (isPolyphonic) {
                // 破音字：每個字直式純文字注音（不用 IVS 字型）
+               // 規格 SECTION 3.1：生字簿的字永遠純文字，不加注音
                const charSpans = [...String(w)].map(c => {
+                 if (this._isMyChar(c)) {
+                   return `<span class="poly-word-char">
+                     <span class="poly-word-han">${this._escapeHtml(c)}</span>
+                   </span>`
+                 }
                  const pron = c === char
                    ? this._pronunciations[this._pronIdx] || ''
                    : this._getCharPron(c)
                  return `<span class="poly-word-char">
                    <span class="poly-word-han">${this._escapeHtml(c)}</span>
-                   <span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>
+                   ${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}
                  </span>`
                }).join('')
                return `<span class="char-card__word char-card__word--poly">
@@ -1030,18 +1036,38 @@ export class CardPage {
   // 13. 輔助：音效
   // ═══════════════════════════════════════
 
-  /** 播放當前字的注音音效 */
+  /** 播放當前字的注音音效
+   * 優先：OGG 注音音檔；OGG 缺失時以詞語 TTS（自然流暢）
+   * 詞語優先選不含其他生字簿字的詞語，讓 TTS 語境最準確
+   */
   _playSound() {
-    // 靜音時不拋出，靜默返回
     if (AppState.settings?.soundOn === false) return
     if (!this._currentChar) return
 
     const pron = this._pronunciations[this._pronIdx] || ''
+    if (!pron) return
+
+    // 取代表性詞語作為 TTS fallback（OGG 存在時不使用）
+    const words   = this._getWordsForPron(this._currentChar, this._pronIdx)
+    const char    = this._currentChar['字'] || this._currentChar.char || ''
+    const fallbackWord = words.find(w => ![...String(w)].some(c => c !== char && this._isMyChar(c)))
+                      || words[0]
+                      || undefined
+
     try {
-      AudioManager.play?.(pron)
+      AudioManager.play?.(pron, fallbackWord)
     } catch (e) {
       console.warn('播放注音失敗', e)
     }
+  }
+
+  /** @deprecated — 已整合進 _playSound，保留供外部可能呼叫用 */
+  _playSoundFallback(pron) {
+    const words = this._getWordsForPron(this._currentChar, this._pronIdx)
+    const char  = this._currentChar['字'] || this._currentChar.char || ''
+    const speakWord = words.find(w => ![...String(w)].some(c => c !== char && this._isMyChar(c)))
+                   || words[0] || pron
+    AudioManager.playWord?.(speakWord)
   }
 
   // ═══════════════════════════════════════

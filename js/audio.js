@@ -49,10 +49,10 @@ export const AudioManager = {
   /**
    * play(zhuyin) — 播放注音發音
    * 主方案：/audio/zhuyin/{注音}.ogg；備援：TTS
-   *
+   * fallbackWord（選填）：OGG 不存在時改以 TTS 讀整詞，發音更自然
    * v4：soundOn=false 時立即 return
    */
-  async play(zhuyin) {
+  async play(zhuyin, fallbackWord) {
     if (AppState.settings?.soundOn === false) return Promise.resolve()
     if (!zhuyin) return
 
@@ -71,8 +71,10 @@ export const AudioManager = {
       )
     } catch (_err) {
       if (playId !== this._voicePlayId) return
-      console.warn(`AudioManager: 音檔不存在，降到 TTS: ${zhuyin}`)
-      await this._playTTS(zhuyin, playId)
+      // 有 fallbackWord 時以整詞 TTS（自然），否則以注音字串 TTS（備援）
+      const ttsText = fallbackWord || zhuyin
+      console.warn(`AudioManager: 音檔不存在，降到 TTS: ${ttsText}`)
+      await this._playTTS(ttsText, playId)
     }
   },
 
