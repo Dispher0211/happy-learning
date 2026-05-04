@@ -360,9 +360,9 @@
   gap: 6px;
 }
 .poly-word-char {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;   /* 規格4: 垂直置中，不靠底 */
   gap: 2px;
 }
 .poly-word-han {
@@ -380,9 +380,9 @@
 .poly-word-char--main .poly-word-han { color: #E11D48; }
 .poly-word-pron {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;   /* 規格4: 垂直置中，不靠頂 */
+  min-height: 3.2em;     /* 規格4F: 固定高度，避免不同注音長度造成跳動 */
   color: #E11D48;
-  padding-bottom: 2px;
 }
 .poly-word-pron .pv-char { font-size: 0.6rem; line-height: 1.1; color: #E11D48; }
 .poly-word-pron .pv-tone-side { font-size: 0.6rem; color: #E11D48; }
@@ -407,6 +407,58 @@
   letter-spacing: 0;
   font-family: 'BpmfIVS', 'Noto Sans TC', sans-serif;
 }
+
+/* ── 詞語卡標題：破音字容器（置中對齊）──
+   word-title-poly-char: 漢字 + 右側直式注音，垂直置中
+   word-title-han: 漢字本身（font-body，無自動注音）
+   word-title-pron: 粉紅直式注音（用 pv-wrap 格式）                   */
+.word-title-poly-char {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+}
+.word-title-han {
+  font-family: var(--font-body);
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: 1;
+}
+.word-title-pron {
+  display: inline-flex;
+  align-items: center;
+  color: #E11D48;
+}
+.word-title-pron .pv-char   { font-size: 0.6rem; line-height: 1.1; color: #E11D48; }
+.word-title-pron .pv-tone-side { font-size: 0.6rem; color: #E11D48; }
+.word-title-pron .pv-tone-top  { font-size: 0.65rem; color: #E11D48; }
+
+/* ── 字義/定義文字中的破音字行內注音 ──
+   mixed-poly-char: inline 容器
+   mixed-poly-han: font-body（不自動注音）
+   mixed-poly-pron: 小型粉紅直式注音                                  */
+.mixed-poly-char {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1px;
+  vertical-align: middle;
+  white-space: nowrap;   /* 規格10H: poly字與注音不可斷行 */
+}
+.mixed-poly-han {
+  font-family: var(--font-body);
+  font-size: inherit;
+  color: inherit;
+}
+.mixed-poly-pron {
+  display: inline-flex;
+  align-items: center;
+  color: #E11D48;
+}
+.mixed-poly-pron .pv-char      { font-size: 0.5rem; line-height: 1.1; color: #E11D48; }
+.mixed-poly-pron .pv-tone-side { font-size: 0.5rem; color: #E11D48; }
+.mixed-poly-pron .pv-tone-top  { font-size: 0.55rem; color: #E11D48; }
 
 /* 發音 + 筆順按鈕 */
 .char-card__action-row {
@@ -546,6 +598,7 @@
   color: #1E3A5F;
   line-height: 1.6;
   font-family: var(--font-body);
+  word-break: keep-all;  /* 規格10G: 手機版避免注音被截斷 */
 }
 
 .char-card__words {
