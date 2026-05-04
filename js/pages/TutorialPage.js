@@ -608,6 +608,10 @@ export class TutorialPage {
       }
       .tutorial-slide-in-right { animation: tutorial-slide-in-right-kf 0.35s ease forwards; }
       .tutorial-slide-in-left  { animation: tutorial-slide-in-left-kf  0.35s ease forwards; }
+      /* ── 桌面（≥1024px）── */
+      @media (min-width: 1024px) {
+        .tutorial-wrap { max-width: 1200px; margin: 0 auto; width: 100%; }
+      }
     `
     document.head.appendChild(style)
   }

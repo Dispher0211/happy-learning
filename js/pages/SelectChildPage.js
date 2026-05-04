@@ -884,6 +884,10 @@ export class SelectChildPage {
         margin-top: 8px;
         min-height: 1.2em;
       }
+      /* ── 桌面（≥1024px）── */
+      @media (min-width: 1024px) {
+        .scp-page { max-width: 1200px; margin: 0 auto; width: 100%; }
+      }
     `;
     document.head.appendChild(style);
   }

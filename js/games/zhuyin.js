@@ -38,6 +38,7 @@
 import { GameEngine } from './GameEngine.js'
 import { GameConfig } from './GameConfig.js'
 import { AppState } from '../state.js'
+import { JSONLoader } from '../json_loader.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { AudioManager } from '../audio.js'
 
@@ -219,8 +220,11 @@ export class ZhuyinGame extends GameEngine {
    * @returns {Promise<Object[]>}
    */
   async loadQuestions({ count = 10 } = {}) {
-    const characters = AppState.characters || []
-    if (characters.length === 0) return []
+    const myChars = AppState.characters || []
+    if (myChars.length === 0) return []
+
+    // 從 characters.json 全字典查詢完整資料（部首、字義等）
+    const allCharsDict = JSONLoader.get('characters') || []
 
     // questionPool 由 GameEngine.init() 依遺忘曲線排好順序
     const pool = (this.questionPool || []).slice(0, count * 3)
@@ -233,11 +237,13 @@ export class ZhuyinGame extends GameEngine {
         : (entry.char || entry['字'] || '')
       if (!char) continue
 
-      // 從 AppState.characters 取完整生字資料
-      const charData = characters.find(c => (c['字'] || c.char) === char)
-      if (!charData) continue
+      // 從 my_characters 取注音（家長設定）；從 characters.json 取完整資料
+      const myChar   = myChars.find(c => (c['字'] || c.char) === char)
+      if (!myChar) continue
+      const charData = allCharsDict.find(c => (c['字'] || c.char) === char) || myChar
 
-      const zhuyin = charData['注音'] || charData.zhuyin || ''
+      const zhuyin = myChar['注音'] || myChar.zhuyin ||
+                     charData.pronunciations?.[0]?.zhuyin || ''
       if (!zhuyin) continue
 
       const readings    = this._parseReadings(zhuyin)
@@ -254,9 +260,9 @@ export class ZhuyinGame extends GameEngine {
         pronunciation,
         isPolyphone,
         readings,
-        meaning:       charData['解釋']    || charData.meaning       || '',
-        radical:       charData['部首']    || charData.radical       || '',
-        radicalZhuyin: charData['部首注音'] || charData.radicalZhuyin || '',
+        meaning:       charData.pronunciations?.[0]?.meaning || charData['解釋'] || charData.meaning       || '',
+        radical:       charData.radical || charData['部首']       || '',
+        radicalZhuyin: charData.radicalZhuyin || charData['部首注音'] || '',
       })
 
       if (questions.length >= count) break
@@ -278,9 +284,9 @@ export class ZhuyinGame extends GameEngine {
           pronunciation:  readings[0] || zhuyin,
           isPolyphone:    readings.length > 1,
           readings,
-          meaning:        charData['解釋']    || charData.meaning       || '',
-          radical:        charData['部首']    || charData.radical       || '',
-          radicalZhuyin:  charData['部首注音'] || charData.radicalZhuyin || '',
+          meaning:        charData.pronunciations?.[0]?.meaning || charData['解釋'] || charData.meaning       || '',
+          radical:        charData.radical || charData['部首']       || '',
+          radicalZhuyin:  charData.radicalZhuyin || charData['部首注音'] || '',
         })
         usedChars.add(char)
       }
@@ -299,7 +305,7 @@ export class ZhuyinGame extends GameEngine {
     // [FIX-1] 清除上一題留下的事件監聽器
     this._flushCleanupFns()
 
-    const app = document.getElementById('app')
+    const app = this._getContainer()
     if (!app) return
 
     // 重置每題狀態
@@ -1435,6 +1441,16 @@ export class ZhuyinGame extends GameEngine {
 
   /* ══ 注音字型 ══════════════════════════════════════════════════ */
   .bpmf-font { font-family: 'BpmfIVS', 'Noto Sans TC', serif; }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .zy-question-area { max-width: 520px; margin: 0 auto; }
+        .zy-options       { max-width: 520px; margin: 0 auto; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .zy-game { max-width: 760px; margin: 0 auto; }
+    }
   `
 
   document.head.appendChild(style)

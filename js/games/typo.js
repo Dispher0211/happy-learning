@@ -35,6 +35,7 @@ import { GameEngine } from './GameEngine.js';
 import { GameConfig } from './GameConfig.js';
 import { AppState } from '../state.js';
 import { JSONLoader } from '../json_loader.js';
+import { HandwritingManager } from '../handwriting.js';
 
 // HandwritingManager 透過 globalThis 存取（避免循環依賴）
 // globalThis.HandwritingManager 由 handwriting.js 掛載
@@ -99,8 +100,17 @@ export class TypoGame extends GameEngine {
     /** @type {boolean} 防止模式二「請再寫一次」重複觸發 */
     this._hwRetrying = false;
 
-    /** @type {Array<Function>} 所有需 destroy 時移除的 listener */
-    this._eventListeners = [];
+    /** @type {HTMLCanvasElement|null} 模式二手寫 canvas 元素 */
+    this._typoCanvas = null;
+
+    /** @type {CanvasRenderingContext2D|null} canvas 繪圖 context */
+    this._typoCtx = null;
+
+    /** @type {Array<Array<{x:number,y:number}>>} 已繪筆畫（供 undo 用） */
+    this._typoStrokes = [];
+
+    /** @type {Array<{x:number,y:number}>|null} 目前繪製中的筆畫點 */
+    this._typoCurrentStroke = null;
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -166,7 +176,7 @@ export class TypoGame extends GameEngine {
    * @param {object} question
    */
   renderQuestion(question) {
-    const app = document.getElementById('app');
+    const app = this._getContainer();
     if (!app) return;
 
     this._currentMode = question.mode;
@@ -392,8 +402,7 @@ export class TypoGame extends GameEngine {
         chest.classList.add('selected');
         this.submitAnswer(char);
       };
-      chest.addEventListener('click', handler);
-      this._eventListeners.push({ el: chest, type: 'click', handler });
+      this._addEventListener(chest, 'click', handler);
     });
   }
 
@@ -459,8 +468,7 @@ export class TypoGame extends GameEngine {
         this._substep = SUBSTEP.WRITE;
         this._renderMode2WriteStep(question);
       };
-      span.addEventListener('click', handler);
-      this._eventListeners.push({ el: span, type: 'click', handler });
+      this._addEventListener(span, 'click', handler);
     });
   }
 
@@ -495,32 +503,23 @@ export class TypoGame extends GameEngine {
       </div>
     `;
 
-    // 初始化 HandwritingManager canvas
-    const hwManager = globalThis.HandwritingManager;
-    if (hwManager) {
-      hwManager.init(CANVAS_ID, { mode: 'hanzi' });
-    } else {
-      console.warn('[TypoGame] HandwritingManager 未載入，手寫功能不可用');
-    }
+    // 初始化 canvas 手寫繪圖（與 writing.js 相同模式）
+    this._typoStrokes = [];
+    this._typoCurrentStroke = null;
+    this._initTypoCanvas();
 
     // 綁定撤銷
     const undoBtn = document.getElementById('typo-btn-undo');
     if (undoBtn) {
-      this._hwUndoHandler = () => {
-        globalThis.HandwritingManager?.undoLastStroke();
-      };
-      undoBtn.addEventListener('click', this._hwUndoHandler);
-      this._eventListeners.push({ el: undoBtn, type: 'click', handler: this._hwUndoHandler });
+      this._hwUndoHandler = () => this._typoUndoStroke();
+      this._addEventListener(undoBtn, 'click', this._hwUndoHandler);
     }
 
     // 綁定清除
     const clearBtn = document.getElementById('typo-btn-clear');
     if (clearBtn) {
-      this._hwClearHandler = () => {
-        globalThis.HandwritingManager?.clearCanvas(CANVAS_ID);
-      };
-      clearBtn.addEventListener('click', this._hwClearHandler);
-      this._eventListeners.push({ el: clearBtn, type: 'click', handler: this._hwClearHandler });
+      this._hwClearHandler = () => this._typoClearCanvas();
+      this._addEventListener(clearBtn, 'click', this._hwClearHandler);
     }
 
     // 綁定確認（送出手寫辨識）
@@ -528,27 +527,29 @@ export class TypoGame extends GameEngine {
     if (confirmBtn) {
       this._hwConfirmHandler = async () => {
         if (this._hwRecognizing || this.isAnswering) return;
+        if (!this._typoCanvas || this._typoStrokes.length === 0) {
+          // 尚未繪製任何筆畫 → 提示
+          const msg = document.querySelector('.typo-retry-msg');
+          if (msg) { msg.textContent = '請先在框內寫字 ✏️'; msg.style.display = 'block'; }
+          return;
+        }
         this._hwRecognizing = true;
         confirmBtn.disabled = true;
 
         try {
-          const hwManager = globalThis.HandwritingManager;
-          if (!hwManager) {
-            // 無手寫 SDK → 直接 retry
+          // 直接使用 import 的 HandwritingManager（不依賴 globalThis）
+          const result = await HandwritingManager.recognize(this._typoCanvas, { mode: 'chinese' });
+
+          if (!result || (!result.text && !result.candidates?.length)) {
             await this._handleHwFallback(question);
             return;
           }
 
-          const result = await hwManager.recognize(CANVAS_ID);
-
-          if (!result || !result.candidates || result.candidates.length === 0) {
-            // 辨識失敗 → fallback: retry
+          const recognized = result.text ?? result.candidates?.[0] ?? '';
+          if (!recognized) {
             await this._handleHwFallback(question);
             return;
           }
-
-          const recognized = result.candidates[0];
-          // 送進 GameEngine submitAnswer 流程
           await this.submitAnswer({ recognized });
 
         } catch (err) {
@@ -561,8 +562,7 @@ export class TypoGame extends GameEngine {
           }
         }
       };
-      confirmBtn.addEventListener('click', this._hwConfirmHandler);
-      this._eventListeners.push({ el: confirmBtn, type: 'click', handler: this._hwConfirmHandler });
+      this._addEventListener(confirmBtn, 'click', this._hwConfirmHandler);
     }
   }
 
@@ -573,7 +573,7 @@ export class TypoGame extends GameEngine {
    */
   async _handleHwFallback(question) {
     this._hwRetrying = true;
-    globalThis.HandwritingManager?.clearCanvas(CANVAS_ID);
+    this._typoClearCanvas();
     this._renderMode2WriteStep(question);
   }
 
@@ -596,11 +596,110 @@ export class TypoGame extends GameEngine {
   // 清理
   // ───────────────────────────────────────────────────────────────────────────
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // 模式二 canvas 手寫繪圖（自行管理，不依賴 globalThis.HandwritingManager）
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * 初始化 typo canvas，設定樣式並綁定手寫事件
+   */
+  _initTypoCanvas() {
+    const canvas = document.getElementById(CANVAS_ID);
+    if (!canvas) return;
+    this._typoCanvas = canvas;
+    this._typoCtx = canvas.getContext('2d');
+    this._typoCtx.strokeStyle = '#1a1a2e';
+    this._typoCtx.lineWidth = 6;
+    this._typoCtx.lineCap = 'round';
+    this._typoCtx.lineJoin = 'round';
+
+    let drawing = false;
+
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const sx = canvas.width / rect.width;
+      const sy = canvas.height / rect.height;
+      const src = e.touches ? e.touches[0] : e;
+      return { x: (src.clientX - rect.left) * sx, y: (src.clientY - rect.top) * sy };
+    };
+
+    const onStart = (e) => {
+      e.preventDefault();
+      drawing = true;
+      const pos = getPos(e);
+      this._typoCurrentStroke = [pos];
+      this._typoCtx.beginPath();
+      this._typoCtx.moveTo(pos.x, pos.y);
+    };
+
+    const onMove = (e) => {
+      e.preventDefault();
+      if (!drawing || !this._typoCurrentStroke) return;
+      const pos = getPos(e);
+      this._typoCurrentStroke.push(pos);
+      this._typoCtx.lineTo(pos.x, pos.y);
+      this._typoCtx.stroke();
+    };
+
+    const onEnd = () => {
+      if (!drawing) return;
+      drawing = false;
+      if (this._typoCurrentStroke && this._typoCurrentStroke.length > 1) {
+        this._typoStrokes.push([...this._typoCurrentStroke]);
+      }
+      this._typoCurrentStroke = null;
+    };
+
+    canvas.addEventListener('mousedown',  onStart);
+    canvas.addEventListener('mousemove',  onMove);
+    canvas.addEventListener('mouseup',    onEnd);
+    canvas.addEventListener('mouseleave', onEnd);
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove',  onMove,  { passive: false });
+    canvas.addEventListener('touchend',   onEnd);
+
+    this._addEventListener(canvas, 'mousedown',  onStart);
+    this._addEventListener(canvas, 'mousemove',  onMove);
+    this._addEventListener(canvas, 'mouseup',    onEnd);
+    this._addEventListener(canvas, 'mouseleave', onEnd);
+    this._addEventListener(canvas, 'touchstart', onStart);
+    this._addEventListener(canvas, 'touchmove',  onMove);
+    this._addEventListener(canvas, 'touchend',   onEnd);
+  }
+
+  /** 撤銷最後一筆 */
+  _typoUndoStroke() {
+    this._typoStrokes.pop();
+    this._typoRedrawStrokes();
+  }
+
+  /** 清除全部筆畫 */
+  _typoClearCanvas() {
+    this._typoStrokes = [];
+    this._typoCurrentStroke = null;
+    if (this._typoCtx && this._typoCanvas) {
+      this._typoCtx.clearRect(0, 0, this._typoCanvas.width, this._typoCanvas.height);
+    }
+  }
+
+  /** 重繪所有筆畫（撤銷後呼叫）*/
+  _typoRedrawStrokes() {
+    if (!this._typoCtx || !this._typoCanvas) return;
+    this._typoCtx.clearRect(0, 0, this._typoCanvas.width, this._typoCanvas.height);
+    for (const stroke of this._typoStrokes) {
+      if (stroke.length < 2) continue;
+      this._typoCtx.beginPath();
+      this._typoCtx.moveTo(stroke[0].x, stroke[0].y);
+      for (let i = 1; i < stroke.length; i++) this._typoCtx.lineTo(stroke[i].x, stroke[i].y);
+      this._typoCtx.stroke();
+    }
+  }
+
   /**
    * 清除手寫相關 event listener
    */
   _cleanupHandwritingListeners() {
-    // 不從 _eventListeners 移除（destroy 統一處理）
+    // _listeners 由 GameEngine.destroy() 統一清除
     // 此處僅清除舊的 hwConfirmHandler 等，防止多次 renderMode2WriteStep 重複綁定
     if (this._hwConfirmHandler) {
       const btn = document.getElementById('typo-btn-confirm');
@@ -623,18 +722,15 @@ export class TypoGame extends GameEngine {
    * 釋放所有資源（由 GameEngine.destroy 呼叫）
    */
   destroy() {
-    // 移除所有 event listener
-    this._eventListeners.forEach(({ el, type, handler }) => {
-      try { el.removeEventListener(type, handler); } catch (_) { /* 忽略 */ }
-    });
-    this._eventListeners = [];
-
     // 標記 canvas 已銷毀，防止 confirm handler 誤操作
     const root = document.getElementById('typo-game-root');
     if (root) root.dataset.destroyed = '1';
 
-    // 清除手寫 canvas
-    globalThis.HandwritingManager?.destroy?.(CANVAS_ID);
+    // 清除手寫 canvas 狀態
+    this._typoCanvas = null;
+    this._typoCtx = null;
+    this._typoStrokes = [];
+    this._typoCurrentStroke = null;
 
     // 呼叫父類別 destroy（處理 wrongPool、移除基本監聽）
     super.destroy();
@@ -959,7 +1055,7 @@ export function injectTypoStyles() {
       padding: 20px 16px;
     }
     .typo-instruction {
-      font-size: 1rem;
+      font-size: 1.2rem;
       color: #5a3a00;
       text-align: center;
       margin-bottom: 16px;
@@ -971,11 +1067,11 @@ export function injectTypoStyles() {
 
     /* ── 句子展示 ── */
     .typo-sentence {
-      font-size: 1.4rem;
-      line-height: 2.2;
+      font-size: 1.8rem;
+      line-height: 2.4;
       text-align: center;
       margin: 12px auto 20px;
-      max-width: 320px;
+      max-width: 360px;
     }
     .typo-s-char {
       display: inline-block;
@@ -989,8 +1085,8 @@ export function injectTypoStyles() {
     }
     .typo-sentence-char {
       display: inline-block;
-      font-size: 1.5rem;
-      padding: 4px 6px;
+      font-size: 2rem;
+      padding: 4px 8px;
       margin: 2px;
       border-radius: 6px;
       border: 2px solid transparent;
@@ -1026,7 +1122,7 @@ export function injectTypoStyles() {
       background: #fff8e1;
       border: 3px solid #e0b000;
       border-radius: 12px;
-      min-width: 68px;
+      min-width: 76px;
       transition: transform 0.15s, box-shadow 0.15s;
       user-select: none;
     }
@@ -1051,7 +1147,7 @@ export function injectTypoStyles() {
       opacity: 0.7;
     }
     .chest-char {
-      font-size: 1.3rem;
+      font-size: 1.8rem;
       font-weight: 700;
       color: #7d4e00;
     }
@@ -1074,8 +1170,17 @@ export function injectTypoStyles() {
       border: 3px solid #e0b000;
       border-radius: 16px;
       background: #fff;
+      /* 米字格參考線 */
+      background-image:
+        linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+      background-size: 140px 140px, 140px 140px, 70px 70px, 70px 70px;
       cursor: crosshair;
       touch-action: none;
+      max-width: 100%;
+      display: block;
     }
     .typo-hw-buttons {
       display: flex;
@@ -1239,6 +1344,16 @@ export function injectTypoStyles() {
     @keyframes fadeIn {
       from { opacity:0; transform: translateY(4px); }
       to   { opacity:1; transform: translateY(0); }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .typo-sentence    { max-width: 480px; }
+        .typo-canvas-wrap { max-width: 480px; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .typo-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

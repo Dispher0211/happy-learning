@@ -151,7 +151,7 @@ export class IdiomGame extends GameEngine {
    * 依模式渲染題目 DOM
    */
   renderQuestion (question) {
-    const app = document.getElementById('app')
+    const app = this._getContainer()
     if (!app) return
 
     this._currentMode = question.mode

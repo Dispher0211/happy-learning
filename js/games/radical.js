@@ -102,50 +102,53 @@ export class RadicalGame extends GameEngine {
   //      需自行從 JSONLoader 取得生字清單
   // ──────────────────────────────────────────────
   async loadQuestions(config) {
-    // 從 JSONLoader 取得已載入的生字資料
+    // ── 題目來自生字簿（AppState.characters），而非全字典 ──
+    // 從 characters.json 全字典查詢完整資料（部首、筆畫等）
     const { JSONLoader } = await import('../json_loader.js');
-    const rawChars = JSONLoader.get('characters');
+    const allCharsDict = JSONLoader.get('characters') || [];
 
-    // 依 config.count 限制題目數，預設 10 題
+    // AppState.characters = my_characters（家長設定的生字簿）
+    const myChars = AppState.characters || [];
+    if (myChars.length === 0) {
+      this.questions = [];
+      return this.questions;
+    }
+
     const count = config?.count || 10;
 
-    // 轉換格式：同時支援原始 characters.json 格式與 GameEngine 預處理格式
-    const allMapped = rawChars
-      .filter(c => (c.char || c['字']) && c.radical)
-      .map(c => {
-        // GameEngine 預處理後的格式（char, radicalStrokes, radicalInfo）
-        if (c.char) {
-          return {
-            char:           c.char,
-            correctRadical: c.radical,
-            correctZhuyin:  c.radicalInfo?.zhuyin || this._lookupZhuyin(c.radical),
-            radicalStrokes: c.radicalStrokes || c.radicalInfo?.strokes || 1,
-            totalStrokes:   c.totalStrokes || c.radicalStrokes || 1,
-            firstStroke:    c.firstStroke || '',
-            definition:     c.radicalInfo?.meaning || c.pronunciations?.[0]?.meaning || '',
-          };
-        }
-        // 原始 characters.json 格式（'字' 欄位）
-        const radical = c.radical;
+    // 將生字簿中每個字對應到 characters.json 的完整資料
+    const myCharKeys = myChars.map(c => c['字'] || c.char || '').filter(Boolean);
+    const myMapped = myCharKeys
+      .map(ch => {
+        const full = allCharsDict.find(c => (c['字'] || c.char) === ch);
+        if (!full || !full.radical) return null;
+        const radical = full.radical;
         const zhuyin  = this._lookupZhuyin(radical);
         return {
-          char:           c['字'],
+          char:           ch,
           correctRadical: radical,
           correctZhuyin:  zhuyin,
-          radicalStrokes: c.radical_strokes || 1,
-          totalStrokes:   c.total_strokes || c.radical_strokes || 1,
+          radicalStrokes: full.radical_strokes || 1,
+          totalStrokes:   full.total_strokes   || full.radical_strokes || 1,
           firstStroke:    '',
-          definition:     c.pronunciations?.[0]?.meaning || '',
+          definition:     full.pronunciations?.[0]?.meaning || '',
         };
-      });
+      })
+      .filter(Boolean);
 
-    // 收集所有部首供干擾選項
-    const allRadicals = new Map(
-      allMapped.map(m => [m.correctRadical, m.correctZhuyin])
-    );
+    if (myMapped.length === 0) {
+      this.questions = [];
+      return this.questions;
+    }
+
+    // 收集全字典部首供干擾選項（不限於生字簿）
+    const allRadicals = new Map();
+    for (const c of allCharsDict) {
+      if (c.radical) allRadicals.set(c.radical, this._lookupZhuyin(c.radical));
+    }
 
     // 洗牌後取前 count 題，並補上選項
-    const shuffled = this._shuffle(allMapped).slice(0, count);
+    const shuffled = this._shuffle(myMapped).slice(0, count);
     this.questions = shuffled.map(q => ({
       ...q,
       options: this._buildOptions(q.correctRadical, q.correctZhuyin, allRadicals),
@@ -157,7 +160,7 @@ export class RadicalGame extends GameEngine {
   // renderQuestion：渲染題目 DOM
   // ──────────────────────────────────────────────
   renderQuestion(question) {
-    const app = document.getElementById('app');
+    const app = this._getContainer();
     if (!app) return;
 
     app.innerHTML = `
@@ -481,7 +484,7 @@ export class RadicalGame extends GameEngine {
         display:flex; flex-direction:column; align-items:center;
         padding:16px; min-height:100vh;
         background:linear-gradient(180deg,#e8f4fd 0%,#fef9e7 100%);
-        font-family:'BpmfIVS','Noto Sans TC',sans-serif;
+        font-family:'Noto Sans TC',sans-serif;
         user-select:none; box-sizing:border-box;
       }
       /* 進度條 */
@@ -502,9 +505,9 @@ export class RadicalGame extends GameEngine {
       }
       .rg-complete { animation:rgComplete .9s ease; }
 
-      /* 題目字 */
-      .rg-char { font-size:100px; line-height:1.1; color:#2c3e50; margin-bottom:4px; }
-      .rg-prompt { font-size:17px; color:#666; margin-bottom:20px; }
+      /* 題目字：不使用 BpmfIVS，避免字旁出現注音標記 */
+      .rg-char { font-size:100px; line-height:1.1; color:#2c3e50; margin-bottom:4px; font-family:'Noto Sans TC','PingFang TC',sans-serif; }
+      .rg-prompt { font-size:17px; color:#666; margin-bottom:20px; font-family:'Noto Sans TC',sans-serif; }
 
       /* 選項 */
       .rg-options {
@@ -520,8 +523,9 @@ export class RadicalGame extends GameEngine {
       }
       .rg-opt:hover:not(.disabled) { background:#eaf4fb; }
       .rg-opt:active:not(.disabled) { transform:scale(.93); }
-      .rg-opt-zhuyin { font-size:13px; color:#aaa; margin-bottom:4px; }
-      .rg-opt-char   { font-size:38px; color:#2c3e50; }
+      /* 注音：用 sans-serif 避免雙層渲染；部首字：用 BpmfIVS 顯示注音體字型 */
+      .rg-opt-zhuyin { font-size:13px; color:#aaa; margin-bottom:4px; font-family:'Noto Sans TC',sans-serif; }
+      .rg-opt-char   { font-size:38px; color:#2c3e50; font-family:'BpmfIVS','Noto Sans TC',sans-serif; }
 
       .rg-opt.correct {
         background:#2ecc71; border-color:#27ae60;
@@ -566,6 +570,17 @@ export class RadicalGame extends GameEngine {
         padding:8px 18px; border-radius:20px;
         border:2px solid #3498db; background:#3498db;
         color:#fff; font-size:14px; cursor:pointer;
+      }
+            /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .rg-char    { font-size: 130px; }
+        .rg-options { max-width: 460px; }
+        .rg-opt     { min-height: 104px; }
+        .rg-opt-char { font-size: 46px; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+      @media (min-width: 1024px) {
+        .rg-wrap { max-width: 760px; margin: 0 auto; }
       }
     </style>`;
   }

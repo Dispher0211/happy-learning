@@ -284,7 +284,8 @@
 .poly-btn {
   padding: 6px 10px;
   border-radius: 16px;
-  font-family: var(--font-zhuyin);
+  /* 破音字切換鈕：不使用 BpmfIVS，避免注音字元被渲染成雙層注音體 */
+  font-family: 'Noto Sans TC', sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
   border: 2px solid #E0E7FF;
@@ -315,27 +316,28 @@
   display: block;
   font-size: 0.85rem;
   line-height: 1.15;
-  font-family: var(--font-zhuyin);
+  /* 注音符號本身：使用 sans-serif，不用 BpmfIVS（避免雙層注音渲染） */
+  font-family: 'Noto Sans TC', sans-serif;
   font-weight: 900;
 }
 /* 聲調右側（ˊˇˋ） */
 .pv-tone-side {
   font-size: 0.85rem;
   font-weight: 900;
-  font-family: var(--font-zhuyin);
+  font-family: 'Noto Sans TC', sans-serif;
   align-self: center;
   margin-left: 1px;
   color: inherit;
 }
-/* 輕聲頂部（˙） */
+/* 輕聲頂部（˙）：使用 em 相對單位確保各字級下都置於正中上方 */
 .pv-tone-top {
   position: absolute;
-  top: -6px;
+  top: -0.55em;
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.9rem;
   font-weight: 900;
-  font-family: var(--font-zhuyin);
+  font-family: 'Noto Sans TC', sans-serif;
   color: inherit;
 }
 /* poly-btn 直式注音容器 */
@@ -621,7 +623,9 @@
   margin: 16px 0 14px;
 }
 .word-card__word {
-  font-family: var(--font-zhuyin);
+  /* 詞語主字：使用一般字體，避免 BpmfIVS 自動附加注音造成雙層注音 */
+  /* 若注音開啟，由 _renderWord() 產生的 .char-zhuyin.bpmf-font span 處理 */
+  font-family: var(--font-body);
   font-size: 2.8rem;
   font-weight: 700;
   color: #0E7490;
@@ -816,4 +820,14 @@
   .char-card__char-box { width:200px; height:200px; }
   .char-card__char-fallback { font-size:7rem; }
   .char-card__game-btn { font-size:1.1rem; }
+}
+
+/* ── 桌面（≥1024px）：限制 card-page 最大寬度 ── */
+@media (min-width:1024px) {
+  .card-page {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
 }

@@ -464,17 +464,56 @@ export class CardPage {
       example    = wordObj['例句'] || wordObj.example || ''
     }
 
+    // 找出詞語中的破音字及其所有讀音（供 poly-bar 使用）
+    // 只取詞語第一個破音字作為切換主體（與生字卡邏輯一致）
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    let polyChar = null
+    let polyCharProns = []
+    for (const c of [...String(word)]) {
+      const entry = allPolyphones.find(p => p['字'] === c || p.char === c)
+      if (entry?.pronunciations?.length > 1) {
+        polyChar = c
+        polyCharProns = entry.pronunciations
+        break
+      }
+    }
+    const hasPolyChar = polyChar && polyCharProns.length > 1
+
+    // 預設選中與詞語上下文匹配的讀音
+    if (hasPolyChar) {
+      const matchedIdx = polyCharProns.findIndex(
+        p => (p.words || []).includes(word)
+      )
+      this._wordPolyIdx = matchedIdx >= 0 ? matchedIdx : 0
+    } else {
+      this._wordPolyIdx = 0
+    }
+
     const wrap = document.getElementById('card-wrap')
     if (!wrap) return
+
+    const renderWordTitle = () => this._renderWordWithPolyIdx(word, polyChar, polyCharProns, this._wordPolyIdx)
 
     wrap.innerHTML = `
       <div class="word-card">
         <div class="word-card__main">
-          <div class="word-card__word bpmf-font">${this._escapeHtml(word)}</div>
+          <div class="word-card__word" id="word-card-title">${renderWordTitle()}</div>
           <button class="word-card__sound-btn" id="word-sound-btn" aria-label="播放詞語">
             ${AppState.settings?.soundOn !== false ? '🔊' : '🔇'}
           </button>
         </div>
+        ${hasPolyChar ? `
+          <div class="char-card__poly-bar" id="word-poly-bar">
+            ${polyCharProns.map((p, i) => `
+              <button class="poly-btn ${i === this._wordPolyIdx ? 'active' : ''}"
+                      data-word-pron-idx="${i}"
+                      aria-label="切換到${p.zhuyin}">
+                <span class="poly-btn__indicator">${i === this._wordPolyIdx ? '●' : '○'}</span>
+                <span class="poly-btn__zhuyin">${this._renderZhuyinVerticalInline(p.zhuyin)}</span>
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
         ${definition ? `<div class="word-card__def">【意思】${this._escapeHtml(definition)}</div>` : ''}
         ${example    ? `<div class="word-card__ex">【例句】${this._escapeHtml(example)}</div>` : ''}
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
@@ -485,6 +524,52 @@ export class CardPage {
     this._addListener('word-sound-btn', 'click', () => {
       if (AppState.settings?.soundOn !== false) AudioManager.playWord?.(word)
     })
+
+    // 詞語破音字切換
+    if (hasPolyChar) {
+      const polyBar = document.getElementById('word-poly-bar')
+      if (polyBar) {
+        const handler = (e) => {
+          const btn = e.target.closest('[data-word-pron-idx]')
+          if (!btn) return
+          const idx = Number(btn.dataset.wordPronIdx)
+          if (idx === this._wordPolyIdx) return
+          this._wordPolyIdx = idx
+          // 更新詞語標題注音
+          const titleEl = document.getElementById('word-card-title')
+          if (titleEl) titleEl.innerHTML = this._renderWordWithPolyIdx(word, polyChar, polyCharProns, idx)
+          // 更新按鈕狀態
+          polyBar.querySelectorAll('[data-word-pron-idx]').forEach(b => {
+            const i = Number(b.dataset.wordPronIdx)
+            b.classList.toggle('active', i === idx)
+            b.querySelector('.poly-btn__indicator').textContent = i === idx ? '●' : '○'
+          })
+        }
+        polyBar.addEventListener('click', handler)
+        this._listeners.push({ el: polyBar, type: 'click', handler })
+      }
+    }
+  }
+
+  /**
+   * _renderWordWithPolyIdx(word, polyChar, polyCharProns, idx)
+   * 渲染詞語標題，破音字依選定讀音索引顯示正確注音
+   */
+  _renderWordWithPolyIdx(word, polyChar, polyCharProns, idx) {
+    if (!AppState.zhuyinOn) return this._escapeHtml(word)
+    return [...String(word)].map(c => {
+      if (this._isMyChar(c)) return this._escapeHtml(c)
+      let zhuyin
+      if (polyChar && c === polyChar && polyCharProns.length > 0) {
+        zhuyin = polyCharProns[idx]?.zhuyin || polyCharProns[0]?.zhuyin || ''
+      } else {
+        zhuyin = this._findWordCharPron(c, word)
+      }
+      if (!zhuyin) return this._escapeHtml(c)
+      return `<span class="char-with-zhuyin">
+        ${this._escapeHtml(c)}<span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+      </span>`
+    }).join('')
   }
 
   // ─────────────────────────────────────────
@@ -862,7 +947,8 @@ export class CardPage {
       const char = chars[i]?.['字'] || chars[i]?.char
       if (char && !this._levelCache[char]) {
         try {
-          const info = await ForgettingCurve.getLevel?.(char)
+          // 使用 getLevelInfo() 取得完整物件，而非 getLevel()（只回傳字串）
+          const info = await ForgettingCurve.getLevelInfo?.(char)
           this._levelCache[char] = info
         } catch (e) {
           this._levelCache[char] = { systemLevel: 'medium', manualOverride: null, gapWarning: false }
@@ -875,7 +961,9 @@ export class CardPage {
   async _getLevelInfo(char) {
     if (this._levelCache[char]) return this._levelCache[char]
     try {
-      const info = await ForgettingCurve.getLevel?.(char) || {
+      // getLevelInfo() 回傳 { systemLevel, manualOverride, gapWarning }
+      // 注意：getLevel() 只回傳字串，不可在此使用
+      const info = await ForgettingCurve.getLevelInfo?.(char) || {
         systemLevel: 'medium', manualOverride: null, gapWarning: false
       }
       this._levelCache[char] = info
@@ -1116,18 +1204,19 @@ export class CardPage {
   }
 
   /**
-   * renderWord(word, targetChar) — 渲染詞語
+   * _renderWord(word, targetChar) — 渲染詞語（含上下文正確注音）
    * 注音規則：生字簿的字純文字；非生字簿的字依 zhuyinOn 決定
+   * 破音字以詞語為上下文查正確讀音（如「著涼」中「著」讀 ㄓㄠ）
    */
   _renderWord(word, targetChar) {
     if (!word) return ''
     const str = String(word)
     if (!AppState.zhuyinOn) return this._escapeHtml(str)
 
-    // 每個字分別判斷是否為生字簿字
+    // 每個字分別判斷是否為生字簿字；破音字依上下文詞語找正確讀音
     return [...str].map(c => {
       if (this._isMyChar(c)) return this._escapeHtml(c)
-      const zhuyin = this._findCharZhuyin(c)
+      const zhuyin = this._findWordCharPron(c, str)
       if (!zhuyin) return this._escapeHtml(c)
       return `<span class="char-with-zhuyin">
         ${this._escapeHtml(c)}<span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
@@ -1140,7 +1229,31 @@ export class CardPage {
     return (AppState.characters || []).some(c => (c['字'] || c.char) === char)
   }
 
-  /** 從 AppState.characters 快查某字的注音 */
+  /**
+   * _findWordCharPron(char, word) — 依詞語上下文取字的正確注音
+   * 優先從 polyphones.json 找包含此詞語的讀音（破音字上下文正確讀音）
+   * fallback：characters.json 第一讀音
+   */
+  _findWordCharPron(char, word) {
+    // 1. 先查 polyphones.json 是否為破音字
+    const allPolyphones = JSONLoader.get('polyphones') || []
+    const polyEntry = allPolyphones.find(p => p['字'] === char || p.char === char)
+    if (polyEntry?.pronunciations?.length > 0) {
+      // 找哪個讀音的 words 列表包含此詞語
+      const matched = polyEntry.pronunciations.find(
+        p => (p.words || []).includes(word)
+      )
+      if (matched) return matched.zhuyin
+      // 找不到匹配詞語，取第一個讀音
+      return polyEntry.pronunciations[0]?.zhuyin || ''
+    }
+    // 2. fallback：從 characters.json 取第一讀音
+    const allChars = JSONLoader.get('characters') || []
+    const entry = allChars.find(c => c['字'] === char || c.char === char)
+    return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
+  }
+
+  /** 從 AppState.characters 快查某字的注音（單音字用）*/
   _findCharZhuyin(char) {
     const found = (AppState.characters || []).find(c => (c['字'] || c.char) === char)
     const raw = found?.['注音'] || found?.pronunciation || ''

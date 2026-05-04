@@ -91,14 +91,15 @@ export class PolyphoneGame extends GameEngine {
 
     // 取得多音字資料（已由 JSONLoader 載入到 AppState.polyphones）
     const polyData = AppState.polyphones || {};
-    const allChars = AppState.characters || [];
+    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
+    const allChars = JSONLoader.get('characters') || [];
     const questions = [];
 
     for (const char of chars) {
       const poly = polyData[char];
       if (!poly || !poly.readings || poly.readings.length < 2) continue;
 
-      const charData = allChars.find(c => c.char === char);
+      const charData = allChars.find(c => (c['字'] || c.char) === char);
 
       // 從所有讀音中，選一個讀音作為本題目標
       // 優先選 fail_rate 最高的讀音（若有遺忘資料）
@@ -146,7 +147,7 @@ export class PolyphoneGame extends GameEngine {
       this._planeX = 50;
     }
 
-    const appEl = document.getElementById('app');
+    const appEl = this._getContainer();
     if (!appEl) return;
 
     appEl.innerHTML = this._buildHTML(q);
@@ -930,6 +931,16 @@ export class PolyphoneGame extends GameEngine {
       .pp-sky { height: 280px; }
       .pp-bubble { width: 58px; height: 58px; }
       .pp-bubble-text { font-size: 0.88rem; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .pp-sky           { max-width: 520px; margin: 0 auto; }
+        .pp-choices       { max-width: 520px; margin: 0 auto; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .pp-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

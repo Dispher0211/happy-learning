@@ -454,4 +454,22 @@
     margin-right: auto;
     width: 100%;
   }
+
+  /* idiom.js / sentence.js 使用 .game-container 作為根容器，桌面限寬 */
+  .game-container {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
+
+/* ── 遊戲共用：平板（600px–1023px）內容區置中 ── */
+@media (min-width: 600px) and (max-width: 1023px) {
+  /* idiom / sentence 使用 .game-container 根容器，平板限寬置中 */
+  .game-container {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }

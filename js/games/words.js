@@ -25,7 +25,8 @@
  */
 
 import { GameEngine } from './GameEngine.js';
-import { AppState } from '../state.js';
+import { AppState } from '../state.js'
+import { JSONLoader } from '../json_loader.js';
 
 // ─────────────────────────────────────────────
 // 賽車移動速度（px/ms）
@@ -87,19 +88,20 @@ export class WordsGame extends GameEngine {
       throw new Error('words: 題目字元為空');
     }
 
-    const allChars = AppState.characters || [];
+    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
+    const allChars = JSONLoader.get('characters') || [];
     // my_words 優先（家長自訂）
     const myWords = AppState.myWords || [];
     const questions = [];
 
     for (const char of chars) {
-      const charData = allChars.find(c => c.char === char);
+      const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
       // 取得詞語：優先 my_words，其次 characters.json 的 words
       let words = myWords.filter(w => w.includes(char));
       if (words.length === 0) {
-        words = (charData.words || []).slice(0, 4); // 最多4個
+        words = (charData.pronunciations?.[0]?.words || charData.words || []).slice(0, 4); // 最多4個
       }
       if (words.length === 0) {
         words = [char + '字']; // 備用詞語
@@ -183,7 +185,7 @@ export class WordsGame extends GameEngine {
     this._wordCards = [];
     this._currentQuestion = q;
 
-    const appEl = document.getElementById('app');
+    const appEl = this._getContainer();
     if (!appEl) return;
 
     appEl.innerHTML = this._buildHTML(q);
@@ -1024,6 +1026,16 @@ export class WordsGame extends GameEngine {
       .wd-track { height: 240px; }
       .wd-char { font-size: 2.2rem; }
       .wd-blank-word { font-size: 1.6rem; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .wd-char          { font-size: 3.8rem; }
+        .wd-choice-area   { max-width: 520px; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .wd-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

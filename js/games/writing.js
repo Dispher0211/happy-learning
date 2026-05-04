@@ -26,6 +26,7 @@ import { AppState } from '../state.js'
 import { AudioManager } from '../audio.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { HandwritingManager } from '../handwriting.js'
+import { JSONLoader } from '../json_loader.js'
 
 // ═══════════════════════════════════════════════════════════
 // WritingGame 主類別
@@ -155,7 +156,7 @@ export class WritingGame extends GameEngine {
     // 建立詞語顯示 HTML（□=手寫佔位符，其餘字依注音規則）
     const wordDisplayHTML = this._buildWordDisplayHTML(question)
 
-    const gameArea = document.getElementById('game-area')
+    const gameArea = this._getContainer()
     if (!gameArea) return
 
     gameArea.innerHTML = `
@@ -264,8 +265,8 @@ export class WritingGame extends GameEngine {
       } else {
         // 非生字簿字且注音開：加注音體（ruby）
         // 注音資料從 characters.json 查找；查無時僅顯示文字
-        const dictEntry = (AppState.characters ?? []).find(c => (c['字'] ?? c.char) === ch)
-        const zhuyin = dictEntry?.pronunciations?.[0]?.zhuyin ?? ''
+        const dictEntry = (JSONLoader.get('characters') || []).find(c => (c['字'] ?? c.char) === ch)
+        const zhuyin = dictEntry?.pronunciations?.[0]?.zhuyin ?? dictEntry?.['注音'] ?? ''
         if (zhuyin) {
           return `<ruby class="writing-char-ruby"><rb>${ch}</rb><rt class="zhuyin">${zhuyin}</rt></ruby>`
         } else {
@@ -1081,6 +1082,15 @@ function injectWritingStyles() {
       20%  { opacity: 1; }
       70%  { opacity: 1; }
       100% { opacity: 0; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .writing-game     { max-width: 520px; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .writing-game { max-width: 760px; margin: 0 auto; }
     }
   `
   document.head.appendChild(style)

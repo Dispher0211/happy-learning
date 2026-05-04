@@ -19,6 +19,7 @@ import { AppState }        from '../state.js'
 import { WrongQueue }      from '../wrong_queue.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { SyncManager }     from '../sync.js'
+import { getGameConfig }   from './GameConfig.js'
 
 // ── 星星發放規則 ──
 const GAME_STARS = {
@@ -86,6 +87,8 @@ export class GameEngine {
       return
     }
     this.questionIndex = 0
+    // 建立遊戲 layout（header 含 ✕ 退出 + 進度條），取得內容容器
+    this._setupGameLayout()
     await this.nextQuestion()
   }
 
@@ -269,6 +272,101 @@ export class GameEngine {
       el.setAttribute('aria-valuenow', answered)
       el.setAttribute('aria-valuemax', total)
     }
+    // 更新題號顯示
+    const counter = document.getElementById('game-counter')
+    if (counter) counter.textContent = `${Math.min(this.questionIndex, total)} / ${total}`
+  }
+
+  // ─────────────────────────────────────────────
+  // _setupGameLayout（建立遊戲頁面 layout）
+  // ─────────────────────────────────────────────
+
+  /**
+   * 在 #app 中建立遊戲共用頂部 + 內容容器：
+   *   ┌─────────────────────────────┐
+   *   │ ✕   遊戲名稱   3/10  ████  │  ← game-header（固定在頁面頂部）
+   *   ├─────────────────────────────┤
+   *   │       #game-content         │  ← 遊戲實際題目渲染區
+   *   └─────────────────────────────┘
+   * 各遊戲 renderQuestion() 透過 this._getContainer() 取得 #game-content
+   */
+  _setupGameLayout() {
+    const appEl = document.getElementById('app')
+    if (!appEl) return
+
+    const cfg = getGameConfig(this.gameId) || {}
+    const name = cfg.name || this.gameId
+    const icon = cfg.icon || '🎮'
+
+    appEl.innerHTML = `
+      <div id="game-layout" style="
+        display:flex; flex-direction:column; min-height:100vh;
+        background:var(--bg-main,#f0f4ff);
+      ">
+        <!-- 遊戲共用頂部（規格 2.12） -->
+        <div id="game-header" style="
+          display:flex; align-items:center; gap:8px;
+          padding:10px 14px 6px;
+          background:white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.08);
+          position:sticky; top:0; z-index:100;
+          flex-shrink:0;
+        ">
+          <!-- ✕ 退出按鈕 -->
+          <button id="game-exit-btn" aria-label="離開遊戲" style="
+            width:36px; height:36px; border-radius:50%;
+            background:#FEE2E2; border:none;
+            color:#DC2626; font-size:1.1rem; font-weight:900;
+            cursor:pointer; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            transition:background 0.15s;
+          ">✕</button>
+
+          <!-- 遊戲名稱 -->
+          <span style="
+            font-size:0.9rem; font-weight:800; color:#475569;
+            flex:1; text-align:center;
+          ">${icon} ${name}</span>
+
+          <!-- 題號 -->
+          <span id="game-counter" style="
+            font-size:0.85rem; font-weight:700; color:#94A3B8;
+            flex-shrink:0;
+          ">0 / ${this.totalQuestions}</span>
+        </div>
+
+        <!-- 進度條 -->
+        <div style="height:4px; background:#E2E8F0; flex-shrink:0;">
+          <div id="game-progress" style="
+            height:100%; width:0%;
+            background:linear-gradient(90deg,#6366F1,#8B5CF6);
+            transition:width 0.3s ease;
+          " aria-valuenow="0" aria-valuemax="${this.totalQuestions}" role="progressbar"></div>
+        </div>
+
+        <!-- 遊戲內容區 -->
+        <div id="game-content" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;"></div>
+      </div>
+    `
+
+    // 綁定 ✕ 退出按鈕
+    const exitBtn = document.getElementById('game-exit-btn')
+    if (exitBtn) {
+      const handler = () => globalThis.UIManager?.back?.()
+      exitBtn.addEventListener('click', handler)
+      this._listeners.push({ el: exitBtn, type: 'click', handler })
+    }
+
+    this.container = document.getElementById('game-content')
+  }
+
+  /**
+   * _getContainer() — 取得遊戲內容容器
+   * 各遊戲 renderQuestion() 應呼叫此方法取得渲染目標
+   * 若 game-content 不存在（相容舊版），fallback 到 #app
+   */
+  _getContainer() {
+    return this.container || document.getElementById('game-content') || document.getElementById('app')
   }
 
   // ─────────────────────────────────────────────

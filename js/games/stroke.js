@@ -24,6 +24,7 @@
 
 import { GameEngine } from './GameEngine.js';
 import { AppState } from '../state.js';
+import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─────────────────────────────────────────────
@@ -75,14 +76,15 @@ export class StrokeGame extends GameEngine {
       throw new Error('stroke: 題目字元為空');
     }
 
-    const allChars = AppState.characters || [];
+    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
+    const allCharsDict = JSONLoader.get('characters') || [];
     const questions = [];
 
     for (const char of chars) {
-      const charData = allChars.find(c => c.char === char);
+      const charData = allCharsDict.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      const strokes = charData.strokes || 5; // 總筆劃數
+      const strokes = charData.total_strokes || charData.strokes || 5; // 總筆劃數
 
       // 依筆劃數決定模式機率
       let mode;
@@ -102,7 +104,7 @@ export class StrokeGame extends GameEngine {
       questions.push({
         char,
         strokes,
-        pronunciation: charData.pronunciation || '',
+        pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
         level: charData.level || 'medium',
         mode,
         targetStrokeIndex, // 模式一出題筆劃（1-based）
@@ -125,7 +127,7 @@ export class StrokeGame extends GameEngine {
     this._quizCompleted = false;
     this._replayingAnimation = false;
 
-    const appEl = document.getElementById('app');
+    const appEl = this._getContainer();
     if (!appEl) return;
 
     appEl.innerHTML = this._buildHTML(q);
@@ -925,6 +927,16 @@ export class StrokeGame extends GameEngine {
     @media (max-width: 480px) {
       .sw-char-display { font-size: 3rem; }
       .sw-hw-container { width: 180px; height: 180px; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .sw-char-display  { font-size: 5rem; }
+        .sw-options-area  { max-width: 520px; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .sw-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

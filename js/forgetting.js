@@ -288,6 +288,33 @@ export const ForgettingCurve = {
   },
 
   /**
+   * getLevelInfo(character)
+   * 取得字的完整等級資訊（供 CardPage._renderLevelBar 使用）
+   * 回傳：{ systemLevel, manualOverride, gapWarning }
+   *   systemLevel:    系統判定等級（'easy_plus'|'easy'|'medium'|'hard'）
+   *   manualOverride: 手動覆蓋等級，無覆蓋時為 null
+   *   gapWarning:     系統 vs 手動差距 ≥ 2 級時為 true
+   */
+  async getLevelInfo(character) {
+    if (!AppState.uid) {
+      return { systemLevel: 'medium', manualOverride: null, gapWarning: false }
+    }
+    const charKey = encodeURIComponent(character)
+    const path    = `users/${AppState.uid}/progress/${charKey}`
+    try {
+      const data = await FirestoreAPI.read(path)
+      if (!data) return { systemLevel: 'medium', manualOverride: null, gapWarning: false }
+      return {
+        systemLevel:    data.system_level    || 'medium',
+        manualOverride: data.manual_override ? (data.manual_level || null) : null,
+        gapWarning:     data.show_gap_warning || false,
+      }
+    } catch (e) {
+      return { systemLevel: 'medium', manualOverride: null, gapWarning: false }
+    }
+  },
+
+  /**
    * clearManualOverride(character)
    * 清除手動覆蓋，恢復系統判定
    */

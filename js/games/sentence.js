@@ -112,7 +112,7 @@ export class SentenceGame extends GameEngine {
     this._lastResult   = null
     this._selectedFill = null
 
-    const app = document.getElementById('app')
+    const app = this._getContainer()
     if (!app) return
 
     // 頂部共用：題目資訊
@@ -996,7 +996,7 @@ export class SentenceGame extends GameEngine {
   // ──────────────────────────────────────────────────
   destroy() {
     // 呼叫父類別 _handleInterrupt（中斷時 wrongPool 加入 WrongQueue）
-    super.destroy?.()
+    super.destroy()
 
     // 清除手寫 Canvas 監聽器
     if (this._canvasEl) {

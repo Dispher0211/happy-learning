@@ -18,7 +18,8 @@
  */
 
 import { GameEngine } from './GameEngine.js';
-import { AppState } from '../state.js';
+import { AppState } from '../state.js'
+import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─────────────────────────────────────────────
@@ -68,11 +69,12 @@ export class ListenGame extends GameEngine {
       throw new Error('listen: 題目字元為空');
     }
 
-    const allChars = AppState.characters || [];
+    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
+    const allChars = JSONLoader.get('characters') || [];
     const questions = [];
 
     for (const char of chars) {
-      const charData = allChars.find(c => c.char === char);
+      const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
       // 決定模式（60/40）
@@ -83,8 +85,8 @@ export class ListenGame extends GameEngine {
 
       questions.push({
         char,
-        pronunciation: charData.pronunciation || '',
-        words: charData.words || [],
+        pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
+        words: charData.pronunciations?.[0]?.words || charData.words || [],
         level: charData.level || 'medium',
         mode,
         distractors, // 3個干擾
@@ -107,30 +109,30 @@ export class ListenGame extends GameEngine {
     if (mode === 1) {
       // 模式一：優先找同音字，補充形近/隨機
       const sameSound = allChars.filter(c =>
-        c.char !== char &&
+        (c['字'] || c.char) !== char &&
         c.pronunciation === charData.pronunciation
       );
       for (const c of sameSound) {
         if (result.length >= 3) break;
-        if (!used.has(c.char)) {
-          result.push(c.char);
-          used.add(c.char);
+        if (!used.has(c['字'] || c.char)) {
+          result.push(c['字'] || c.char);
+          used.add(c['字'] || c.char);
         }
       }
       // 補充隨機字
       const shuffled = [...allChars].sort(() => Math.random() - 0.5);
       for (const c of shuffled) {
         if (result.length >= 3) break;
-        if (!used.has(c.char)) {
-          result.push(c.char);
-          used.add(c.char);
+        if (!used.has(c['字'] || c.char)) {
+          result.push(c['字'] || c.char);
+          used.add(c['字'] || c.char);
         }
       }
     } else {
       // 模式二：找相似注音（替換聲調或聲母）
       const correctPron = charData.pronunciation || '';
       const similar = allChars
-        .filter(c => c.char !== char && c.pronunciation && c.pronunciation !== correctPron)
+        .filter(c => (c['字'] || c.char) !== char && c.pronunciation && c.pronunciation !== correctPron)
         .sort((a, b) => {
           // 優先選聲母相同但聲調不同的（干擾性更強）
           const aScore = a.pronunciation[0] === correctPron[0] ? 1 : 0;
@@ -171,7 +173,7 @@ export class ListenGame extends GameEngine {
     // 停止舊動畫
     this._stopFishAnimation();
 
-    const appEl = document.getElementById('app');
+    const appEl = this._getContainer();
     if (!appEl) return;
 
     // 正確答案文字（模式一=漢字，模式二=注音）
@@ -375,7 +377,7 @@ export class ListenGame extends GameEngine {
     } else {
       // 模式二：播放詞語（逐字播放）
       for (const c of this._currentWord) {
-        const charData = (AppState.characters || []).find(ch => ch.char === c);
+        const charData = (JSONLoader.get('characters') || []).find(ch => (ch['字'] || ch.char) === c);
         if (charData?.pronunciation) {
           await AudioManager.play(charData.pronunciation).catch(() => {});
           await new Promise(r => setTimeout(r, 100)); // 字間停頓
@@ -928,6 +930,18 @@ export class ListenGame extends GameEngine {
       .ls-fish-emoji { font-size: 1.6rem; }
       .ls-fish-label { font-size: 0.95rem; }
       .ls-question-text { font-size: 0.92rem; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .ls-aquarium      { height: 300px; }
+        .ls-fish-emoji    { font-size: 2.2rem; }
+        .ls-fish-label    { font-size: 1.15rem; }
+        .ls-question-text { font-size: 1.15rem; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .ls-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

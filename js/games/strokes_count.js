@@ -65,16 +65,16 @@ export class StrokesCountGame extends GameEngine {
       throw new Error('strokes_count: 題目字元為空，請確認 questionChars 已設定');
     }
 
-    // 從 AppState.characters（已由 JSONLoader 載入）取得筆劃資料
-    const allChars = AppState.characters || [];
+    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
+    const allChars = JSONLoader.get('characters') || [];
 
     const questions = [];
     for (const char of chars) {
-      const charData = allChars.find(c => c.char === char);
+      const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
       // 確保有總筆劃和部首筆劃資料
-      const totalStrokes = charData.strokes;          // 總筆劃數
+      const totalStrokes = charData.total_strokes || charData.strokes;          // 總筆劃數
       const radicalStrokes = charData.radical_strokes; // 部首筆劃數
       const radical = charData.radical;                // 部首字
 
@@ -85,7 +85,7 @@ export class StrokesCountGame extends GameEngine {
         totalStrokes,      // 總筆劃
         radicalStrokes,    // 部首筆劃
         radical,           // 部首
-        pronunciation: charData.pronunciation || '',
+        pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
         level: charData.level || 'medium',
       });
     }
@@ -106,7 +106,7 @@ export class StrokesCountGame extends GameEngine {
     this._phaseWrongCount = 0;
     this._hintPending = false;
 
-    const appEl = document.getElementById('app');
+    const appEl = this._getContainer();
     if (!appEl) return;
 
     // 取得遺忘等級，決定靶速度
@@ -919,6 +919,17 @@ export class StrokesCountGame extends GameEngine {
       .sc-target        { width: 64px; height: 64px; }
       .sc-target-face   { width: 64px; height: 64px; }
       .sc-target-number { font-size: 1.2rem; }
+    }
+    
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width: 600px) {
+        .sc-question-char { font-size: 3.8rem; }
+        .sc-archer-lane   { max-width: 520px; margin: 0 auto; }
+        .sc-answer-row    { max-width: 520px; margin: 0 auto; }
+      }
+/* ── RWD 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .sc-game { max-width: 760px; margin: 0 auto; }
     }
   `;
   document.head.appendChild(style);

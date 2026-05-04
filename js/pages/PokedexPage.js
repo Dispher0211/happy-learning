@@ -304,6 +304,10 @@ function injectStyle() {
     @keyframes pokedex-spin {
       to { transform: rotate(360deg); }
     }
+    /* ── 桌面（≥1024px）── */
+    @media (min-width: 1024px) {
+      .pokedex-page { max-width: 1200px; margin: 0 auto; width: 100%; }
+    }
   `
   document.head.appendChild(style)
 }

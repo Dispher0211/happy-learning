@@ -400,6 +400,16 @@
   overflow-y: auto;
 }
 
+/* 平板：彈窗寬度對齊 680px App 容器 */
+@media (min-width: 600px) {
+  .overlay-sheet { max-width: 680px; }
+}
+
+/* 桌面：彈窗寬度放寬至 800px */
+@media (min-width: 1024px) {
+  .overlay-sheet { max-width: 800px; }
+}
+
 /* 彈窗把手 */
 .overlay-sheet::before {
   content: '';

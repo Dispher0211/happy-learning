@@ -244,6 +244,16 @@ export class GameListPage {
         .gl-grid { grid-template-columns: repeat(3, 1fr); }
       }
 
+      /* ── 桌面（≥1024px）：限制最大寬度，置中 ── */
+      @media (min-width: 1024px) {
+        .gl-page {
+          max-width: 1200px;
+          margin-left: auto;
+          margin-right: auto;
+          width: 100%;
+        }
+      }
+
       .gl-game-btn {
         display: flex;
         flex-direction: column;

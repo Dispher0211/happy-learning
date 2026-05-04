@@ -425,25 +425,23 @@ const UIManager = {
       <span class="toast-icon" aria-hidden="true">${icon}</span>
       <span class="toast-msg">${this._escapeHtml(message)}</span>`
 
-    // 套用樣式
+    // 套用樣式（#toast-root 已處理 fixed 定位與 pointer-events:none）
     Object.assign(toast.style, {
-      display:       'flex',
-      alignItems:    'center',
-      gap:           '8px',
-      padding:       '12px 18px',
-      borderRadius:  '12px',
-      background:    bg,
-      color:         '#fff',
-      fontSize:      '14px',
-      fontFamily:    'sans-serif',
-      boxShadow:     '0 4px 16px rgba(0,0,0,0.18)',
-      marginBottom:  '8px',
-      opacity:       '0',
-      transform:     'translateY(-10px)',
-      transition:    'opacity 0.25s ease, transform 0.25s ease',
-      pointerEvents: 'none',
-      maxWidth:      '85vw',
-      wordBreak:     'break-word',
+      display:      'flex',
+      alignItems:   'center',
+      gap:          '8px',
+      padding:      '12px 18px',
+      borderRadius: '12px',
+      background:   bg,
+      color:        '#fff',
+      fontSize:     '14px',
+      fontFamily:   'sans-serif',
+      boxShadow:    '0 4px 16px rgba(0,0,0,0.18)',
+      opacity:      '0',
+      transform:    'translateY(-10px)',
+      transition:   'opacity 0.25s ease, transform 0.25s ease',
+      maxWidth:     '85vw',
+      wordBreak:    'break-word',
     })
 
     this._toastRoot.appendChild(toast)
@@ -456,13 +454,12 @@ const UIManager = {
       })
     })
 
-    // 自動消失
+    // 自動消失（timer 觸發後從 _toastTimers 移除，避免記憶體洩漏）
     const timer = setTimeout(() => {
       toast.style.opacity   = '0'
       toast.style.transform = 'translateY(-10px)'
-      setTimeout(() => {
-        toast.remove()
-      }, 300)
+      setTimeout(() => { toast.remove() }, 300)
+      this._toastTimers = this._toastTimers.filter(t => t !== timer)
     }, duration)
 
     this._toastTimers.push(timer)

@@ -117,9 +117,9 @@ export class RandomGame extends GameEngine {
    * 渲染隨機挑戰的外層 UI 框架（進度條、連續計數器、bonus 提示區）
    */
   _renderShell() {
-    const container = document.getElementById(this._containerId)
+    const container = this._getContainer()
     if (!container) {
-      console.error('[RandomGame] 找不到容器：', this._containerId)
+      console.error('[RandomGame] 找不到遊戲容器')
       return
     }
 
@@ -739,7 +739,7 @@ export class RandomGame extends GameEngine {
     }
 
     // 呼叫父類 destroy（包含 _handleInterrupt）
-    super.destroy?.()
+    super.destroy()
   }
 }
 

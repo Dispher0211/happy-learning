@@ -60,10 +60,13 @@ export const AudioManager = {
     this._stopVoice()
 
     try {
-      // 音檔命名格式：#U{hex}（非 encodeURIComponent）
-      const filename = [...zhuyin].map(c => `#U${c.codePointAt(0).toString(16).padStart(4,'0')}`).join('')
+      // 音檔命名格式：直接使用注音字元（與 GitHub Pages 實際檔名一致）
+      // 輕聲（˙）統一移至開頭，例如 ㄉㄜ˙ → ˙ㄉㄜ
+      const normalizedZhuyin = zhuyin.endsWith('˙')
+        ? '˙' + zhuyin.slice(0, -1)
+        : zhuyin
       await this._playAudioFile(
-        `${_pathPrefix}/audio/zhuyin/${filename}.ogg`,
+        `${_pathPrefix}/audio/zhuyin/${normalizedZhuyin}.ogg`,
         playId
       )
     } catch (_err) {

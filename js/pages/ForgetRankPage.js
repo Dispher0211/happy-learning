@@ -552,6 +552,10 @@ export class ForgetRankPage {
         margin: 8px 0;
         font-size: 16px;
       }
+      /* ── 桌面（≥1024px）── */
+      @media (min-width: 1024px) {
+        .forget-rank-page { max-width: 1200px; margin: 0 auto; width: 100%; }
+      }
     `
     document.head.appendChild(style)
   }
