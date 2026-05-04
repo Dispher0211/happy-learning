@@ -347,7 +347,7 @@
 .poly-btn__zhuyin .pv-tone-top { color: inherit; }
 .poly-btn.active { background: #7C3AED; color: white; border-color: #7C3AED; }
 
-/* 破音字詞語：每個字帶直式注音 */
+/* 詞語 chips：每個字 + 直式注音（不用 BpmfIVS，JS 明確查詢並渲染注音） */
 .char-card__word--poly {
   flex-direction: row;
   align-items: flex-end;
@@ -357,7 +357,7 @@
 .poly-word-chars {
   display: flex;
   flex-direction: row;
-  gap: 4px;
+  gap: 6px;
 }
 .poly-word-char {
   display: flex;
@@ -368,9 +368,16 @@
 .poly-word-han {
   font-size: 1.3rem;
   font-weight: 700;
-  font-family: var(--font-body);
+  font-family: var(--font-body);  /* poly 字預設 font-body：不自動注音 */
   line-height: 1;
+  color: #1E293B;
 }
+/* 一般字（非 poly）加了 bpmf-font class 後切換為 BpmfIVS 自動注音 */
+.poly-word-han.bpmf-font {
+  font-family: var(--font-zhuyin);
+}
+/* 多音字主字：粉紅色強調 */
+.poly-word-char--main .poly-word-han { color: #E11D48; }
 .poly-word-pron {
   display: inline-flex;
   align-items: flex-end;

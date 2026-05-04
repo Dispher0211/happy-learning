@@ -557,17 +557,19 @@ export class CardPage {
    */
   _renderWordWithPolyIdx(word, polyChar, polyCharProns, idx) {
     if (!AppState.zhuyinOn) return this._escapeHtml(word)
+    // 詞語卡標題：每個字都顯示注音（包含生字簿字），使用 char-with-zhuyin 直式格式
     return [...String(word)].map(c => {
-      if (this._isMyChar(c)) return this._escapeHtml(c)
       let zhuyin
       if (polyChar && c === polyChar && polyCharProns.length > 0) {
+        // 多音字主字：使用當前選定讀音索引
         zhuyin = polyCharProns[idx]?.zhuyin || polyCharProns[0]?.zhuyin || ''
       } else {
+        // 其他字：依詞語上下文查 polyphones.json，再 fallback characters.json
         zhuyin = this._findWordCharPron(c, word)
       }
       if (!zhuyin) return this._escapeHtml(c)
       return `<span class="char-with-zhuyin">
-        ${this._escapeHtml(c)}<span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+        <span>${this._escapeHtml(c)}</span><span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
       </span>`
     }).join('')
   }
@@ -874,16 +876,15 @@ export class CardPage {
    * _renderMeaningAndWords(meaning, words, char)
    *
    * 注音策略：
-   * ─ 預設：詞語中每個字用 BpmfIVS (bpmf-font) → 字型自動附加注音
-   * ─ 例外：該字出現在 polyphones.json → 改用 font-body（無自動注音）
-   *         + 右側插入粉紅色直式注音（依詞語上下文選正確讀音）
-   * 範例：著涼 → 著(font-body+ㄓㄠ直式) 涼(BpmfIVS自動注音)
+   * ─ 詞語中不含 polyphones 字 → 整個 chip 用 bpmf-font（BpmfIVS 自動注音）
+   * ─ 詞語中含 polyphones 字   → 混合渲染：
+   *     · poly 字：font-body + JS 直式注音（主字取當前 tab 讀音；其他 poly 字取詞語上下文讀音）
+   *     · 其他字：bpmf-font（BpmfIVS 自動注音）
    */
   _renderMeaningAndWords(meaning, words, char) {
     const cleanMeaning = (meaning || '').trim()
     const isPolyphonic  = this._pronunciations.length > 1
 
-    // 取 polyphones 字表，用於判斷任意字是否為破音字
     const allPolyphones = JSONLoader.get('polyphones') || []
     const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
 
@@ -908,7 +909,7 @@ export class CardPage {
                </span>`
              }
 
-             // ── 混合模式：逐字判斷 ──
+             // ── 混合模式：poly 字用 JS 注音，其他字用 BpmfIVS ──
              const charSpans = [...wStr].map(c => {
                if (!isPolyChar(c)) {
                  // 一般字 → BpmfIVS 自動注音
@@ -916,11 +917,12 @@ export class CardPage {
                    <span class="poly-word-han bpmf-font">${this._escapeHtml(c)}</span>
                  </span>`
                }
-               // 破音字 → font-body + 粉紅直式注音
+               // poly 字 → font-body + 粉紅直式注音
                const pron = (isPolyphonic && c === char)
                  ? (this._pronunciations[this._pronIdx] || '')
                  : this._findWordCharPron(c, wStr)
-               return `<span class="poly-word-char">
+               const isMain = (c === char)
+               return `<span class="poly-word-char${isMain ? ' poly-word-char--main' : ''}">
                  <span class="poly-word-han">${this._escapeHtml(c)}</span>
                  ${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}
                </span>`
@@ -1244,33 +1246,14 @@ export class CardPage {
   }
 
   /**
-   * _renderWord(word, targetChar) — 渲染詞語（用於詞語卡標題 / _renderMeaningAndWords 單音路徑）
-   *
-   * 策略（與 _renderMeaningAndWords 一致）：
-   * ─ 注音關閉：純文字
-   * ─ 注音開啟：
-   *   非 poly 字 → BpmfIVS 自動注音（回傳文字，由父容器 bpmf-font 處理）
-   *   poly 字    → font-body + 粉紅直式注音 span
+   * _renderWord(word, targetChar) — 渲染詞語（純 BpmfIVS 路徑的 fallback）
+   * 注音開啟時整個詞語用 bpmf-font 自動注音（此函數只在無 poly 字時被呼叫）
    */
   _renderWord(word, targetChar) {
     if (!word) return ''
     const str = String(word)
     if (!AppState.zhuyinOn) return this._escapeHtml(str)
-
-    const allPolyphones = JSONLoader.get('polyphones') || []
-    const isPolyChar = c => allPolyphones.some(p => (p['字'] || p.char) === c)
-
-    return [...str].map(c => {
-      if (!isPolyChar(c)) {
-        // 一般字：直接輸出，由父層 bpmf-font 自動注音
-        return `<span class="bpmf-font">${this._escapeHtml(c)}</span>`
-      }
-      // 破音字：font-body + 粉紅直式注音
-      const pron = this._findWordCharPron(c, str)
-      return `<span class="char-with-zhuyin">
-        <span>${this._escapeHtml(c)}</span>${pron ? `<span class="char-zhuyin bpmf-font">${this._escapeHtml(pron)}</span>` : ''}
-      </span>`
-    }).join('')
+    return `<span class="bpmf-font">${this._escapeHtml(str)}</span>`
   }
 
   /** 判斷是否為生字簿字 */
