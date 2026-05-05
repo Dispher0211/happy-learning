@@ -250,10 +250,11 @@ export class CardPage {
       mergedPronunciations = polyEntry.pronunciations.map(pp => {
         const charPron = charProns.find(cp => cp.zhuyin === pp.zhuyin || normZ(cp.zhuyin) === normZ(pp.zhuyin))
         return {
-          zhuyin:  pp.zhuyin,
-          label:   pp.label   || charPron?.label   || '',
-          meaning: charPron?.meaning || pp.label   || '',
-          words:   pp.words   || charPron?.words   || [],
+          zhuyin:      pp.zhuyin,
+          label:       pp.label       || charPron?.label   || '',
+          meaning:     charPron?.meaning || pp.label       || '',
+          words:       pp.words       || charPron?.words   || [],
+          definitions: charPron?.definitions || [],   // ← 加入教育部字典定義
         }
       })
     }
