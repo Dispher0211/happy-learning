@@ -238,12 +238,7 @@ export class CardPage {
     const polyEntry = allPolyphones.find(p => p['字'] === char || p.char === char)
 
     // 將 polyphones.json 的讀音與 characters.json 的 meaning 合併
-    // normZ：統一輕聲˙到開頭，解決 polyphones「ㄓㄜ˙」與 characters「˙ㄓㄜ」不一致
-    // normZ: 統一輕聲位置（˙後→˙前）＋統一輕聲符號（U+2027‧→U+02D9˙）
-    const normZ = z => {
-      const s = z.replace(/\u2027/g, '˙')
-      return s.endsWith('˙') ? '˙' + s.slice(0, -1) : s
-    }
+    const normZ = z => { const s = z.replace(/\u2027/g,'˙'); return s.endsWith('˙') ? '˙'+s.slice(0,-1) : s }
     let mergedPronunciations = null
     if (polyEntry?.pronunciations?.length > 0) {
       const charProns = dictEntry?.pronunciations || []
@@ -254,7 +249,7 @@ export class CardPage {
           label:       pp.label       || charPron?.label   || '',
           meaning:     charPron?.meaning || pp.label       || '',
           words:       pp.words       || charPron?.words   || [],
-          definitions: charPron?.definitions || [],   // ← 加入教育部字典定義
+          definitions: charPron?.definitions || [],
         }
       })
     }
@@ -414,7 +409,7 @@ export class CardPage {
     this._addListener('card-words-section', 'click', (e) => {
       const wordEl = e.target.closest('.char-card__word')
       if (!wordEl) return
-      const word = wordEl.dataset.word || wordEl.innerText.replace('🔊', '').trim()
+      const word = wordEl.innerText.replace('🔊', '').trim()
       if (word && AppState.settings?.soundOn !== false) {
         AudioManager.playWord?.(word)
       }
@@ -565,39 +560,30 @@ export class CardPage {
   _renderWordWithPolyIdx(word, polyChar, polyCharProns, idx) {
     if (!AppState.zhuyinOn) return this._escapeHtml(word)
 
-    // 詞語卡標題：使用教育部資料的逐字注音
-    // 先嘗試從 characters.json definitions 找這個詞的 ex 資料
-    const allChars = JSONLoader.get('characters') || []
-    const findWordEx = (w) => {
-      for (const entry of allChars) {
-        for (const p of (entry.pronunciations || [])) {
-          for (const d of (p.definitions || [])) {
-            const ex = (d.ex || []).find(e => e.w === w)
-            if (ex) return ex
-          }
-        }
-      }
-      return null
-    }
-
-    const ex = findWordEx(String(word))
-    if (ex?.chars?.length > 0) {
-      // 使用教育部資料的精確注音
-      return ex.chars.map(({c, z}) => {
-        const isPoly = polyChar && c === polyChar
-        return this._moeCZ(c, z, isPoly)
-      }).join('')
-    }
-
-    // fallback：自行查注音
     return [...String(word)].map(c => {
       let zhuyin
+
       if (polyChar && c === polyChar && polyCharProns.length > 0) {
         zhuyin = polyCharProns[idx]?.zhuyin || polyCharProns[0]?.zhuyin || ''
       } else {
         zhuyin = this._findWordCharPron(c, word)
       }
-      return this._moeCZ(c, zhuyin, polyChar && c === polyChar)
+
+      if (!zhuyin) return this._escapeHtml(c)
+
+      const isCustom = polyChar && c === polyChar
+
+      if (isCustom) {
+        return `<span class="multi-tone-char">
+          <span class="multi-tone-base">${this._escapeHtml(c)}</span>
+          <span class="multi-tone-bpmf bpmf-font">${this._renderZhuyinVerticalInline(zhuyin)}</span>
+        </span>`
+      }
+
+      return `<span class="char-with-zhuyin">
+        ${this._escapeHtml(c)}
+        <span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+      </span>`
     }).join('')
   }
 
@@ -890,68 +876,6 @@ export class CardPage {
    * _getMeaningForPron(charObj, pronIdx) — 取得指定讀音的字義說明
    * 優先從 pronunciations[pronIdx].meaning 取，fallback 到 '解釋' 字串
    */
-
-  // ═══════════════════════════════════════
-  // 注音渲染：使用教育部國語小字典注音資料
-  // ═══════════════════════════════════════
-
-  /**
-   * _moeZ(zhuyin) — 將注音字串分拆為垂直排列的 HTML
-   * ㄌㄧㄤˊ → <span>ㄌ</span><span>ㄧ</span><span>ㄤ</span><span class="mz-tone">ˊ</span>
-   */
-  _moeZ(z) {
-    if (!z) return ''
-    const tones = 'ˊˇˋ˙'
-    return [...z].map(ch =>
-      tones.includes(ch)
-        ? `<span class="mz-tone">${ch}</span>`
-        : `<span>${ch}</span>`
-    ).join('')
-  }
-
-  /**
-   * _moeCZ(char, zhuyin, isPoly) — 漢字 + 右側直式注音
-   * isPoly → 注音粉紅色
-   */
-  _moeCZ(c, z, isPoly = false) {
-    if (!AppState.zhuyinOn) return `<span class="mz-han">${this._escapeHtml(c)}</span>`
-    const cls = isPoly ? 'mz-unit mz-unit--poly' : 'mz-unit'
-    const zHtml = z ? `<span class="mz-z">${this._moeZ(z)}</span>` : ''
-    return `<span class="${cls}"><span class="mz-han">${this._escapeHtml(c)}</span>${zHtml}</span>`
-  }
-
-  /**
-   * _renderMoeAnn(ann, mainChar) — 渲染 ann 陣列（字義說明文字）
-   * ann = [{c:'受',z:'ㄕㄡˋ'} | {p:'、'}]
-   */
-  _renderMoeAnn(ann, mainChar) {
-    if (!ann || !ann.length) return ''
-    return ann.map(t => {
-      if (t.p !== undefined) return `<span class="mz-punct">${this._escapeHtml(t.p)}</span>`
-      return this._moeCZ(t.c, t.z, t.c === mainChar)
-    }).join('')
-  }
-
-  /**
-   * _renderMoeChip(exObj, mainChar) — 渲染詞語 chip
-   * exObj = { w: '著涼', chars: [{c:'著',z:'ㄓㄠ'},{c:'涼',z:'ㄌㄧㄤˊ'}] }
-   */
-  _renderMoeChip(exObj, mainChar) {
-    const word = exObj.w || ''
-    const chars = exObj.chars || []
-    // If chars array exists, use annotated version; else fall back to plain word
-    let inner
-    if (chars.length > 0 && AppState.zhuyinOn) {
-      inner = chars.map(({c, z}) => this._moeCZ(c, z, c === mainChar)).join('')
-    } else {
-      inner = this._escapeHtml(word)
-    }
-    return `<span class="char-card__word" data-word="${this._escapeHtml(word)}">
-      <span class="word-text mz-word">${inner}</span>
-      <span class="word-sound-icon">🔊</span>
-    </span>`
-  }
-
   _getMeaningForPron(charObj, pronIdx) {
     const prons = charObj['pronunciations'] || charObj.pronunciations || []
     if (prons.length > 0 && prons[pronIdx]) {
@@ -961,47 +885,48 @@ export class CardPage {
     return charObj['解釋'] || charObj.definition || ''
   }
 
+  /**
+   * _renderMeaningAndWords(meaning, words, char) — 渲染字義說明 + 詞語 chips
+   * 破音字時在詞語下方顯示文字注音（從字典查每個字的注音）
+   */
   _renderMeaningAndWords(meaning, words, char) {
-    // 優先使用 characters.json 的 definitions 陣列（含注音 ann）
+    const isPolyphonic = this._pronunciations.length > 1
+
+    // helper：渲染一組詞語 chips（排版不變）
+    const renderChips = (chipWords) => {
+      if (!chipWords.length) return ''
+      return `<div class="char-card__words">${chipWords.map(w => {
+        if (isPolyphonic) {
+          const charSpans = [...String(w)].map(c => {
+            if (this._isMyChar(c)) return `<span class="poly-word-char"><span class="poly-word-han">${this._escapeHtml(c)}</span></span>`
+            const pron = c === char ? (this._pronunciations[this._pronIdx] || '') : this._getCharPron(c)
+            return `<span class="poly-word-char"><span class="poly-word-han">${this._escapeHtml(c)}</span>${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}</span>`
+          }).join('')
+          return `<span class="char-card__word char-card__word--poly" data-word="${this._escapeHtml(String(w))}"><span class="poly-word-chars">${charSpans}</span><span class="word-sound-icon">🔊</span></span>`
+        }
+        return `<span class="char-card__word" data-word="${this._escapeHtml(String(w))}"><span class="word-text">${this._renderWord(w, char)}</span><span class="word-sound-icon">🔊</span></span>`
+      }).join('')}</div>`
+    }
+
+    // 優先使用 definitions 陣列（多義分組）
     const pron = (this._currentChar?.pronunciations || [])[this._pronIdx]
     const defs = pron?.definitions
-
     if (defs && defs.length > 0) {
-      // ── 新版：使用教育部注音資料 ──
       return defs.map((d, i) => {
-        const numHtml = `<span class="char-card__meaning-num">${i + 1}</span>`
-        const annHtml = d.ann?.length
-          ? `<p class="char-card__meaning-text">${this._renderMoeAnn(d.ann, char)}</p>`
-          : (d.sense ? `<p class="char-card__meaning-text">${this._escapeHtml(d.sense)}</p>` : '')
-        const chips = (d.ex || [])
-          .filter(e => e.w && e.w.length > 1)
-          .map(e => this._renderMoeChip(e, char))
-          .join('')
-        const chipsHtml = chips
-          ? `<div class="char-card__words" id="card-words-${i}">${chips}</div>`
+        const senseHtml = d.sense
+          ? `<p class="char-card__meaning-text">${this._escapeHtml(d.sense)}</p>`
           : ''
-        return `<div class="char-card__meaning-row">${numHtml}${annHtml}${chipsHtml}</div>`
+        const chipWords = (d.ex || []).map(e => e.w).filter(w => w && w.length > 1)
+        return `<div class="char-card__meaning-row">
+          <span class="char-card__meaning-num">${i + 1}</span>
+          ${senseHtml}${renderChips(chipWords)}
+        </div>`
       }).join('')
     }
 
-    // ── fallback：舊版邏輯 ──
+    // fallback：舊版單組顯示
     const cleanMeaning = (meaning || '').trim()
-    const isPolyphonic = this._pronunciations.length > 1
-    const meaningHtml = cleanMeaning
-      ? `<div class="char-card__meaning-row">
-           <span class="char-card__meaning-num">1</span>
-           <p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p>
-         </div>`
-      : ''
-    const wordsHtml = words.length > 0
-      ? `<div class="char-card__words" id="card-words">
-           ${words.map(w => `<span class="char-card__word" data-word="${this._escapeHtml(String(w))}">
-             <span class="word-text">${this._escapeHtml(String(w))}</span>
-             <span class="word-sound-icon">🔊</span>
-           </span>`).join('')}
-         </div>`
-      : ''
-    return meaningHtml + wordsHtml
+    return `${cleanMeaning ? `<div class="char-card__meaning-row"><span class="char-card__meaning-num">1</span><p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p></div>` : ''}${words.length ? renderChips(words) : ''}`
   }
 
   /** 查單一字的第一個讀音注音（用於破音字詞語顯示） */
@@ -1310,31 +1235,47 @@ export class CardPage {
     </span>`
   }
 
+
+  /**
+   * 渲染混合注音：
+   * - 多音字：粉紅色直式注音
+   * - 一般字：BpmfIVS/ruby 樣式
+   */
   _renderMixedWord(word) {
     if (!word) return ''
     const str = String(word)
-    if (!AppState.zhuyinOn) return this._escapeHtml(str)
 
-    // 優先從 characters.json definitions 找詞語的精確注音
-    const allChars = JSONLoader.get('characters') || []
-    for (const entry of allChars) {
-      for (const p of (entry.pronunciations || [])) {
-        for (const d of (p.definitions || [])) {
-          const ex = (d.ex || []).find(e => e.w === str)
-          if (ex?.chars?.length > 0) {
-            return ex.chars.map(({c, z}) => this._moeCZ(c, z, false)).join('')
-          }
-        }
-      }
-    }
-
-    // fallback：用 _findWordCharPron 逐字查
     return [...str].map(c => {
-      const z = this._findWordCharPron(c, str)
-      return this._moeCZ(c, z, false)
+      const zhuyin = this._findWordCharPron(c, str)
+      if (!zhuyin) return this._escapeHtml(c)
+
+      const allPolyphones = JSONLoader.get('polyphones') || []
+      const polyEntry = allPolyphones.find(
+        p => (p['字'] || p.char) === c &&
+             (p.pronunciations || []).some(x => (x.words || []).includes(str))
+      )
+
+      // 多音字 → 粉紅色直式
+      if (polyEntry) {
+        return `<span class="multi-tone-char">
+          <span class="multi-tone-base">${this._escapeHtml(c)}</span>
+          <span class="multi-tone-bpmf bpmf-font">${this._renderZhuyinVerticalInline(zhuyin)}</span>
+        </span>`
+      }
+
+      // 一般字 → ruby/BpmfIVS
+      return `<span class="char-with-zhuyin">
+        ${this._escapeHtml(c)}
+        <span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+      </span>`
     }).join('')
   }
 
+  /**
+   * _renderWord(word, targetChar) — 渲染詞語（含上下文正確注音）
+   * 注音規則：生字簿的字純文字；非生字簿的字依 zhuyinOn 決定
+   * 破音字以詞語為上下文查正確讀音（如「著涼」中「著」讀 ㄓㄠ）
+   */
   _renderWord(word, targetChar) {
     if (!word) return ''
     const str = String(word)
