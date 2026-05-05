@@ -876,6 +876,26 @@ export class CardPage {
    * _getMeaningForPron(charObj, pronIdx) — 取得指定讀音的字義說明
    * 優先從 pronunciations[pronIdx].meaning 取，fallback 到 '解釋' 字串
    */
+
+  /**
+   * _renderAnn(ann, cls) — 渲染 ann 陣列為帶直式注音的行內文字
+   * ann = [{c:'圓',z:'ㄩㄢˊ'} | {p:'、'}]
+   * cls = 'ann' (字義說明) or 'chip-ann' (詞語chip)
+   */
+  _renderAnn(ann, cls = 'ann') {
+    if (!ann || !ann.length) return ''
+    if (!AppState.zhuyinOn) {
+      return ann.map(t => this._escapeHtml(t.c || t.p || '')).join('')
+    }
+    return ann.map(t => {
+      if (t.p !== undefined) {
+        return `<span class="${cls}-punct">${this._escapeHtml(t.p)}</span>`
+      }
+      const pronHtml = t.z ? this._renderZhuyinVerticalInline(t.z) : ''
+      return `<span class="${cls}-unit"><span class="${cls}-han">${this._escapeHtml(t.c)}</span>${pronHtml}</span>`
+    }).join('')
+  }
+
   _getMeaningForPron(charObj, pronIdx) {
     const prons = charObj['pronunciations'] || charObj.pronunciations || []
     if (prons.length > 0 && prons[pronIdx]) {
@@ -890,43 +910,49 @@ export class CardPage {
    * 破音字時在詞語下方顯示文字注音（從字典查每個字的注音）
    */
   _renderMeaningAndWords(meaning, words, char) {
-    const isPolyphonic = this._pronunciations.length > 1
-
-    // helper：渲染一組詞語 chips（排版不變）
-    const renderChips = (chipWords) => {
-      if (!chipWords.length) return ''
-      return `<div class="char-card__words">${chipWords.map(w => {
-        if (isPolyphonic) {
-          const charSpans = [...String(w)].map(c => {
-            if (this._isMyChar(c)) return `<span class="poly-word-char"><span class="poly-word-han">${this._escapeHtml(c)}</span></span>`
-            const pron = c === char ? (this._pronunciations[this._pronIdx] || '') : this._getCharPron(c)
-            return `<span class="poly-word-char"><span class="poly-word-han">${this._escapeHtml(c)}</span>${pron ? `<span class="poly-word-pron">${this._renderZhuyinVerticalInline(pron)}</span>` : ''}</span>`
+    // helper：渲染一組詞語 chips（使用 ex 的 chars 陣列帶注音）
+    const renderChips = (exList) => {
+      if (!exList.length) return ''
+      return `<div class="char-card__words">${exList.map(e => {
+        const w = typeof e === 'string' ? e : e.w
+        // 用 ann 陣列或 chars 陣列渲染帶注音的詞語
+        const chars = typeof e === 'object' ? (e.chars || []) : []
+        let inner
+        if (chars.length > 0 && AppState.zhuyinOn) {
+          inner = chars.map(({c, z}) => {
+            const pronHtml = z ? this._renderZhuyinVerticalInline(z) : ''
+            return `<span class="chip-ann-unit"><span class="chip-ann-han">${this._escapeHtml(c)}</span>${pronHtml}</span>`
           }).join('')
-          return `<span class="char-card__word char-card__word--poly" data-word="${this._escapeHtml(String(w))}"><span class="poly-word-chars">${charSpans}</span><span class="word-sound-icon">🔊</span></span>`
+        } else {
+          inner = this._escapeHtml(w)
         }
-        return `<span class="char-card__word" data-word="${this._escapeHtml(String(w))}"><span class="word-text">${this._renderWord(w, char)}</span><span class="word-sound-icon">🔊</span></span>`
+        return `<span class="char-card__word" data-word="${this._escapeHtml(w)}">
+          <span class="word-text chip-ann">${inner}</span>
+          <span class="word-sound-icon">🔊</span>
+        </span>`
       }).join('')}</div>`
     }
 
-    // 優先使用 definitions 陣列（多義分組）
+    // 優先使用 definitions 陣列（多義分組，含 ann 完整注音）
     const pron = (this._currentChar?.pronunciations || [])[this._pronIdx]
     const defs = pron?.definitions
     if (defs && defs.length > 0) {
       return defs.map((d, i) => {
-        const senseHtml = d.sense
-          ? `<p class="char-card__meaning-text">${this._escapeHtml(d.sense)}</p>`
-          : ''
-        const chipWords = (d.ex || []).map(e => e.w).filter(w => w && w.length > 1)
+        // 字義說明：用 ann 陣列渲染帶注音的說明文字
+        const annHtml = d.ann?.length
+          ? `<p class="char-card__meaning-text ann-text">${this._renderAnn(d.ann, 'ann')}</p>`
+          : (d.sense ? `<p class="char-card__meaning-text">${this._escapeHtml(d.sense)}</p>` : '')
         return `<div class="char-card__meaning-row">
           <span class="char-card__meaning-num">${i + 1}</span>
-          ${senseHtml}${renderChips(chipWords)}
+          ${annHtml}${renderChips(d.ex || [])}
         </div>`
       }).join('')
     }
 
-    // fallback：舊版單組顯示
+    // fallback
     const cleanMeaning = (meaning || '').trim()
-    return `${cleanMeaning ? `<div class="char-card__meaning-row"><span class="char-card__meaning-num">1</span><p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p></div>` : ''}${words.length ? renderChips(words) : ''}`
+    const fallbackChips = words.map(w => ({w, chars:[]}))
+    return `${cleanMeaning ? `<div class="char-card__meaning-row"><span class="char-card__meaning-num">1</span><p class="char-card__meaning-text">${this._escapeHtml(cleanMeaning)}</p></div>` : ''}${fallbackChips.length ? renderChips(fallbackChips) : ''}`
   }
 
   /** 查單一字的第一個讀音注音（用於破音字詞語顯示） */

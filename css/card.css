@@ -901,3 +901,63 @@
     font-size: 0.52em;
   }
 }
+
+/* ── 字義說明行內注音（ann-unit）──
+   每個漢字 + 右側直式 pv-wrap 注音，字號比 chip 更小 */
+.ann-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.6;
+}
+.ann-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.ann-han {
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  line-height: 1;
+  color: #1E3A5F;
+}
+.ann-unit .pv-wrap { margin-left: 1px; }
+.ann-unit .pv-char { font-size: 0.52rem; line-height: 1.1; }
+.ann-unit .pv-tone-side { font-size: 0.52rem; }
+.ann-unit .pv-tone-top { font-size: 0.55rem; top: -0.4em; }
+.ann-punct {
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  color: #1E3A5F;
+  line-height: 1.6;
+}
+
+/* ── 詞語 chip 行內注音（chip-ann-unit）──
+   比字義說明稍大 */
+.chip-ann {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+.chip-ann-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.chip-ann-han {
+  font-size: 1.1rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: #1E293B;
+  line-height: 1;
+}
+.chip-ann-unit .pv-wrap { margin-left: 1px; }
+.chip-ann-unit .pv-char { font-size: 0.55rem; line-height: 1.1; }
+.chip-ann-unit .pv-tone-side { font-size: 0.55rem; }
+.chip-ann-unit .pv-tone-top { font-size: 0.58rem; top: -0.4em; }
+
