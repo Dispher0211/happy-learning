@@ -911,8 +911,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 2px 1px;
-  line-height: 2;
+  gap: 4px 2px;
+  line-height: 2.8;    /* 為直式注音留出垂直空間，避免上下行覆蓋 */
 }
 .ann-unit {
   display: inline-flex;
@@ -922,17 +922,17 @@
   gap: 0;
 }
 .ann-han {
-  font-size: 1.0rem;
+  font-size: 1.25rem;     /* 加大讓三符號注音不超出 */
   font-family: var(--font-body);
   font-weight: 500;
   line-height: 1;
   color: #1E3A5F;
 }
 .ann-punct {
-  font-size: 1.0rem;
+  font-size: 1.25rem;
   font-family: var(--font-body);
   color: #1E3A5F;
-  line-height: 2;
+  line-height: 2.8;
   margin: 0 1px;
 }
 
@@ -952,7 +952,7 @@
   gap: 0;
 }
 .chip-ann-han {
-  font-size: 1.15rem;
+  font-size: 1.3rem;     /* 加大讓三符號注音不超出 */
   font-family: var(--font-body);
   font-weight: 700;
   color: #1E293B;
@@ -1130,18 +1130,18 @@
 .poly-word-pron .pv2-dot   { font-size: 0.52rem; color: #E11D48; top: -0.5em; }
 .poly-word-pron .pv2-col   { gap: 0px; }
 
-/* 字義說明（ann-unit，漢字 1.1rem 旁）*/
+/* 字義說明（ann-unit，漢字 1.25rem 旁）*/
 .ann-unit .pv2-sym,
-.ann-unit .pv2-empty { font-size: 0.46rem; }
-.ann-unit .pv2-tone  { font-size: 0.46rem; }
-.ann-unit .pv2-dot   { font-size: 0.46rem; top: -0.4em; }
+.ann-unit .pv2-empty { font-size: 0.48rem; }
+.ann-unit .pv2-tone  { font-size: 0.48rem; }
+.ann-unit .pv2-dot   { font-size: 0.48rem; top: -0.45em; }
 .ann-unit .pv2-col   { gap: 0px; }
 
-/* chip-ann-unit（漢字 1.2rem 旁）*/
+/* chip-ann-unit（漢字 1.3rem 旁）*/
 .chip-ann-unit .pv2-sym,
-.chip-ann-unit .pv2-empty { font-size: 0.5rem; }
-.chip-ann-unit .pv2-tone  { font-size: 0.5rem; }
-.chip-ann-unit .pv2-dot   { font-size: 0.5rem; top: -0.4em; }
+.chip-ann-unit .pv2-empty { font-size: 0.52rem; }
+.chip-ann-unit .pv2-tone  { font-size: 0.52rem; }
+.chip-ann-unit .pv2-dot   { font-size: 0.52rem; top: -0.45em; }
 .chip-ann-unit .pv2-col   { gap: 0px; }
 
 /* 部首（漢字 1rem 旁）*/

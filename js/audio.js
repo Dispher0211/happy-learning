@@ -66,7 +66,7 @@ export const AudioManager = {
         ? '˙' + zhuyin.slice(0, -1)
         : zhuyin
       await this._playAudioFile(
-        `${_pathPrefix}/audio/zhuyin/${normalizedZhuyin}.ogg`,
+        `${_pathPrefix}/audio/zhuyin/${encodeURIComponent(normalizedZhuyin)}.ogg`,
         playId
       )
     } catch (_err) {
