@@ -303,7 +303,7 @@
 .pv-wrap {
   display: inline-flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-end;  /* 注音欄對齊漢字底部，介音不偏高 */
   position: relative;
   line-height: 1;
 }
@@ -325,7 +325,7 @@
   font-size: 0.85rem;
   font-weight: 900;
   font-family: 'Noto Sans TC', sans-serif;
-  align-self: center;
+  align-self: flex-end;  /* 聲調對齊注音欄底部 */
   margin-left: 1px;
   color: inherit;
 }
@@ -642,14 +642,17 @@
   margin: 16px 0 14px;
 }
 .word-card__word {
-  /* 詞語主字：使用一般字體，避免 BpmfIVS 自動附加注音造成雙層注音 */
-  /* 若注音開啟，由 _renderWord() 產生的 .char-zhuyin.bpmf-font span 處理 */
   font-family: var(--font-body);
   font-size: 2.8rem;
   font-weight: 700;
   color: #0E7490;
-  letter-spacing: 0.1em;
-  line-height: 1.2;
+  letter-spacing: 0;
+  line-height: 1;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;  /* 各字對齊底部，注音從底部往上生長 */
+  flex-wrap: wrap;
+  gap: 2px;
 }
 .word-card__sound-btn {
   background: #ECFEFF;
@@ -685,7 +688,7 @@
   line-height: 1.9;
   border-left: 4px solid #06B6D4;
   margin-bottom: 14px;
-  font-family: var(--font-zhuyin);
+  font-family: var(--font-body);  /* 不用 BpmfIVS，避免自動注音 */
 }
 .word-card__ex {
   background: #F0FDF4;
@@ -696,7 +699,7 @@
   line-height: 1.9;
   border-left: 4px solid #34D399;
   margin-bottom: 14px;
-  font-family: var(--font-zhuyin);
+  font-family: var(--font-body);
 }
 
 /* ══════════════════════════════════════════
