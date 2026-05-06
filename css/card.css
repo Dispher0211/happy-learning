@@ -908,8 +908,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 2px;
-  line-height: 1.6;
+  gap: 3px;
+  line-height: 1.8;
 }
 .ann-unit {
   display: inline-flex;
@@ -918,30 +918,30 @@
   white-space: nowrap;
 }
 .ann-han {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-family: var(--font-body);
+  font-weight: 500;
   line-height: 1;
   color: #1E3A5F;
 }
 .ann-unit .pv-wrap { margin-left: 1px; }
-.ann-unit .pv-char { font-size: 0.52rem; line-height: 1.1; }
-.ann-unit .pv-tone-side { font-size: 0.52rem; }
-.ann-unit .pv-tone-top { font-size: 0.55rem; top: -0.4em; }
+.ann-unit .pv-char { font-size: 0.44rem; line-height: 1.1; }
+.ann-unit .pv-tone-side { font-size: 0.44rem; }
+.ann-unit .pv-tone-top { font-size: 0.46rem; top: -0.35em; }
 .ann-punct {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-family: var(--font-body);
   color: #1E3A5F;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
-/* ── 詞語 chip 行內注音（chip-ann-unit）──
-   比字義說明稍大 */
+/* ── 詞語 chip 行內注音（chip-ann-unit）── */
 .chip-ann {
   display: inline-flex;
   flex-direction: row;
   align-items: flex-end;
   flex-wrap: nowrap;
-  gap: 0;
+  gap: 1px;
 }
 .chip-ann-unit {
   display: inline-flex;
@@ -950,14 +950,58 @@
   white-space: nowrap;
 }
 .chip-ann-han {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-family: var(--font-body);
   font-weight: 700;
   color: #1E293B;
   line-height: 1;
 }
 .chip-ann-unit .pv-wrap { margin-left: 1px; }
-.chip-ann-unit .pv-char { font-size: 0.55rem; line-height: 1.1; }
-.chip-ann-unit .pv-tone-side { font-size: 0.55rem; }
-.chip-ann-unit .pv-tone-top { font-size: 0.58rem; top: -0.4em; }
+.chip-ann-unit .pv-char { font-size: 0.46rem; line-height: 1.1; }
+.chip-ann-unit .pv-tone-side { font-size: 0.46rem; }
+.chip-ann-unit .pv-tone-top { font-size: 0.48rem; top: -0.35em; }
 
+/* 部首 + 直式注音 */
+.radical-ann-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+  font-size: 1rem;
+}
+.radical-han {
+  font-size: 1rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  line-height: 1;
+}
+.radical-ann-unit .pv-wrap { margin-left: 1px; }
+.radical-ann-unit .pv-char { font-size: 0.42rem; line-height: 1.1; color: #6366F1; }
+.radical-ann-unit .pv-tone-side { font-size: 0.42rem; color: #6366F1; }
+.radical-ann-unit .pv-tone-top { font-size: 0.44rem; top: -0.35em; color: #6366F1; }
+
+/* 詞語卡標題：漢字 + 直式注音（pv-wrap 格式）*/
+.word-title-char-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.word-title-han {
+  font-family: var(--font-body);
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: 1;
+}
+.word-title-pron {
+  margin-left: 1px;
+}
+.word-title-pron .pv-char { font-size: 0.28em; line-height: 1.1; color: #0E7490; }
+.word-title-pron .pv-tone-side { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv-tone-top { font-size: 0.3em; color: #0E7490; }
+
+/* poly 主字：粉紅色 */
+.word-card__word .multi-tone-bpmf .pv-char { color: #ff4fa3; font-size: 0.28em; }
+.word-card__word .multi-tone-bpmf .pv-tone-side { color: #ff4fa3; font-size: 0.28em; }
+.word-card__word .multi-tone-bpmf .pv-tone-top { color: #ff4fa3; font-size: 0.3em; }

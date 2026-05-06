@@ -365,8 +365,10 @@ export class CardPage {
           <div class="char-card__info-cell">
             <span class="char-card__info-label">部首</span>
             <span class="char-card__info-value">
-              ${this._escapeHtml(radical)}
-              <span class="bpmf-font">${this._escapeHtml(radicalPron)}</span>
+              <span class="radical-ann-unit">
+                <span class="radical-han">${this._escapeHtml(radical)}</span>
+                ${radicalPron ? this._renderZhuyinVerticalInline(radicalPron) : ''}
+              </span>
             </span>
           </div>
           <div class="char-card__info-cell">
@@ -409,7 +411,8 @@ export class CardPage {
     this._addListener('card-words-section', 'click', (e) => {
       const wordEl = e.target.closest('.char-card__word')
       if (!wordEl) return
-      const word = wordEl.innerText.replace('🔊', '').trim()
+      // 使用 data-word 取純漢字（避免 innerText 含注音符號造成 TTS 念注音）
+      const word = wordEl.dataset.word || wordEl.innerText.replace(/[ㄅ-ㄩˊˇˋ˙🔊]/g, '').trim()
       if (word && AppState.settings?.soundOn !== false) {
         AudioManager.playWord?.(word)
       }
@@ -580,9 +583,9 @@ export class CardPage {
         </span>`
       }
 
-      return `<span class="char-with-zhuyin">
-        ${this._escapeHtml(c)}
-        <span class="char-zhuyin bpmf-font">${this._escapeHtml(zhuyin)}</span>
+      return `<span class="word-title-char-unit">
+        <span class="word-title-han">${this._escapeHtml(c)}</span>
+        <span class="word-title-pron">${this._renderZhuyinVerticalInline(zhuyin)}</span>
       </span>`
     }).join('')
   }
@@ -962,12 +965,15 @@ export class CardPage {
     return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
   }
 
-  /** 取得部首的注音 */
+  /** 取得部首的注音（優先查 radicals.json）*/
   _getRadicalPron(radical) {
-    // 嘗試從 characters.json 快取查找部首注音
-    const chars = AppState.characters || []
-    const found = chars.find(c => (c['字'] || c.char) === radical)
-    return found ? (found['注音'] || found.pronunciation || '') : ''
+    const radicals = JSONLoader.get('radicals') || []
+    const found = radicals.find(r => r.radical === radical || r['字'] === radical)
+    if (found?.zhuyin) return found.zhuyin
+    // fallback: characters.json
+    const chars = JSONLoader.get('characters') || []
+    const charEntry = chars.find(c => (c['字'] || c.char) === radical)
+    return charEntry?.pronunciations?.[0]?.zhuyin || ''
   }
 
   // ═══════════════════════════════════════
