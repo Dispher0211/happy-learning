@@ -1009,170 +1009,6 @@
 .word-card__word .multi-tone-bpmf .pv-tone-side { color: #ff4fa3; font-size: 0.28em; }
 .word-card__word .multi-tone-bpmf .pv-tone-top { color: #ff4fa3; font-size: 0.3em; }
 
-/* ══════════════════════════════════════════
-   pv2-* 直式注音系統 (A/B/C 規則)
-   A = 單符號（3格，中格）
-   B = 雙符號（2格，上下）
-   C = 三符號（3格，上中下）
-   ══════════════════════════════════════════ */
-
-/* 外層容器：row flex，漢字+注音欄+聲調 */
-.pv2 {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  position: relative;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-/* 注音欄：column flex */
-.pv2-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* A: 3格（單符號，中格），B: 2格，C: 3格 — 高度對齊漢字 */
-.pv2-a .pv2-col,
-.pv2-c .pv2-col { height: 1em; }
-.pv2-b .pv2-col { height: 1em; }
-
-/* 格位：flex:1 均等分配 */
-.pv2-top, .pv2-mid, .pv2-bot, .pv2-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  font-size: 0.38em;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 700;
-  line-height: 1;
-  min-width: 1em;
-  color: inherit;
-}
-
-/* 空格佔位 */
-.pv2-empty { visibility: hidden; }
-
-/* B: 兩格各佔 50% */
-.pv2-b .pv2-top { flex: 1; }
-.pv2-b .pv2-bot { flex: 1; }
-
-/* 聲調右側：對齊注音欄中央 */
-.pv2-tone-side {
-  display: flex;
-  align-items: center;
-  align-self: center;
-  font-size: 0.4em;
-  font-weight: 900;
-  font-family: 'Noto Sans TC', sans-serif;
-  margin-left: 1px;
-  color: inherit;
-  line-height: 1;
-}
-
-/* B 的聲調：放在注音欄外側，flex 自然置中 */
-.pv2-b > .pv2-tone-side {
-  align-self: center;
-}
-
-/* C 的聲調：在 mid 格內部右側，inline */
-.pv2-c .pv2-mid .pv2-tone-side {
-  font-size: 1em;   /* 相對 pv2-mid 的 0.38em，total ≈ 0.38em */
-  margin-left: 1px;
-  align-self: center;
-}
-.pv2-c .pv2-mid {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-
-/* A 的聲調：在 mid 格內部右側 */
-.pv2-a .pv2-mid {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.pv2-a .pv2-mid .pv2-tone-side {
-  font-size: 1em;
-  margin-left: 1px;
-}
-
-/* 輕聲（˙）：絕對定位在頂部 */
-.pv2-tone-top {
-  position: absolute;
-  top: -0.45em;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 0.4em;
-  font-weight: 900;
-  font-family: 'Noto Sans TC', sans-serif;
-  color: inherit;
-  pointer-events: none;
-}
-
-/* ── Context 尺寸覆蓋 ── */
-
-/* 生字旁大注音（char-card__zhuyin-side）*/
-.char-card__zhuyin-side .pv2-top,
-.char-card__zhuyin-side .pv2-mid,
-.char-card__zhuyin-side .pv2-bot,
-.char-card__zhuyin-side .pv2-empty  { font-size: 0.9rem; }
-.char-card__zhuyin-side .pv2-tone-side { font-size: 0.9rem; }
-.char-card__zhuyin-side .pv2-tone-top  { font-size: 0.9rem; top: -0.5em; }
-.char-card__zhuyin-side .pv2-a .pv2-col,
-.char-card__zhuyin-side .pv2-b .pv2-col,
-.char-card__zhuyin-side .pv2-c .pv2-col { height: auto; gap: 3px; }
-
-/* 多音字 tab（poly-btn__zhuyin）*/
-.poly-btn__zhuyin .pv2-top,
-.poly-btn__zhuyin .pv2-mid,
-.poly-btn__zhuyin .pv2-bot  { font-size: 0.85rem; color: inherit; }
-.poly-btn__zhuyin .pv2-tone-side { font-size: 0.85rem; color: inherit; }
-.poly-btn__zhuyin .pv2-a .pv2-col,
-.poly-btn__zhuyin .pv2-b .pv2-col,
-.poly-btn__zhuyin .pv2-c .pv2-col { height: auto; gap: 2px; }
-
-/* poly-word-pron（生字詞語 chip）*/
-.poly-word-pron .pv2-top,
-.poly-word-pron .pv2-mid,
-.poly-word-pron .pv2-bot  { font-size: 0.6rem; color: #E11D48; }
-.poly-word-pron .pv2-tone-side { font-size: 0.6rem; color: #E11D48; }
-
-/* 字義說明（ann-unit）*/
-.ann-unit .pv2-top,
-.ann-unit .pv2-mid,
-.ann-unit .pv2-bot  { font-size: 0.42em; }
-.ann-unit .pv2-tone-side { font-size: 0.44em; }
-
-/* 詞語 chip（chip-ann-unit）*/
-.chip-ann-unit .pv2-top,
-.chip-ann-unit .pv2-mid,
-.chip-ann-unit .pv2-bot  { font-size: 0.44em; }
-.chip-ann-unit .pv2-tone-side { font-size: 0.46em; }
-
-/* 部首（radical-ann-unit）*/
-.radical-ann-unit .pv2-top,
-.radical-ann-unit .pv2-mid,
-.radical-ann-unit .pv2-bot  { font-size: 0.42em; color: #6366F1; }
-.radical-ann-unit .pv2-tone-side { font-size: 0.42em; color: #6366F1; }
-
-/* 詞語卡標題（word-title-pron）*/
-.word-title-pron .pv2-top,
-.word-title-pron .pv2-mid,
-.word-title-pron .pv2-bot  { font-size: 0.28em; color: #0E7490; }
-.word-title-pron .pv2-tone-side { font-size: 0.28em; color: #0E7490; }
-
-/* poly 主字粉紅色 */
-.mz-unit--poly .pv2-top,
-.mz-unit--poly .pv2-mid,
-.mz-unit--poly .pv2-bot,
 .mz-unit--poly .pv2-tone-side { color: #ff4fa3; }
 
 /* multi-tone-bpmf（多音字詞語 chip poly 主字）*/
@@ -1180,4 +1016,261 @@
 .multi-tone-bpmf .pv2-mid,
 .multi-tone-bpmf .pv2-bot  { font-size: 0.55em; color: #ff4fa3; }
 .multi-tone-bpmf .pv2-tone-side { font-size: 0.55em; color: #ff4fa3; }
+/* ══════════════════════════════════════════
+   pv2-* 直式注音系統 (A/B/C)
+   結構：.pv2 > .pv2-col (左欄符號) + .pv2-tone (右欄聲調)
+   A=單符號3格  B=雙符號2格  C=三符號3格
+   ══════════════════════════════════════════ */
 
+/* 外層：row，左欄+右欄 */
+.pv2 {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  position: relative;
+  line-height: 1;
+}
+
+/* 左欄：符號縱排 */
+.pv2-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+/* 格位：sym = 實際符號，empty = 佔位 */
+.pv2-sym, .pv2-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  font-size: 0.38em;
+  line-height: 1;
+  min-width: 0.9em;
+  color: inherit;
+}
+.pv2-empty { visibility: hidden; }
+
+/* A: 3格高度 = 1em，sym在中格 */
+.pv2-a .pv2-col { height: 1em; justify-content: space-around; }
+/* B: 2格高度 = 1em，均分 */
+.pv2-b .pv2-col { height: 1em; justify-content: space-around; }
+/* C: 3格高度 = 1em，均分 */
+.pv2-c .pv2-col { height: 1em; justify-content: space-around; }
+
+/* 右欄：聲調(ˊˇˋ)垂直置中 */
+.pv2-tone {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 900;
+  font-size: 0.4em;
+  line-height: 1;
+  margin-left: 1px;
+  color: inherit;
+}
+
+/* 輕聲(˙)：絕對定位在左欄頂部 */
+.pv2-dot {
+  position: absolute;
+  top: -0.55em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9em;
+  font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: inherit;
+  pointer-events: none;
+}
+
+/* ── Context 尺寸 ── */
+
+/* 生字側邊大注音 */
+.char-card__zhuyin-side .pv2-sym  { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-tone { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-dot  { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-a .pv2-col,
+.char-card__zhuyin-side .pv2-b .pv2-col,
+.char-card__zhuyin-side .pv2-c .pv2-col { height: auto; gap: 3px; }
+
+/* 多音字 tab */
+.poly-btn__zhuyin .pv2-sym  { font-size: 0.85rem; color: inherit; }
+.poly-btn__zhuyin .pv2-tone { font-size: 0.85rem; color: inherit; }
+.poly-btn__zhuyin .pv2-a .pv2-col,
+.poly-btn__zhuyin .pv2-b .pv2-col,
+.poly-btn__zhuyin .pv2-c .pv2-col { height: auto; gap: 2px; }
+
+/* poly-word-pron（生字詞語chip） */
+.poly-word-pron .pv2-sym  { font-size: 0.6rem; color: #E11D48; }
+.poly-word-pron .pv2-tone { font-size: 0.6rem; color: #E11D48; }
+.poly-word-pron .pv2-dot  { font-size: 0.6rem; color: #E11D48; }
+
+/* 字義說明（ann-unit） */
+.ann-unit .pv2-sym  { font-size: 0.42em; }
+.ann-unit .pv2-tone { font-size: 0.44em; }
+.ann-unit .pv2-dot  { font-size: 0.42em; }
+
+/* 詞語chip（chip-ann-unit） */
+.chip-ann-unit .pv2-sym  { font-size: 0.44em; }
+.chip-ann-unit .pv2-tone { font-size: 0.46em; }
+
+/* 部首（radical-ann-unit） */
+.radical-ann-unit .pv2-sym  { font-size: 0.42em; color: #6366F1; }
+.radical-ann-unit .pv2-tone { font-size: 0.42em; color: #6366F1; }
+
+/* 詞語卡標題（word-title-pron） */
+.word-title-pron .pv2-sym  { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv2-tone { font-size: 0.28em; color: #0E7490; }
+
+/* multi-tone-bpmf（多音字詞語主字） */
+.multi-tone-bpmf .pv2-sym  { font-size: 0.55em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-tone { font-size: 0.55em; color: #ff4fa3; }
+
+/* ══════════════════════════════════════════
+   pv2 直式注音系統
+   HTML: <span class="pv2 pv2-[a|b|c]">
+           <span class="pv2-col">
+             [<span class="pv2-dot">˙</span>]   ← 輕聲頂部
+             <span class="pv2-empty"/>           ← A規則佔位
+             <span class="pv2-sym">ㄓ</span>     ← 注音符號
+             ...
+           </span>
+           [<span class="pv2-tone">ˋ</span>]    ← 2/3/4聲右側
+         </span>
+   ══════════════════════════════════════════ */
+
+/* 外容器 */
+.pv2 {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* 注音欄（左側）：col flex，height=1em 讓格子等高 */
+.pv2-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+/* 注音符號格 */
+.pv2-sym, .pv2-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.38em;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1em;
+  color: inherit;
+  flex-shrink: 0;
+}
+.pv2-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 聲調右欄：垂直置中 */
+.pv2-tone {
+  display: flex;
+  align-items: center;
+  font-size: 0.4em;
+  font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: inherit;
+  line-height: 1;
+  margin-left: 1px;
+  align-self: center;
+}
+
+/* A (3格) 聲調置中 = 中格位置 */
+.pv2-a .pv2-tone { align-self: center; }
+
+/* B (2格) 聲調置中 */
+.pv2-b .pv2-tone { align-self: center; }
+
+/* C (3格) 聲調對齊中格 = 1/3+1/6 = center */
+.pv2-c .pv2-tone { align-self: center; }
+
+/* 輕聲˙：在 pv2-col 頂部，絕對定位 */
+.pv2-dot {
+  position: absolute;
+  top: -0.6em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.45em;
+  font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: inherit;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── Context 尺寸覆蓋 ── */
+
+/* 生字旁大注音 */
+.char-card__zhuyin-side .pv2-sym,
+.char-card__zhuyin-side .pv2-empty { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-tone  { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-dot   { font-size: 0.88rem; top: -0.55em; }
+.char-card__zhuyin-side .pv2-col   { gap: 3px; }
+
+/* 多音字 tab */
+.poly-btn__zhuyin .pv2-sym  { font-size: 0.85rem; color: inherit; }
+.poly-btn__zhuyin .pv2-tone { font-size: 0.85rem; color: inherit; }
+.poly-btn__zhuyin .pv2-dot  { font-size: 0.85rem; top: -0.5em; color: inherit; }
+.poly-btn__zhuyin .pv2-col  { gap: 2px; }
+
+/* poly chip */
+.poly-word-pron .pv2-sym  { font-size: 0.6rem; color: #E11D48; }
+.poly-word-pron .pv2-tone { font-size: 0.6rem; color: #E11D48; }
+.poly-word-pron .pv2-dot  { font-size: 0.6rem; color: #E11D48; }
+.poly-word-pron .pv2-col  { gap: 1px; }
+
+/* 字義說明 ann-unit */
+.ann-unit .pv2-sym  { font-size: 0.42em; }
+.ann-unit .pv2-tone { font-size: 0.44em; }
+.ann-unit .pv2-dot  { font-size: 0.44em; }
+.ann-unit .pv2-col  { gap: 0.5px; }
+
+/* chip-ann-unit */
+.chip-ann-unit .pv2-sym  { font-size: 0.44em; }
+.chip-ann-unit .pv2-tone { font-size: 0.46em; }
+.chip-ann-unit .pv2-dot  { font-size: 0.46em; }
+.chip-ann-unit .pv2-col  { gap: 0.5px; }
+
+/* 部首 */
+.radical-ann-unit .pv2-sym  { font-size: 0.42em; color: #6366F1; }
+.radical-ann-unit .pv2-tone { font-size: 0.42em; color: #6366F1; }
+.radical-ann-unit .pv2-dot  { font-size: 0.42em; color: #6366F1; }
+.radical-ann-unit .pv2-col  { gap: 0.5px; }
+
+/* 詞語卡標題 */
+.word-title-pron .pv2-sym  { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv2-tone { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv2-dot  { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv2-col  { gap: 0.5px; }
+
+/* poly 主字粉紅 */
+.mz-unit--poly .pv2-sym,
+.mz-unit--poly .pv2-tone,
+.mz-unit--poly .pv2-dot { color: #ff4fa3; }
+
+/* multi-tone-bpmf */
+.multi-tone-bpmf .pv2-sym  { font-size: 0.55em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-tone { font-size: 0.55em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-dot  { font-size: 0.55em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-col  { gap: 1px; }
