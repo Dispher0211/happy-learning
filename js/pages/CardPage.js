@@ -1331,18 +1331,30 @@ export class CardPage {
     const allPolyphones = JSONLoader.get('polyphones') || []
     const polyEntry = allPolyphones.find(p => p['字'] === char || p.char === char)
     if (polyEntry?.pronunciations?.length > 0) {
-      // 找哪個讀音的 words 列表包含此詞語
-      const matched = polyEntry.pronunciations.find(
-        p => (p.words || []).includes(word)
-      )
+      const matched = polyEntry.pronunciations.find(p => (p.words || []).includes(word))
       if (matched) return matched.zhuyin
-      // 找不到匹配詞語，取第一個讀音
       return polyEntry.pronunciations[0]?.zhuyin || ''
     }
-    // 2. fallback：從 characters.json 取第一讀音
+    // 2. 查 characters.json 的 definitions.ex 陣列
+    //    找包含此詞語(word)的 ex，取對應字的注音（詞語上下文正確讀音）
     const allChars = JSONLoader.get('characters') || []
     const entry = allChars.find(c => c['字'] === char || c.char === char)
-    return entry?.pronunciations?.[0]?.zhuyin || entry?.['注音'] || entry?.zhuyin || ''
+    if (entry) {
+      for (const pron of (entry.pronunciations || [])) {
+        for (const def of (pron.definitions || [])) {
+          const ex = (def.ex || []).find(e => e.w === word)
+          if (ex) {
+            // 從 ex.chars 找此字的注音
+            const charData = ex.chars?.find(ch => ch.c === char)
+            if (charData?.z) return charData.z
+            return pron.zhuyin  // fallback to this pronunciation's zhuyin
+          }
+        }
+      }
+      // 3. 找不到詞語上下文，取第一讀音
+      return entry.pronunciations?.[0]?.zhuyin || entry['注音'] || ''
+    }
+    return ''
   }
 
   /** 從 AppState.characters 快查某字的注音（單音字用）*/
