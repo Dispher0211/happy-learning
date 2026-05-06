@@ -1198,48 +1198,48 @@ export class CardPage {
     `
   }
 
-  /** 直式注音 HTML（仿範例 APP：主符號縱排，聲調右側，輕聲頂部） */
+  /** 直式注音 HTML — 聲母/介音/韻母分格排列，聲調右側置中
+   *  3格（有介音）: 上=聲母 中=介音 下=韻母  聲調右側中格
+   *  2格（無介音）: 上=聲母 下=韻母          聲調右側中間
+   *  輕聲(˙): 漂浮在頂部
+   */
   _renderZhuyinVerticalInline(pron) {
     if (!pron) return ''
-    const tones = ['ˊ', 'ˇ', 'ˋ', '˙']
-    let tone = ''
-    let main = pron
 
-    // 輕聲在開頭
-    if (main.startsWith('˙')) {
-      tone = '˙'
-      main = main.slice(1)
-    } else {
-      const chars = [...main]
-      const last = chars[chars.length - 1]
-      const first = chars[0]
-      if (tones.includes(last)) {
-        tone = last
-        main = main.slice(0, -1)
-      } else if (tones.includes(first)) {
-        // 聲調在開頭（部分資料格式）
-        tone = first
-        main = main.slice(1)
-      }
+    const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ')
+    const MEDIALS  = new Set('ㄧㄨㄩ')
+    const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
+
+    let src = pron
+    let tone = ''
+    if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
+    else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+      tone = src[src.length - 1]; src = src.slice(0, -1)
     }
 
-    // 主符號縱排
-    const mainHtml = [...main]
-      .filter(c => c.charCodeAt(0) >= 0x3100 && c.charCodeAt(0) <= 0x312F ||
-                   c.charCodeAt(0) >= 0x02CA && c.charCodeAt(0) <= 0x02D9)
-      .map(c => `<span class="pv-char">${this._escapeHtml(c)}</span>`)
-      .join('')
+    let initial = '', medial = '', final = ''
+    for (const c of src) {
+      if (INITIALS.has(c))     initial = c
+      else if (MEDIALS.has(c)) medial  = c
+      else                     final  += c
+    }
+    // 純介音（如 ㄧ ㄩ 單獨）→ 視為聲母位
+    if (!initial && medial && !final) { initial = medial; medial = '' }
 
-    const toneTop  = tone === '˙'
-      ? `<span class="pv-tone-top">${this._escapeHtml(tone)}</span>` : ''
-    const toneSide = tone && tone !== '˙'
-      ? `<span class="pv-tone-side">${this._escapeHtml(tone)}</span>` : ''
+    const hasMedial = !!medial
+    const wrapCls   = hasMedial ? 'pv2 pv2--3' : 'pv2 pv2--2'
 
-    return `<span class="pv-wrap">
-      ${toneTop}
-      <span class="pv-main">${mainHtml}</span>
-      ${toneSide}
-    </span>`
+    const iHtml = `<span class="pv2-i">${initial ? this._escapeHtml(initial) : ''}</span>`
+    const mHtml = hasMedial ? `<span class="pv2-m">${this._escapeHtml(medial)}</span>` : ''
+    const fHtml = `<span class="pv2-f">${final ? this._escapeHtml(final) : ''}</span>`
+
+    const toneHtml = tone === '˙'
+      ? `<span class="pv2-tone-top">${this._escapeHtml(tone)}</span>`
+      : tone
+        ? `<span class="pv2-tone-side">${this._escapeHtml(tone)}</span>`
+        : ''
+
+    return `<span class="${wrapCls}">${toneHtml}<span class="pv2-col">${iHtml}${mHtml}${fHtml}</span>${tone && tone !== '˙' ? `<span class="pv2-tone-side">${this._escapeHtml(tone)}</span>` : ''}</span>`
   }
 
   /**

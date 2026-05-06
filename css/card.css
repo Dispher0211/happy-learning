@@ -1008,3 +1008,131 @@
 .word-card__word .multi-tone-bpmf .pv-char { color: #ff4fa3; font-size: 0.28em; }
 .word-card__word .multi-tone-bpmf .pv-tone-side { color: #ff4fa3; font-size: 0.28em; }
 .word-card__word .multi-tone-bpmf .pv-tone-top { color: #ff4fa3; font-size: 0.3em; }
+
+/* ══════════════════════════════════════════
+   pv2-* 直式注音系統
+   聲母/介音/韻母分格排列，聲調右側置中
+   pv2--2 = 2格（無介音）
+   pv2--3 = 3格（有介音）
+   ══════════════════════════════════════════ */
+
+.pv2 {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* 注音欄：flex-column，每格等高 */
+.pv2-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 2格時：漢字高度的每格 = 1/2 */
+.pv2--2 .pv2-col {
+  height: 1em;
+}
+
+/* 3格時：漢字高度的每格 = 1/3 */
+.pv2--3 .pv2-col {
+  height: 1em;
+}
+
+/* 個別注音格：flex:1 讓三格均等分配 */
+.pv2-i, .pv2-m, .pv2-f {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 0.38em;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 0;
+  min-width: 1.1em;
+  color: inherit;
+}
+
+/* 2格：每格佔 50% */
+.pv2--2 .pv2-i,
+.pv2--2 .pv2-f {
+  height: 50%;
+}
+
+/* 3格：每格佔 33% */
+.pv2--3 .pv2-i,
+.pv2--3 .pv2-m,
+.pv2--3 .pv2-f {
+  height: 33.33%;
+}
+
+/* 聲調右側（ˊˇˋ）：置中對齊注音欄 */
+.pv2-tone-side {
+  display: flex;
+  align-items: center;
+  font-size: 0.4em;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 900;
+  margin-left: 1px;
+  color: inherit;
+  align-self: center;
+  line-height: 1;
+}
+
+/* 輕聲（˙）：絕對定位在頂部 */
+.pv2-tone-top {
+  position: absolute;
+  top: -0.5em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.42em;
+  font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: inherit;
+}
+
+/* 大小調整：各 context */
+/* 生字旁注音（預設大小，由 pv-char 舊有 size 繼承）*/
+.char-card__zhuyin-side .pv2-i,
+.char-card__zhuyin-side .pv2-m,
+.char-card__zhuyin-side .pv2-f   { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-tone-side { font-size: 0.85rem; }
+.char-card__zhuyin-side .pv2-tone-top  { font-size: 0.9rem; }
+.char-card__zhuyin-side .pv2--2 .pv2-col { height: auto; gap: 4px; }
+.char-card__zhuyin-side .pv2--3 .pv2-col { height: auto; gap: 3px; }
+
+/* 字義說明文字（ann-unit）*/
+.ann-unit .pv2-i,
+.ann-unit .pv2-m,
+.ann-unit .pv2-f   { font-size: 0.42em; }
+.ann-unit .pv2-tone-side { font-size: 0.44em; }
+
+/* 詞語 chip（chip-ann-unit）*/
+.chip-ann-unit .pv2-i,
+.chip-ann-unit .pv2-m,
+.chip-ann-unit .pv2-f   { font-size: 0.44em; }
+.chip-ann-unit .pv2-tone-side { font-size: 0.46em; }
+
+/* 部首（radical-ann-unit）*/
+.radical-ann-unit .pv2-i,
+.radical-ann-unit .pv2-m,
+.radical-ann-unit .pv2-f   { font-size: 0.42em; color: #6366F1; }
+.radical-ann-unit .pv2-tone-side { font-size: 0.42em; color: #6366F1; }
+
+/* 詞語卡標題（word-title-pron）*/
+.word-title-pron .pv2-i,
+.word-title-pron .pv2-m,
+.word-title-pron .pv2-f   { font-size: 0.28em; color: #0E7490; }
+.word-title-pron .pv2-tone-side { font-size: 0.28em; color: #0E7490; }
+
+/* poly 主字：粉紅色 */
+.mz-unit--poly .pv2-i,
+.mz-unit--poly .pv2-m,
+.mz-unit--poly .pv2-f,
+.mz-unit--poly .pv2-tone-side { color: #ff4fa3; }
+
