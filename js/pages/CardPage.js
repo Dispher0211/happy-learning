@@ -1198,48 +1198,70 @@ export class CardPage {
     `
   }
 
-  /** 直式注音 HTML — 聲母/介音/韻母分格排列，聲調右側置中
-   *  3格（有介音）: 上=聲母 中=介音 下=韻母  聲調右側中格
-   *  2格（無介音）: 上=聲母 下=韻母          聲調右側中間
-   *  輕聲(˙): 漂浮在頂部
+  /** 直式注音 HTML — pv2 系統
+   * A: 單符號（只有韻母或介音）→ 3格，符號在中格，聲調在中格旁
+   * B: 雙符號（聲母+介音 / 聲母+韻母 / 介音+韻母）→ 2格，上下各一，聲調在中間旁
+   * C: 三符號（聲母+介音+韻母）→ 3格，上中下，聲調在中格旁
+   * 輕聲：浮在頂部（A/C在上格1/3處，B同）
    */
   _renderZhuyinVerticalInline(pron) {
     if (!pron) return ''
 
     const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ')
     const MEDIALS  = new Set('ㄧㄨㄩ')
+    const FINALS   = new Set('ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ')
     const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
 
-    let src = pron
-    let tone = ''
+    // 拆解聲調
+    let src = pron, tone = ''
     if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
     else if (src.length > 0 && TONES.has(src[src.length - 1])) {
       tone = src[src.length - 1]; src = src.slice(0, -1)
     }
 
+    // 拆解聲母/介音/韻母
     let initial = '', medial = '', final = ''
     for (const c of src) {
-      if (INITIALS.has(c))     initial = c
-      else if (MEDIALS.has(c)) medial  = c
-      else                     final  += c
+      if (INITIALS.has(c))          initial = c
+      else if (MEDIALS.has(c))      medial  = c
+      else                          final  += c
     }
-    // 純介音（如 ㄧ ㄩ 單獨）→ 視為聲母位
-    if (!initial && medial && !final) { initial = medial; medial = '' }
 
-    const hasMedial = !!medial
-    const wrapCls   = hasMedial ? 'pv2 pv2--3' : 'pv2 pv2--2'
+    const count = [initial, medial, final].filter(Boolean).length
 
-    const iHtml = `<span class="pv2-i">${initial ? this._escapeHtml(initial) : ''}</span>`
-    const mHtml = hasMedial ? `<span class="pv2-m">${this._escapeHtml(medial)}</span>` : ''
-    const fHtml = `<span class="pv2-f">${final ? this._escapeHtml(final) : ''}</span>`
+    // 聲調 HTML（tone-side 在中格旁；tone-top 浮頂）
+    const toneSideHtml = (tone && tone !== '˙')
+      ? `<span class="pv2-tone-side">${this._escapeHtml(tone)}</span>` : ''
+    const toneTopHtml  = (tone === '˙')
+      ? `<span class="pv2-tone-top">${this._escapeHtml(tone)}</span>` : ''
 
-    const toneHtml = tone === '˙'
-      ? `<span class="pv2-tone-top">${this._escapeHtml(tone)}</span>`
-      : tone
-        ? `<span class="pv2-tone-side">${this._escapeHtml(tone)}</span>`
-        : ''
+    // ── A: 單符號 → 3格，中格放符號 ──
+    if (count === 1) {
+      const sym = initial || medial || final
+      return `<span class="pv2 pv2-a">${toneTopHtml}<span class="pv2-col">` +
+        `<span class="pv2-empty"></span>` +
+        `<span class="pv2-mid">${this._escapeHtml(sym)}${toneSideHtml}</span>` +
+        `<span class="pv2-empty"></span>` +
+        `</span></span>`
+    }
 
-    return `<span class="${wrapCls}">${toneHtml}<span class="pv2-col">${iHtml}${mHtml}${fHtml}</span>${tone && tone !== '˙' ? `<span class="pv2-tone-side">${this._escapeHtml(tone)}</span>` : ''}</span>`
+    // ── B: 雙符號 → 2格，上下各一 ──
+    if (count === 2) {
+      // 排列順序：先有的在上，後有的在下
+      const slots = [initial, medial, final].filter(Boolean)
+      const top = slots[0], bot = slots[1]
+      return `<span class="pv2 pv2-b">${toneTopHtml}<span class="pv2-col">` +
+        `<span class="pv2-top">${this._escapeHtml(top)}</span>` +
+        `<span class="pv2-bot">${this._escapeHtml(bot)}</span>` +
+        `</span>${toneSideHtml}</span>`
+    }
+
+    // ── C: 三符號 → 3格，上=聲母 中=介音 下=韻母 ──
+    return `<span class="pv2 pv2-c">${toneTopHtml}<span class="pv2-col">` +
+      `<span class="pv2-top">${this._escapeHtml(initial)}</span>` +
+      `<span class="pv2-mid">${this._escapeHtml(medial)}${toneSideHtml}</span>` +
+      `<span class="pv2-bot">${this._escapeHtml(final)}</span>` +
+      `</span></span>`
   }
 
   /**
