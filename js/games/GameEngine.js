@@ -193,6 +193,7 @@ export class GameEngine {
     try {
       await this.playCorrectAnimation(stars)
       await this._addStars(stars)
+      this.updateProgress()   // 答對後即時更新 header 星星數字
       if (char) ForgettingCurve.recordResult(char, true, pron).catch(() => {})
       globalThis.PokedexManager?.checkAndReveal?.('star')
     } finally {
@@ -266,15 +267,43 @@ export class GameEngine {
     const total    = this.totalQuestions
     const answered = Math.max(0, this.questionIndex - 1)
     const percent  = total > 0 ? Math.round((answered / total) * 100) : 0
+
+    // 進度條
     const el = document.getElementById('game-progress')
     if (el) {
       el.style.width = `${percent}%`
       el.setAttribute('aria-valuenow', answered)
-      el.setAttribute('aria-valuemax', total)
     }
-    // 更新題號顯示
+    // 題號
     const counter = document.getElementById('game-counter')
     if (counter) counter.textContent = `${Math.min(this.questionIndex, total)} / ${total}`
+
+    // 星星即時更新
+    const yellow = AppState.stars?.yellow_total ?? 0
+    const blue   = AppState.stars?.blue_total   ?? 0
+    const red    = AppState.stars?.red_total     ?? 0
+    const ghRed    = document.getElementById('gh-red')
+    const ghBlue   = document.getElementById('gh-blue')
+    const ghYellow = document.getElementById('gh-yellow')
+    if (ghRed)    ghRed.textContent    = `🔴★×${red}`
+    if (ghBlue)   ghBlue.textContent   = `🔵★×${blue}`
+    if (ghYellow) ghYellow.textContent = `⭐×${yellow}`
+
+    // 連續答對 bonus 提示
+    const bonusBar = document.getElementById('game-bonus-bar')
+    if (bonusBar) {
+      const c = this.consecutiveCorrect
+      if (c >= 3) {
+        let bonusText = `連續答對：${c} 題`
+        if (c >= 10) bonusText += ' bonus★+6 🔥'
+        else if (c >= 5) bonusText += ' bonus★+3 ⚡'
+        else if (c >= 3) bonusText += ' bonus★+1 ✨'
+        bonusBar.textContent = bonusText
+        bonusBar.style.display = 'block'
+      } else {
+        bonusBar.style.display = 'none'
+      }
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -294,9 +323,14 @@ export class GameEngine {
     const appEl = document.getElementById('app')
     if (!appEl) return
 
-    const cfg = getGameConfig(this.gameId) || {}
+    const cfg  = getGameConfig(this.gameId) || {}
     const name = cfg.name || this.gameId
     const icon = cfg.icon || '🎮'
+
+    // 取目前星星數
+    const yellow = AppState.stars?.yellow_total ?? 0
+    const blue   = AppState.stars?.blue_total   ?? 0
+    const red    = AppState.stars?.red_total     ?? 0
 
     appEl.innerHTML = `
       <div id="game-layout" style="
@@ -305,43 +339,61 @@ export class GameEngine {
       ">
         <!-- 遊戲共用頂部（規格 2.12） -->
         <div id="game-header" style="
-          display:flex; align-items:center; gap:8px;
-          padding:10px 14px 6px;
           background:white;
           box-shadow:0 2px 8px rgba(0,0,0,0.08);
           position:sticky; top:0; z-index:100;
           flex-shrink:0;
         ">
-          <!-- ✕ 退出按鈕 -->
-          <button id="game-exit-btn" aria-label="離開遊戲" style="
-            width:36px; height:36px; border-radius:50%;
-            background:#FEE2E2; border:none;
-            color:#DC2626; font-size:1.1rem; font-weight:900;
-            cursor:pointer; flex-shrink:0;
-            display:flex; align-items:center; justify-content:center;
-            transition:background 0.15s;
-          ">✕</button>
+          <!-- 第一列：✕ + 星星 -->
+          <div style="display:flex; align-items:center; gap:6px; padding:8px 12px 4px;">
+            <!-- ✕ 退出 -->
+            <button id="game-exit-btn" aria-label="離開遊戲" style="
+              width:32px; height:32px; border-radius:50%;
+              background:#FEE2E2; border:none;
+              color:#DC2626; font-size:1rem; font-weight:900;
+              cursor:pointer; flex-shrink:0;
+              display:flex; align-items:center; justify-content:center;
+            ">✕</button>
 
-          <!-- 遊戲名稱 -->
-          <span style="
-            font-size:0.9rem; font-weight:800; color:#475569;
-            flex:1; text-align:center;
-          ">${icon} ${name}</span>
+            <!-- 星星顯示 -->
+            <div id="game-header-stars" style="
+              display:flex; gap:8px; align-items:center;
+              font-size:0.8rem; font-weight:700; flex:1;
+              justify-content:center;
+            ">
+              <span id="gh-red"  style="color:#ef4444;">🔴★×${red}</span>
+              <span id="gh-blue" style="color:#3b82f6;">🔵★×${blue}</span>
+              <span id="gh-yellow" style="color:#f59e0b;">⭐×${yellow}</span>
+            </div>
 
-          <!-- 題號 -->
-          <span id="game-counter" style="
-            font-size:0.85rem; font-weight:700; color:#94A3B8;
-            flex-shrink:0;
-          ">0 / ${this.totalQuestions}</span>
-        </div>
+            <!-- 題號 -->
+            <span id="game-counter" style="
+              font-size:0.82rem; font-weight:700; color:#94A3B8; flex-shrink:0;
+            ">1 / ${this.totalQuestions}</span>
+          </div>
 
-        <!-- 進度條 -->
-        <div style="height:4px; background:#E2E8F0; flex-shrink:0;">
-          <div id="game-progress" style="
-            height:100%; width:0%;
-            background:linear-gradient(90deg,#6366F1,#8B5CF6);
-            transition:width 0.3s ease;
-          " aria-valuenow="0" aria-valuemax="${this.totalQuestions}" role="progressbar"></div>
+          <!-- 連續答對 bonus 列（預設隱藏，答對才顯示） -->
+          <div id="game-bonus-bar" style="
+            display:none; text-align:center;
+            font-size:0.78rem; font-weight:700; color:#7c3aed;
+            padding:2px 0 4px; background:#f5f3ff;
+          "></div>
+
+          <!-- 第二列：遊戲名稱 + 進度 -->
+          <div style="display:flex; align-items:center; gap:8px; padding:4px 12px 6px;">
+            <span style="
+              font-size:0.9rem; font-weight:800; color:#475569; flex:1; text-align:center;
+            ">${icon} ${name}</span>
+          </div>
+
+          <!-- 進度條 -->
+          <div style="height:4px; background:#E2E8F0;">
+            <div id="game-progress" style="
+              height:100%; width:0%;
+              background:linear-gradient(90deg,#6366F1,#8B5CF6);
+              transition:width 0.3s ease;
+            " role="progressbar" aria-valuenow="0" aria-valuemax="${this.totalQuestions}"></div>
+          </div>
         </div>
 
         <!-- 遊戲內容區 -->
@@ -349,7 +401,7 @@ export class GameEngine {
       </div>
     `
 
-    // 綁定 ✕ 退出按鈕
+    // 綁定 ✕
     const exitBtn = document.getElementById('game-exit-btn')
     if (exitBtn) {
       const handler = () => globalThis.UIManager?.back?.()

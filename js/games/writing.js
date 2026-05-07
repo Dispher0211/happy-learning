@@ -33,8 +33,8 @@ import { JSONLoader } from '../json_loader.js'
 // ═══════════════════════════════════════════════════════════
 
 export class WritingGame extends GameEngine {
-  constructor() {
-    super('writing')
+  constructor(options = {}) {
+    super('writing', options)
     // 手寫 canvas 相關
     this._canvas = null
     this._ctx = null
@@ -48,6 +48,8 @@ export class WritingGame extends GameEngine {
     this._localStrokes = []
     // 目前正在繪製的筆畫點陣
     this._currentStrokePoints = []
+    // retryMsg timer
+    this._retryMsgTimer = null
   }
 
   // ═══════════════════════════════════════════════════════
@@ -681,17 +683,14 @@ export class WritingGame extends GameEngine {
   // 動畫效果
   // ═══════════════════════════════════════════════════════
 
-  /**
-   * 答對動畫（規格 D.1 / 2.13）：
-   *   1. 魔法書大放光芒（glow）
-   *   2. ★★★★ 飛向右上角（數量 = stars 參數）
-   *   3. 更新 game-header 星星數字
-   */
   async playCorrectAnimation(stars = 4) {
+    console.log(`[WritingGame] 答對動畫開始，星星=${stars}`)
     const container = document.getElementById('writing-magic-book')
     if (container) {
       container.classList.remove('writing-book-shake', 'writing-book-close')
       container.classList.add('writing-book-glow')
+    } else {
+      console.warn('[WritingGame] 找不到 writing-magic-book')
     }
 
     // 播放答對音效
@@ -699,65 +698,53 @@ export class WritingGame extends GameEngine {
       AudioManager.playEffect('correct')
     }
 
-    // ★ 飛向右上角（stars 顆，最多 8）
+    // ★ 飛向右上角
     this._flyStarsToHeader(Math.min(Math.ceil(stars), 8))
 
-    // 等待光芒動畫完成
     await this._delay(1000)
     if (container) container.classList.remove('writing-book-glow')
-
-    // 更新 game-header 星星數字（讓小朋友看到即時反饋）
     this._updateHeaderStars()
+    console.log('[WritingGame] 答對動畫完成')
   }
 
-  /**
-   * 答錯一次動畫（規格 D.1 / 2.13）：
-   *   書本搖晃，清空重寫
-   */
   async playWrongAnimation() {
+    console.log('[WritingGame] 答錯一次動畫開始')
     const container = document.getElementById('writing-magic-book')
     if (container) {
       container.classList.remove('writing-book-glow')
       container.classList.add('writing-book-shake')
+    } else {
+      console.warn('[WritingGame] 找不到 writing-magic-book')
     }
 
-    // 播放答錯音效
     if (AppState.settings?.soundOn !== false) {
       AudioManager.playEffect('wrong')
     }
 
     await this._delay(600)
     if (container) container.classList.remove('writing-book-shake')
-
-    // 清空 canvas 供重寫
     this._handleClear()
+    console.log('[WritingGame] 答錯一次動畫完成，canvas 已清空')
   }
 
-  /**
-   * 答錯二次：書本合起，顯示正確答案（規格 D.1 / 2.13）
-   * GameEngine.onWrongSecondTime 呼叫，需等用戶按[下一題]才進下一題
-   */
   async showCorrectAnswer() {
+    console.log('[WritingGame] 答錯二次，書本合起')
     const container = document.getElementById('writing-magic-book')
     if (container) {
       container.classList.remove('writing-book-shake')
       container.classList.add('writing-book-close')
     }
 
-    // 播放答錯音效
     if (AppState.settings?.soundOn !== false) {
       AudioManager.playEffect('wrong')
     }
 
-    // 顯示正確答案
     const revealDiv = document.getElementById('writing-correct-reveal')
     if (revealDiv) revealDiv.style.display = 'flex'
 
-    // 隱藏手寫操作按鈕，改為顯示「下一題」按鈕
     const btnRow = document.getElementById('writing-btn-row')
     if (btnRow) btnRow.style.display = 'none'
 
-    // 插入「下一題」按鈕（若未存在）
     if (!document.getElementById('btn-next-question')) {
       const bookEl = document.getElementById('writing-magic-book')
       if (bookEl) {
@@ -812,16 +799,10 @@ export class WritingGame extends GameEngine {
   }
 
   /**
-   * 更新 game-header 的星星數字顯示
+   * 更新 game-header 星星顯示（委派給 GameEngine.updateProgress）
    */
   _updateHeaderStars() {
-    const yellow = AppState.stars?.yellow_total ?? 0
-    const blue   = AppState.stars?.blue_total   ?? 0
-    const red    = AppState.stars?.red_total     ?? 0
-    const headerStar = document.getElementById('game-header-stars')
-    if (headerStar) {
-      headerStar.textContent = `🌟${yellow}`
-    }
+    this.updateProgress()
   }
 
   // ═══════════════════════════════════════════════════════
