@@ -196,6 +196,10 @@ export const HandwritingManager = {
             console.warn(`HandwritingManager: Gemini Vision [${model}] 429，切換模型`)
             break
           }
+          if (e.status === 503) {
+            console.warn(`HandwritingManager: Gemini Vision [${model}] 503 過載，切換模型`)
+            break
+          }
           console.warn(`HandwritingManager: Gemini Vision [${model}] 失敗 — ${e.message}`)
         }
       }

@@ -85,7 +85,7 @@ export class ParentAPIPage {
           <textarea
             class="api-key-input"
             id="input-myscript"
-            placeholder="每行填入一組 Key（最多3組）"
+            placeholder="每行填入一組 Key（最多3組）&#10;格式：applicationKey:hmacKey"
             rows="3"
             autocomplete="off"
             spellcheck="false"
