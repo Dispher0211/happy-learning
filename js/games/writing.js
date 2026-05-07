@@ -574,8 +574,10 @@ export class WritingGame extends GameEngine {
         // 辨識失敗：顯示「請再寫一次」，清空 canvas，不計答錯
         this._handleRecognitionFailure()
       } else {
-        // 辨識成功：取第一個候選字
-        const recognized = result?.candidates?.[0] ?? result?.text ?? ''
+        // 辨識成功：取第一個漢字（Gemini 可能回傳詞語或帶空白）
+        const rawText = result?.candidates?.[0] ?? result?.text ?? ''
+        const recognized = (rawText.match(/[\u4e00-\u9fff\u3400-\u4dbf]/)?.[0] ?? rawText.trim().charAt(0) ?? '')
+        console.log(`[WritingGame] 辨識結果：「${rawText}」→ 取字「${recognized}」，答案「${this.currentQuestion?.character}」`)
         // 透過 GameEngine.submitAnswer 走標準流程
         await this.submitAnswer(recognized)
       }
@@ -692,6 +694,13 @@ export class WritingGame extends GameEngine {
     // 加入光芒動畫 class
     container.classList.add('writing-book-glow')
 
+    // 在 canvas 上疊加大字「✓」反饋
+    const wrapper = container.querySelector('.writing-canvas-wrapper')
+    const feedback = document.createElement('div')
+    feedback.className = 'writing-correct-feedback'
+    feedback.textContent = '✓'
+    if (wrapper) wrapper.appendChild(feedback)
+
     // 播放答對音效
     if (AppState.settings?.soundOn !== false) {
       AudioManager.playEffect('correct')
@@ -700,6 +709,7 @@ export class WritingGame extends GameEngine {
     // 等待動畫完成
     await this._delay(1000)
     container.classList.remove('writing-book-glow')
+    feedback.remove()
   }
 
   /**
@@ -1149,6 +1159,27 @@ function injectWritingStyles() {
       font-size: 0.95rem;
       color: #5a4a00;
       line-height: 1.5;
+    }
+
+    /* ── 答對大字反饋 ── */
+    .writing-correct-feedback {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 5rem;
+      color: #22c55e;
+      font-weight: 900;
+      z-index: 10;
+      animation: correctPop 0.9s ease-out forwards;
+      pointer-events: none;
+      text-shadow: 0 2px 12px rgba(34,197,94,0.5);
+    }
+
+    @keyframes correctPop {
+      0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      40%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+      70%  { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.0); opacity: 0; }
     }
 
     /* ── 動畫：魔法書光芒（答對） ── */
