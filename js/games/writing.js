@@ -668,10 +668,11 @@ export class WritingGame extends GameEngine {
      * 注意：answer 已是 HandwritingManager 辨識出的文字
      */
     const question = this.currentQuestion
-    if (!question) return false
+    if (!question) return { correct: false }
 
     const normalized = (answer ?? '').trim()
-    return normalized === question.character
+    const correct = normalized === question.character
+    return { correct }
   }
 
   // ═══════════════════════════════════════════════════════
