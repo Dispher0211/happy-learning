@@ -100,16 +100,30 @@ export class WritingGame extends GameEngine {
     // 選擇出題用的讀音（fail_rate 最高者，若無則取第一個）
     const targetPron = dictEntry.pronunciations?.[0]
 
-    // 選出包含該字的詞語：優先從 definitions.ex 取（含正確注音）
+    // 選出包含該字的詞語：從 definitions.ex 取（含正確注音），隨機選取增加變化
+    const allExCandidates = []
+    for (const d of (targetPron?.definitions ?? [])) {
+      for (const ex of (d.ex ?? [])) {
+        if (ex.w?.includes(char) && ex.w.length >= 2 && ex.w.length <= 6) {
+          allExCandidates.push(ex)
+        }
+      }
+    }
+
     let selectedWord = null
     let selectedWordZhuyinList = null
-    for (const d of (targetPron?.definitions ?? [])) {
-      const ex = (d.ex ?? []).find(e => e.w?.includes(char) && e.w.length >= 2 && e.w.length <= 5)
-      if (ex) { selectedWord = ex.w; selectedWordZhuyinList = ex.chars; break }
-    }
-    if (!selectedWord) {
+    if (allExCandidates.length > 0) {
+      // 隨機選一個候選詞（增加每次玩題目的變化性）
+      const chosen = allExCandidates[Math.floor(Math.random() * allExCandidates.length)]
+      selectedWord = chosen.w
+      selectedWordZhuyinList = chosen.chars
+    } else {
+      // fallback：從 words 陣列取
       const words = targetPron?.words ?? []
-      selectedWord = words.find(w => w.includes(char)) ?? (char + '字')
+      const valid = words.filter(w => w.includes(char))
+      selectedWord = valid.length > 0
+        ? valid[Math.floor(Math.random() * valid.length)]
+        : (char + '字')
     }
 
     // 計算該字在詞語中的位置，以顯示□
@@ -274,8 +288,8 @@ export class WritingGame extends GameEngine {
 
     return Array.from(word).map((ch, idx) => {
       if (idx === charIndex) {
-        // □ + 目標生字注音（顯示在□旁邊作提示，使用 pv2 方格格式）
-        if (zhuyinOn && targetPronunciation) {
+        // □ + 目標生字注音：注音永遠顯示（題目提示，不受注音開關影響）
+        if (targetPronunciation) {
           return `<span class="writing-char-blank-wrap">` +
             `<span class="writing-char-placeholder">□</span>` +
             `<span class="writing-blank-pron">${this._renderZhuyinHint(targetPronunciation)}</span>` +
