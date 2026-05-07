@@ -1,4 +1,6 @@
-[
+git add audio/zhuyin
+git commit -m "修正ㄓㄠㄓㄠˊ音檔"
+git push[
   {
     "id": "fill_518d_01",
     "character": "再",
