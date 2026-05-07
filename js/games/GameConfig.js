@@ -36,7 +36,7 @@ export const GameConfig = {
   // ─────────────────────────────────────────────
   writing: {
     id: 'writing',
-    name: '寫出注音',
+    name: '寫國字',
     icon: '✏️',
     stars: {
       first: 4,

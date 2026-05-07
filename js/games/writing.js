@@ -96,9 +96,17 @@ export class WritingGame extends GameEngine {
     // 選擇出題用的讀音（fail_rate 最高者，若無則取第一個）
     const targetPron = dictEntry.pronunciations?.[0]
 
-    // 選出包含該字的詞語（從目標讀音的 words 中取一個）
-    const words = targetPron?.words ?? []
-    const selectedWord = words.find(w => w.includes(char)) ?? (char + '字')
+    // 選出包含該字的詞語：優先從 definitions.ex 取（含正確注音）
+    let selectedWord = null
+    let selectedWordZhuyinList = null
+    for (const d of (targetPron?.definitions ?? [])) {
+      const ex = (d.ex ?? []).find(e => e.w?.includes(char) && e.w.length >= 2 && e.w.length <= 5)
+      if (ex) { selectedWord = ex.w; selectedWordZhuyinList = ex.chars; break }
+    }
+    if (!selectedWord) {
+      const words = targetPron?.words ?? []
+      selectedWord = words.find(w => w.includes(char)) ?? (char + '字')
+    }
 
     // 計算該字在詞語中的位置，以顯示□
     const charIndex = selectedWord.indexOf(char)
@@ -116,6 +124,7 @@ export class WritingGame extends GameEngine {
       isPolyphone,                  // 是否多音字
       targetPronunciation: targetPron?.zhuyin ?? '',
       word: selectedWord,           // 出題詞語
+      wordZhuyinList: selectedWordZhuyinList,  // 詞語各字注音（from ex.chars）
       charIndex,                    // 目標字在詞語中的索引
       radical: dictEntry.radical ?? '',             // 部首
       radicalZhuyin: '',            // 部首注音（若有）
@@ -247,33 +256,76 @@ export class WritingGame extends GameEngine {
    *   非生字簿字 + 注音開 = 注音體
    */
   _buildWordDisplayHTML(question) {
-    const { word, charIndex } = question
+    const { word, charIndex, wordZhuyinList, targetPronunciation } = question
     const zhuyinOn = AppState.settings?.zhuyinOn ?? AppState.zhuyinOn ?? true
     const charSet = new Set((AppState.characters ?? []).map(c => c['字'] ?? c.char))
+    const allCharsDict = JSONLoader.get('characters') || []
+
+    // 查詞語中某字的注音（優先用 wordZhuyinList）
+    const getZhuyin = (ch, idx) => {
+      if (wordZhuyinList?.length > idx) return wordZhuyinList[idx]?.z ?? ''
+      const entry = allCharsDict.find(c => (c['字'] ?? c.char) === ch)
+      return entry?.pronunciations?.[0]?.zhuyin ?? ''
+    }
 
     return Array.from(word).map((ch, idx) => {
       if (idx === charIndex) {
-        // □ 手寫佔位符
-        return `<span class="writing-char-placeholder" aria-label="填入生字">□</span>`
-      }
-
-      const isInStudyList = charSet.has(ch)
-
-      if (isInStudyList || !zhuyinOn) {
-        // 生字簿內的字或注音關閉：純文字顯示
-        return `<span class="writing-char-text">${ch}</span>`
-      } else {
-        // 非生字簿字且注音開：加注音體（ruby）
-        // 注音資料從 characters.json 查找；查無時僅顯示文字
-        const dictEntry = (JSONLoader.get('characters') || []).find(c => (c['字'] ?? c.char) === ch)
-        const zhuyin = dictEntry?.pronunciations?.[0]?.zhuyin ?? dictEntry?.['注音'] ?? ''
-        if (zhuyin) {
-          return `<ruby class="writing-char-ruby"><rb>${ch}</rb><rt class="zhuyin">${zhuyin}</rt></ruby>`
-        } else {
-          return `<span class="writing-char-text">${ch}</span>`
+        // □ + 目標生字注音（顯示在□旁邊作提示，使用 pv2 方格格式）
+        if (zhuyinOn && targetPronunciation) {
+          return `<span class="writing-char-blank-wrap">` +
+            `<span class="writing-char-placeholder">□</span>` +
+            `<span class="writing-blank-pron">${this._renderZhuyinHint(targetPronunciation)}</span>` +
+            `</span>`
         }
+        return `<span class="writing-char-placeholder">□</span>`
       }
+
+      const z = zhuyinOn ? getZhuyin(ch, idx) : ''
+      if (z) {
+        return `<span class="writing-char-unit">` +
+          `<span class="writing-char-text">${ch}</span>` +
+          `<span class="writing-char-pron">${this._renderZhuyinHint(z)}</span>` +
+          `</span>`
+      }
+      return `<span class="writing-char-text">${ch}</span>`
     }).join('')
+  }
+
+  // 渲染詞語旁的小型直式注音（使用 pv2 系統）
+  _renderZhuyinHint(pron) {
+    if (!pron) return ''
+    // 直接使用 CardPage 的 pv2 系統
+    const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ')
+    const MEDIALS  = new Set('ㄧㄨㄩ')
+    const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
+    let src = pron, tone = ''
+    if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
+    else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+      tone = src[src.length - 1]; src = src.slice(0, -1)
+    }
+    let initial = '', medial = '', final = ''
+    for (const c of src) {
+      if (INITIALS.has(c)) initial = c
+      else if (MEDIALS.has(c)) medial = c
+      else final += c
+    }
+    const count = [initial, medial, final].filter(Boolean).length
+    const hasDot = tone === '˙'
+    const dotCls = hasDot ? ' pv2--dot' : ''
+    const dotHtml = hasDot ? `<span class="pv2-dot">${tone}</span>` : ''
+    const toneHtml = (tone && tone !== '˙')
+      ? `<span class="pv2-tone">${tone}</span>`
+      : `<span class="pv2-tone pv2-empty"></span>`
+    const toneCol = `<span class="pv2-tone-col"><span class="pv2-tone-spacer"></span>${toneHtml}<span class="pv2-tone-spacer"></span></span>`
+    if (count === 1) {
+      const sym = initial || medial || final
+      return `<span class="pv2 pv2-a writing-pv2${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1 pv2-empty"></span><span class="pv2-r2">${sym}</span><span class="pv2-r3 pv2-empty"></span></span>${toneCol}</span>`
+    }
+    if (count === 2) {
+      const slots = [initial, medial, final].filter(Boolean)
+      return `<span class="pv2 pv2-b writing-pv2${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${slots[0]}</span><span class="pv2-r2 pv2-empty"></span><span class="pv2-r3">${slots[1]}</span></span>${toneCol}</span>`
+    }
+    return `<span class="pv2 pv2-c writing-pv2${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${initial}</span><span class="pv2-r2">${medial}</span><span class="pv2-r3">${final}</span></span>${toneCol}</span>`
   }
 
   // ═══════════════════════════════════════════════════════
@@ -293,7 +345,8 @@ export class WritingGame extends GameEngine {
     this._ctx.lineJoin = 'round'
 
     // 初始化 HandwritingManager（傳入 canvas，手寫 stack 重置）
-    
+    HandwritingManager.setCanvas(this._canvas)
+
     // 綁定觸控/滑鼠事件
     this._bindDrawingEvents()
   }
@@ -326,17 +379,16 @@ export class WritingGame extends GameEngine {
       }
     }
 
-    let currentStrokePath = []
-
     const onStart = (e) => {
       e.preventDefault()
       drawing = true
       const pos = getPos(e)
       lastX = pos.x
       lastY = pos.y
-      currentStrokePath = [{ x: pos.x, y: pos.y }]
       this._ctx.beginPath()
       this._ctx.moveTo(lastX, lastY)
+      // 通知 HandwritingManager 開始新筆畫
+      HandwritingManager.beginStroke(lastX, lastY)
     }
 
     const onMove = (e) => {
@@ -345,7 +397,7 @@ export class WritingGame extends GameEngine {
       const pos = getPos(e)
       this._ctx.lineTo(pos.x, pos.y)
       this._ctx.stroke()
-      currentStrokePath.push({ x: pos.x, y: pos.y })
+      HandwritingManager.addPoint(pos.x, pos.y)
       lastX = pos.x
       lastY = pos.y
     }
@@ -353,11 +405,7 @@ export class WritingGame extends GameEngine {
     const onEnd = (e) => {
       if (!drawing) return
       drawing = false
-      // 記錄完成的筆畫到 HandwritingManager（供 undo 使用）
-      if (currentStrokePath.length > 1) {
-        HandwritingManager.recordStroke([...currentStrokePath])
-      }
-      currentStrokePath = []
+      HandwritingManager.endStroke()
     }
 
     // 滑鼠事件
@@ -464,7 +512,7 @@ export class WritingGame extends GameEngine {
     if (this._recognizing || this.isAnswering) return
 
     // 檢查是否有繪製任何筆畫
-    if (HandwritingManager._strokeStack.length === 0) {
+    if (HandwritingManager.getStrokeCount() === 0) {
       this._showRetryMessage('請先在魔法書上寫字 ✏️')
       return
     }

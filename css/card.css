@@ -1081,7 +1081,7 @@
 
 /* 有˙時上方留空，避免˙與注音重疊 */
 .pv2--dot {
-  padding-top: 0.1em;
+  padding-top: 0.45em;
 }
 
 .pv2-col {
@@ -1199,3 +1199,63 @@
 .multi-tone-bpmf .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; color: #ff4fa3; }
 .multi-tone-bpmf .pv2-dot,
 .multi-tone-bpmf .pv2-tone { font-size: 0.40rem; color: #ff4fa3; }
+/* ── 寫國字遊戲：詞語+注音 ── */
+.writing-word-display {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  font-size: 2rem;
+  margin: 12px 0 16px;
+}
+.writing-char-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.writing-char-text {
+  font-family: var(--font-body);
+  font-size: inherit;
+  line-height: 1;
+}
+.writing-char-blank-wrap {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.writing-char-placeholder {
+  font-size: inherit;
+  color: #6366F1;
+  font-weight: 700;
+  line-height: 1;
+}
+/* □旁及詞語各字的 pv2 注音大小 */
+.writing-pv2.pv2-col,
+.writing-char-pron .pv2-col,
+.writing-blank-pron .pv2-col,
+.writing-char-pron .pv2-tone-col,
+.writing-blank-pron .pv2-tone-col { height: 2rem; }
+.writing-pv2 .pv2-r1,
+.writing-pv2 .pv2-r2,
+.writing-pv2 .pv2-r3,
+.writing-char-pron .pv2-r1,
+.writing-char-pron .pv2-r2,
+.writing-char-pron .pv2-r3,
+.writing-blank-pron .pv2-r1,
+.writing-blank-pron .pv2-r2,
+.writing-blank-pron .pv2-r3 { font-size: 0.6rem; min-width: 0.65em; }
+.writing-pv2 .pv2-tone,
+.writing-char-pron .pv2-tone,
+.writing-blank-pron .pv2-tone { font-size: 0.6rem; }
+.writing-pv2 .pv2-dot,
+.writing-char-pron .pv2-dot,
+.writing-blank-pron .pv2-dot { font-size: 0.6rem; }
+/* □旁注音用紫色 */
+.writing-blank-pron .pv2-r1,
+.writing-blank-pron .pv2-r2,
+.writing-blank-pron .pv2-r3,
+.writing-blank-pron .pv2-tone,
+.writing-blank-pron .pv2-dot { color: #6366F1; }
