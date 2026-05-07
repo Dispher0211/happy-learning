@@ -293,8 +293,7 @@ export class WritingGame extends GameEngine {
     this._ctx.lineJoin = 'round'
 
     // 初始化 HandwritingManager（傳入 canvas，手寫 stack 重置）
-    HandwritingManager.setCanvas(this._canvas)
-
+    
     // 綁定觸控/滑鼠事件
     this._bindDrawingEvents()
   }
@@ -327,16 +326,17 @@ export class WritingGame extends GameEngine {
       }
     }
 
+    let currentStrokePath = []
+
     const onStart = (e) => {
       e.preventDefault()
       drawing = true
       const pos = getPos(e)
       lastX = pos.x
       lastY = pos.y
+      currentStrokePath = [{ x: pos.x, y: pos.y }]
       this._ctx.beginPath()
       this._ctx.moveTo(lastX, lastY)
-      // 通知 HandwritingManager 開始新筆畫
-      HandwritingManager.beginStroke(lastX, lastY)
     }
 
     const onMove = (e) => {
@@ -345,7 +345,7 @@ export class WritingGame extends GameEngine {
       const pos = getPos(e)
       this._ctx.lineTo(pos.x, pos.y)
       this._ctx.stroke()
-      HandwritingManager.addPoint(pos.x, pos.y)
+      currentStrokePath.push({ x: pos.x, y: pos.y })
       lastX = pos.x
       lastY = pos.y
     }
@@ -353,7 +353,11 @@ export class WritingGame extends GameEngine {
     const onEnd = (e) => {
       if (!drawing) return
       drawing = false
-      HandwritingManager.endStroke()
+      // 記錄完成的筆畫到 HandwritingManager（供 undo 使用）
+      if (currentStrokePath.length > 1) {
+        HandwritingManager.recordStroke([...currentStrokePath])
+      }
+      currentStrokePath = []
     }
 
     // 滑鼠事件
@@ -460,7 +464,7 @@ export class WritingGame extends GameEngine {
     if (this._recognizing || this.isAnswering) return
 
     // 檢查是否有繪製任何筆畫
-    if (HandwritingManager.getStrokeCount() === 0) {
+    if (HandwritingManager._strokeStack.length === 0) {
       this._showRetryMessage('請先在魔法書上寫字 ✏️')
       return
     }
