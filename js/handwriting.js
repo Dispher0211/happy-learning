@@ -41,10 +41,21 @@ export const HandwritingManager = {
 
   async recognize(canvas, options = {}) {
     const mode       = options.mode || 'chinese'
+    const geminiKeys = (AppState.settings?.api_keys?.gemini   || []).filter(k => k?.trim())
     const msKeys     = (AppState.settings?.api_keys?.myScript || []).filter(k => k?.trim())
     const visionKeys = (AppState.settings?.api_keys?.vision   || []).filter(k => k?.trim())
-    const geminiKeys = (AppState.settings?.api_keys?.gemini   || []).filter(k => k?.trim())
 
+    // 整體 timeout 30s，防止所有模型串聯等待時畫面凍結
+    const timeoutPromise = new Promise(resolve =>
+      setTimeout(() => resolve({ fallback: mode === 'zhuyin' ? 'keyboard' : 'retry' }), 30000)
+    )
+
+    const recognizePromise = this._doRecognize(canvas, mode, geminiKeys, msKeys, visionKeys)
+
+    return Promise.race([recognizePromise, timeoutPromise])
+  },
+
+  async _doRecognize(canvas, mode, geminiKeys, msKeys, visionKeys) {
     // ① Gemini Vision（免費額度高，優先使用）
     if (geminiKeys.length > 0) {
       const r = await this._callGeminiWithFallback(canvas, geminiKeys, mode)

@@ -561,10 +561,14 @@ export class WritingGame extends GameEngine {
 
     this._recognizing = true
     this._setButtonsEnabled(false)
+    this._showRetryMessage('🔍 辨識中…', true)
 
     try {
       // 呼叫 HandwritingManager 進行辨識
       const result = await HandwritingManager.recognize(this._canvas, { mode: 'chinese' })
+
+      // 辨識完成，隱藏「辨識中」提示
+      this._hideRetryMessage()
 
       if (result && result.fallback === 'retry') {
         // 辨識失敗：顯示「請再寫一次」，清空 canvas，不計答錯
@@ -595,16 +599,25 @@ export class WritingGame extends GameEngine {
   /**
    * 顯示辨識重試訊息
    */
-  _showRetryMessage(msg) {
+  _showRetryMessage(msg, persistent = false) {
     const retryMsg = document.getElementById('writing-retry-msg')
     if (retryMsg) {
       retryMsg.textContent = msg
       retryMsg.style.display = 'block'
-      // 2秒後自動隱藏
-      setTimeout(() => {
-        if (retryMsg) retryMsg.style.display = 'none'
-      }, 2000)
+      if (!persistent) {
+        // 一般提示 2 秒後自動隱藏
+        clearTimeout(this._retryMsgTimer)
+        this._retryMsgTimer = setTimeout(() => {
+          if (retryMsg) retryMsg.style.display = 'none'
+        }, 2000)
+      }
     }
+  }
+
+  _hideRetryMessage() {
+    const retryMsg = document.getElementById('writing-retry-msg')
+    if (retryMsg) retryMsg.style.display = 'none'
+    clearTimeout(this._retryMsgTimer)
   }
 
   /**
