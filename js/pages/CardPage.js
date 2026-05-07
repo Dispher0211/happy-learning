@@ -1253,14 +1253,12 @@ export class CardPage {
     const MEDIALS  = new Set('ㄧㄨㄩ')
     const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
 
-    // 拆解聲調
     let src = pron, tone = ''
     if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
     else if (src.length > 0 && TONES.has(src[src.length - 1])) {
       tone = src[src.length - 1]; src = src.slice(0, -1)
     }
 
-    // 拆解聲母/介音/韻母
     let initial = '', medial = '', final = ''
     for (const c of src) {
       if (INITIALS.has(c))     initial = c
@@ -1270,48 +1268,51 @@ export class CardPage {
 
     const count = [initial, medial, final].filter(Boolean).length
 
-    // 方格系統：3列注音格 + 聲調格
-    // 聲調格 row1=˙位置, row2=ˊˇˋ位置, row3=空
-    const dotHtml  = tone === '˙'
-      ? `<span class="pv2-dot">${this._escapeHtml(tone)}</span>` : '<span class="pv2-dot pv2-empty"></span>'
-    const toneHtml = (tone && tone !== '˙')
-      ? `<span class="pv2-tone">${this._escapeHtml(tone)}</span>` : '<span class="pv2-tone pv2-empty"></span>'
+    // 輕聲˙：浮在注音欄正上方，pv2 加 has-dot class 保留空間
+    const hasDot  = tone === '˙'
+    const dotHtml = hasDot
+      ? `<span class="pv2-dot">${this._escapeHtml(tone)}</span>` : ''
 
-    // A: 1個符號 → 列1空, 列2放符號, 列3空
+    // 聲調（ˊˇˋ）：在聲調欄中間
+    const toneHtml = (tone && tone !== '˙')
+      ? `<span class="pv2-tone">${this._escapeHtml(tone)}</span>`
+      : `<span class="pv2-tone pv2-empty"></span>`
+
+    const toneCol = `<span class="pv2-tone-col">` +
+      `<span class="pv2-empty pv2-tone-spacer"></span>` +
+      toneHtml +
+      `<span class="pv2-empty pv2-tone-spacer"></span>` +
+      `</span>`
+
+    // 外層 class：加 has-dot 供 CSS padding-top 用
+    const dotCls = hasDot ? ' pv2--dot' : ''
+
     if (count === 1) {
       const sym = initial || medial || final
-      return `<span class="pv2 pv2-a">` +
+      return `<span class="pv2 pv2-a${dotCls}">${dotHtml}` +
         `<span class="pv2-col">` +
         `<span class="pv2-r1 pv2-empty"></span>` +
         `<span class="pv2-r2">${this._escapeHtml(sym)}</span>` +
         `<span class="pv2-r3 pv2-empty"></span>` +
-        `</span>` +
-        `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
-        `</span>`
+        `</span>${toneCol}</span>`
     }
 
-    // B: 2個符號 → 列1+列3，聲調在列2右側
     if (count === 2) {
       const slots = [initial, medial, final].filter(Boolean)
-      return `<span class="pv2 pv2-b">` +
+      return `<span class="pv2 pv2-b${dotCls}">${dotHtml}` +
         `<span class="pv2-col">` +
         `<span class="pv2-r1">${this._escapeHtml(slots[0])}</span>` +
         `<span class="pv2-r2 pv2-empty"></span>` +
         `<span class="pv2-r3">${this._escapeHtml(slots[1])}</span>` +
-        `</span>` +
-        `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
-        `</span>`
+        `</span>${toneCol}</span>`
     }
 
-    // C: 3個符號 → 列1=聲母, 列2=介音, 列3=韻母，聲調在列2右側
-    return `<span class="pv2 pv2-c">` +
+    return `<span class="pv2 pv2-c${dotCls}">${dotHtml}` +
       `<span class="pv2-col">` +
       `<span class="pv2-r1">${this._escapeHtml(initial)}</span>` +
       `<span class="pv2-r2">${this._escapeHtml(medial)}</span>` +
       `<span class="pv2-r3">${this._escapeHtml(final)}</span>` +
-      `</span>` +
-      `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
-      `</span>`
+      `</span>${toneCol}</span>`
   }
 
   /**

@@ -1076,7 +1076,12 @@
   vertical-align: bottom;
   white-space: nowrap;
   line-height: 1;
-  position: relative;   /* 讓 pv2-dot 可絕對定位 */
+  position: relative;
+}
+
+/* 有˙時上方留空，避免˙與注音重疊 */
+.pv2--dot {
+  padding-top: 0.45em;
 }
 
 .pv2-col {
@@ -1090,7 +1095,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;   /* 聲調置中 */
+  justify-content: center;
 }
 
 .pv2-r1, .pv2-r2, .pv2-r3,
@@ -1104,16 +1109,12 @@
   color: inherit;
 }
 
-/* 聲調欄的上下佔位格 */
-.pv2-tone-spacer {
-  flex: 1;
-  visibility: hidden;
-}
+.pv2-tone-spacer { flex: 1; visibility: hidden; }
 
-/* 輕聲˙：絕對定位，浮在注音欄正上方中央 */
+/* 輕聲˙：padding-top 留的空間內，正中對齊注音欄 */
 .pv2-dot {
   position: absolute;
-  top: -0.5em;
+  top: 0;
   left: 0;
   right: 0;
   text-align: center;
