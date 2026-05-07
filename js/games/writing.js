@@ -44,6 +44,10 @@ export class WritingGame extends GameEngine {
     this._cleanupFns = []
     // 是否正在等待辨識結果
     this._recognizing = false
+    // 本地筆畫 stack（每筆畫為 { points: [{x,y},...] }）
+    this._localStrokes = []
+    // 目前正在繪製的筆畫點陣
+    this._currentStrokePoints = []
   }
 
   // ═══════════════════════════════════════════════════════
@@ -344,8 +348,11 @@ export class WritingGame extends GameEngine {
     this._ctx.lineCap = 'round'
     this._ctx.lineJoin = 'round'
 
-    // 初始化 HandwritingManager（傳入 canvas，手寫 stack 重置）
-    HandwritingManager.setCanvas(this._canvas)
+    // 重置本地筆畫 stack
+    this._localStrokes = []
+    this._currentStrokePoints = []
+    // 同步清空 HandwritingManager 的 undo stack
+    HandwritingManager.clearStrokes()
 
     // 綁定觸控/滑鼠事件
     this._bindDrawingEvents()
@@ -387,8 +394,8 @@ export class WritingGame extends GameEngine {
       lastY = pos.y
       this._ctx.beginPath()
       this._ctx.moveTo(lastX, lastY)
-      // 通知 HandwritingManager 開始新筆畫
-      HandwritingManager.beginStroke(lastX, lastY)
+      // 開始收集本筆畫點陣
+      this._currentStrokePoints = [{ x: lastX, y: lastY }]
     }
 
     const onMove = (e) => {
@@ -397,7 +404,8 @@ export class WritingGame extends GameEngine {
       const pos = getPos(e)
       this._ctx.lineTo(pos.x, pos.y)
       this._ctx.stroke()
-      HandwritingManager.addPoint(pos.x, pos.y)
+      // 記錄點陣
+      this._currentStrokePoints.push({ x: pos.x, y: pos.y })
       lastX = pos.x
       lastY = pos.y
     }
@@ -405,7 +413,13 @@ export class WritingGame extends GameEngine {
     const onEnd = (e) => {
       if (!drawing) return
       drawing = false
-      HandwritingManager.endStroke()
+      // 將本筆畫存入本地 stack 並通知 HandwritingManager
+      if (this._currentStrokePoints.length > 0) {
+        const strokeData = { points: [...this._currentStrokePoints] }
+        this._localStrokes.push(strokeData)
+        HandwritingManager.recordStroke(strokeData)
+        this._currentStrokePoints = []
+      }
     }
 
     // 滑鼠事件
@@ -486,15 +500,21 @@ export class WritingGame extends GameEngine {
    * 呼叫 HandwritingManager.undoLastStroke() 並重繪 canvas
    */
   _handleUndo() {
-    const remaining = HandwritingManager.undoLastStroke()
-    // 清空 canvas 後重繪剩餘筆畫
-    this._redrawStrokes(remaining)
+    // 從本地 stack 移除最後一筆
+    this._localStrokes.pop()
+    // 同步 HandwritingManager undo stack（會回傳剩餘，但我們用本地 stack 重繪）
+    HandwritingManager.undoLastStroke()
+    // 用本地 stack 重繪 canvas
+    this._redrawStrokes(this._localStrokes)
   }
 
   /**
    * 清除全部筆畫
    */
   _handleClear() {
+    // 清空本地筆畫 stack
+    this._localStrokes = []
+    this._currentStrokePoints = []
     HandwritingManager.clearStrokes()
     if (this._ctx && this._canvas) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
@@ -511,8 +531,8 @@ export class WritingGame extends GameEngine {
     // 防止重複觸發
     if (this._recognizing || this.isAnswering) return
 
-    // 檢查是否有繪製任何筆畫
-    if (HandwritingManager.getStrokeCount() === 0) {
+    // 檢查是否有繪製任何筆畫（用本地 stack 判斷）
+    if (this._localStrokes.length === 0) {
       this._showRetryMessage('請先在魔法書上寫字 ✏️')
       return
     }
@@ -832,6 +852,8 @@ export class WritingGame extends GameEngine {
     this._canvas = null
     this._ctx = null
     this._recognizing = false
+    this._localStrokes = []
+    this._currentStrokePoints = []
 
     // 清理 HandwritingManager canvas 綁定
     try {
