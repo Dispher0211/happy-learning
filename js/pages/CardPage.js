@@ -601,23 +601,53 @@ export class CardPage {
   renderIdiomCard(idiomObj) {
     if (!idiomObj) return
 
-    // 相容純字串格式（my_idioms 存的是字串）
-    let idiom, meaning, example, origin, pron
+    // 查 idioms.json（優先）或 idiom_dict.json（fallback）
+    const lookup = (name) => {
+      const idiomsDict = JSONLoader.get('idioms') || []
+      let found = idiomsDict.find(e => e.idiom === name || e['成語'] === name)
+      if (!found) {
+        const dictData = JSONLoader.get('idiom_dict') || []
+        found = dictData.find(e => e.idiom === name)
+      }
+      return found || null
+    }
+
+    let idiom, meaning, story, example, zhuyinList
     if (typeof idiomObj === 'string') {
       idiom = idiomObj
-      const idiomsDict = JSONLoader.get('idioms') || []
-      const found = idiomsDict.find(e => e.idiom === idiom || e['成語'] === idiom)
-      meaning = found?.meaning || found?.['意思'] || ''
-      example = found?.example || found?.['例句'] || ''
-      origin  = found?.origin  || found?.['出處'] || ''
-      pron    = found?.zhuyin  || found?.['注音'] || ''
+      const found = lookup(idiom)
+      meaning    = found?.meaning || ''
+      story      = found?.story   || ''
+      example    = found?.example || ''
+      zhuyinList = Array.isArray(found?.zhuyin) ? found.zhuyin : []
     } else {
-      idiom   = idiomObj['成語'] || idiomObj.idiom || ''
-      meaning = idiomObj['意思'] || idiomObj.meaning || ''
-      example = idiomObj['例句'] || idiomObj.example || ''
-      origin  = idiomObj['出處'] || idiomObj.origin || ''
-      pron    = idiomObj['注音'] || idiomObj.pronunciation || ''
+      idiom      = idiomObj['成語'] || idiomObj.idiom || ''
+      meaning    = idiomObj['意思'] || idiomObj.meaning || ''
+      story      = idiomObj.story   || ''
+      example    = idiomObj['例句'] || idiomObj.example || ''
+      zhuyinList = Array.isArray(idiomObj.zhuyin) ? idiomObj.zhuyin : []
+      // fallback lookup
+      if (!meaning || !zhuyinList.length) {
+        const found = lookup(idiom)
+        if (found) {
+          if (!meaning)        meaning    = found.meaning || ''
+          if (!story)          story      = found.story   || ''
+          if (!zhuyinList.length) zhuyinList = found.zhuyin || []
+        }
+      }
     }
+
+    // 成語標題：逐字用方格注音格式
+    const idiomChars = [...String(idiom)]
+    const idiomHtml = (AppState.zhuyinOn && zhuyinList.length === idiomChars.length)
+      ? idiomChars.map((c, i) => {
+          const z = zhuyinList[i] || ''
+          return `<span class="idiom-char-unit">
+            <span class="idiom-han">${this._escapeHtml(c)}</span>
+            ${z ? `<span class="idiom-pron">${this._renderZhuyinVerticalInline(z)}</span>` : ''}
+          </span>`
+        }).join('')
+      : `<span class="idiom-han-plain">${this._escapeHtml(idiom)}</span>`
 
     const wrap = document.getElementById('card-wrap')
     if (!wrap) return
@@ -625,13 +655,11 @@ export class CardPage {
     wrap.innerHTML = `
       <div class="idiom-card">
         <div class="idiom-card__main">
-          <div class="idiom-card__idiom bpmf-font">
-            ${this._escapeHtml(idiom)}
-          </div>
+          <div class="idiom-card__idiom">${idiomHtml}</div>
         </div>
-        ${meaning ? `<div class="idiom-card__meaning">【意思】${this._escapeHtml(meaning)}</div>` : ''}
-        ${example ? `<div class="idiom-card__example">【例句】${this._escapeHtml(example)}</div>`  : ''}
-        ${origin  ? `<div class="idiom-card__origin">【出處】${this._escapeHtml(origin)}</div>`   : ''}
+        ${meaning ? `<div class="idiom-card__meaning">💡 ${this._escapeHtml(meaning)}</div>` : ''}
+        ${story   ? `<div class="idiom-card__story">📖 ${this._escapeHtml(story)}</div>`   : ''}
+        ${example ? `<div class="idiom-card__example">✏️ ${this._escapeHtml(example)}</div>` : ''}
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
       </div>
     `
@@ -1211,14 +1239,14 @@ export class CardPage {
     const MEDIALS  = new Set('ㄧㄨㄩ')
     const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
 
-    // ── 拆解聲調 ──
+    // 拆解聲調
     let src = pron, tone = ''
     if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
     else if (src.length > 0 && TONES.has(src[src.length - 1])) {
       tone = src[src.length - 1]; src = src.slice(0, -1)
     }
 
-    // ── 拆解聲母/介音/韻母 ──
+    // 拆解聲母/介音/韻母
     let initial = '', medial = '', final = ''
     for (const c of src) {
       if (INITIALS.has(c))     initial = c
@@ -1227,51 +1255,49 @@ export class CardPage {
     }
 
     const count = [initial, medial, final].filter(Boolean).length
-    const e = s => this._escapeHtml(s)
 
-    // ── 右側聲調欄 ──
-    // 1聲不顯示；2ˊ3ˇ4ˋ在右欄垂直置中；輕聲˙在左欄頂部
-    const rightTone = (tone && tone !== '˙')
-      ? `<span class="pv2-tone">${e(tone)}</span>`
-      : ''
+    // 方格系統：3列注音格 + 聲調格
+    // 聲調格 row1=˙位置, row2=ˊˇˋ位置, row3=空
+    const dotHtml  = tone === '˙'
+      ? `<span class="pv2-dot">${this._escapeHtml(tone)}</span>` : '<span class="pv2-dot pv2-empty"></span>'
+    const toneHtml = (tone && tone !== '˙')
+      ? `<span class="pv2-tone">${this._escapeHtml(tone)}</span>` : '<span class="pv2-tone pv2-empty"></span>'
 
-    // ── A: 單符號 → 3格，符號置中格 ──
+    // A: 1個符號 → 列1空, 列2放符號, 列3空
     if (count === 1) {
       const sym = initial || medial || final
-      const topDot = tone === '˙' ? `<span class="pv2-dot">˙</span>` : ''
-      return `<span class="pv2 pv2-a">`+
-        `<span class="pv2-col">${topDot}`+
-          `<span class="pv2-empty"></span>`+
-          `<span class="pv2-sym">${e(sym)}</span>`+
-          `<span class="pv2-empty"></span>`+
-        `</span>`+
-        rightTone+
-      `</span>`
+      return `<span class="pv2 pv2-a">` +
+        `<span class="pv2-col">` +
+        `<span class="pv2-r1 pv2-empty"></span>` +
+        `<span class="pv2-r2">${this._escapeHtml(sym)}</span>` +
+        `<span class="pv2-r3 pv2-empty"></span>` +
+        `</span>` +
+        `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
+        `</span>`
     }
 
-    // ── B: 雙符號 → 2格，上下各一 ──
+    // B: 2個符號 → 列1+列3，聲調在列2右側
     if (count === 2) {
       const slots = [initial, medial, final].filter(Boolean)
-      const topDot = tone === '˙' ? `<span class="pv2-dot">˙</span>` : ''
-      return `<span class="pv2 pv2-b">`+
-        `<span class="pv2-col">${topDot}`+
-          `<span class="pv2-sym">${e(slots[0])}</span>`+
-          `<span class="pv2-sym">${e(slots[1])}</span>`+
-        `</span>`+
-        rightTone+
-      `</span>`
+      return `<span class="pv2 pv2-b">` +
+        `<span class="pv2-col">` +
+        `<span class="pv2-r1">${this._escapeHtml(slots[0])}</span>` +
+        `<span class="pv2-r2 pv2-empty"></span>` +
+        `<span class="pv2-r3">${this._escapeHtml(slots[1])}</span>` +
+        `</span>` +
+        `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
+        `</span>`
     }
 
-    // ── C: 三符號 → 3格，上=聲母 中=介音 下=韻母 ──
-    const topDot = tone === '˙' ? `<span class="pv2-dot">˙</span>` : ''
-    return `<span class="pv2 pv2-c">`+
-      `<span class="pv2-col">${topDot}`+
-        `<span class="pv2-sym">${e(initial)}</span>`+
-        `<span class="pv2-sym">${e(medial)}</span>`+
-        `<span class="pv2-sym">${e(final)}</span>`+
-      `</span>`+
-      rightTone+
-    `</span>`
+    // C: 3個符號 → 列1=聲母, 列2=介音, 列3=韻母，聲調在列2右側
+    return `<span class="pv2 pv2-c">` +
+      `<span class="pv2-col">` +
+      `<span class="pv2-r1">${this._escapeHtml(initial)}</span>` +
+      `<span class="pv2-r2">${this._escapeHtml(medial)}</span>` +
+      `<span class="pv2-r3">${this._escapeHtml(final)}</span>` +
+      `</span>` +
+      `<span class="pv2-tone-col">${dotHtml}${toneHtml}<span class="pv2-empty"></span></span>` +
+      `</span>`
   }
 
   /**

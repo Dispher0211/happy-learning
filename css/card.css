@@ -734,29 +734,80 @@
 }
 
 /* 成語主字（大字，注音體） */
+/* 成語標題：逐字方格注音 */
 .idiom-card__idiom {
-  font-family: var(--font-zhuyin);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 10px;
+  line-height: 1;
+}
+.idiom-char-unit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.idiom-han {
+  font-family: var(--font-body);
   font-size: 2.8rem;
   font-weight: 700;
   color: #065F46;
-  text-align: center;
-  letter-spacing: 0.15em;
-  margin: 14px 0 10px;
-  line-height: 1.2;
+  line-height: 1;
 }
+.idiom-han-plain {
+  font-family: var(--font-body);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #065F46;
+}
+.idiom-pron {
+  margin-left: 2px;
+}
+/* 成語注音：同 word-title-pron 尺寸 */
+.idiom-pron .pv2-r1,
+.idiom-pron .pv2-r2,
+.idiom-pron .pv2-r3   { font-size: 0.72rem; color: #059669; }
+.idiom-pron .pv2-dot,
+.idiom-pron .pv2-tone  { font-size: 0.72rem; color: #059669; }
 
-/* 成語意思 / 例句 */
+/* 成語意思 / 典故 / 例句 */
 .idiom-card__meaning,
-.idiom-card__example,
-.idiom-card__origin {
-  font-size: 1.1rem;
-  line-height: 1.9;
+.idiom-card__story,
+.idiom-card__example {
+  font-size: 1.05rem;
+  line-height: 1.8;
   margin-bottom: 10px;
-  font-family: var(--font-zhuyin);
+  font-family: var(--font-body);
 }
-.idiom-card__meaning { color: #064E3B; background: #ECFDF5; border-left: 4px solid #10B981; border-radius: 10px; padding: 8px 12px; }
-.idiom-card__example { color: #065F46; background: #F0FDF4; border-left: 4px solid #34D399; border-radius: 10px; padding: 8px 12px; }
-.idiom-card__origin  { color: #6B7280; font-size: 0.9rem; padding: 4px 12px; }
+.idiom-card__meaning {
+  color: #064E3B;
+  background: #ECFDF5;
+  border-left: 4px solid #10B981;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.idiom-card__story {
+  color: #374151;
+  background: #FEF9C3;
+  border-left: 4px solid #FBBF24;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-height: 8em;
+  overflow-y: auto;
+}
+.idiom-card__example {
+  color: #065F46;
+  background: #F0FDF4;
+  border-left: 4px solid #34D399;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
    ══════════════════════════════════════════ */
 
 .card-page__empty {
@@ -1011,162 +1062,142 @@
 .multi-tone-bpmf .pv2-mid,
 .multi-tone-bpmf .pv2-bot  { font-size: 0.55em; color: #ff4fa3; }
 .multi-tone-bpmf .pv2-tone-side { font-size: 0.55em; color: #ff4fa3; }
+
 /* ══════════════════════════════════════════
-   pv2-* 直式注音系統 (A/B/C)
-   結構：.pv2 > .pv2-col (左欄符號) + .pv2-tone (右欄聲調)
-   A=單符號3格  B=雙符號2格  C=三符號3格
+   pv2 方格注音系統
+   結構：
+   .pv2 > .pv2-col(注音格3列) + .pv2-tone-col(聲調格3列)
+   
+   列1(r1): 聲母 / 上格
+   列2(r2): 介音 / 中格（A規則的唯一符號）
+   列3(r3): 韻母 / 下格
+   
+   聲調格:
+   row1 = ˙輕聲位置
+   row2 = ˊˇˋ聲調位置
+   row3 = 空
    ══════════════════════════════════════════ */
 
-/* 外層：row，左欄+右欄 */
+/* 外容器：漢字+注音格+聲調格，flex row */
 .pv2 {
   display: inline-flex;
   flex-direction: row;
-  align-items: center;
-  white-space: nowrap;
+  align-items: stretch;
   vertical-align: middle;
-  position: relative;
+  white-space: nowrap;
   line-height: 1;
 }
 
-/* 左欄：符號縱排 */
+/* 注音格：3個等高列 */
 .pv2-col {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  gap: 0.5px;
+  justify-content: stretch;
 }
 
-/* 格位：sym = 實際符號，empty = 佔位 */
-.pv2-sym, .pv2-empty {
+/* 聲調格：3個等高列（˙格/聲調格/空格） */
+.pv2-tone-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
+}
+
+/* 各列格子：等高，文字置中 */
+.pv2-r1, .pv2-r2, .pv2-r3,
+.pv2-dot, .pv2-tone {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 700;
+  line-height: 1;
+  min-height: 0;
+  color: inherit;
+}
+
+/* 預設大小（由各 context 覆蓋） */
+.pv2-r1, .pv2-r2, .pv2-r3 {
   font-size: 0.75rem;
-  line-height: 1;
-  min-width: 0.9em;
-  color: inherit;
-}
-.pv2-empty { visibility: hidden; }
-
-/* A: 3格高度 = 1em，sym在中格 */
-.pv2-a .pv2-col { height: 1em; justify-content: space-around; }
-/* B: 2格高度 = 1em，均分 */
-.pv2-b .pv2-col { height: 1em; justify-content: space-around; }
-/* C: 3格高度 = 1em，均分 */
-.pv2-c .pv2-col { height: 1em; justify-content: space-around; }
-
-/* 右欄：聲調(ˊˇˋ)垂直置中 */
-.pv2-tone {
-  display: flex;
-  align-items: center;
-  align-self: center;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 900;
-  font-size: 0.4em;
-  line-height: 1;
-  margin-left: 1px;
-  color: inherit;
+  min-width: 0.8em;
 }
 
-/* 輕聲(˙)：絕對定位在左欄頂部 */
-.pv2-dot {
-  position: absolute;
-  top: -0.55em;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.9em;
-  font-weight: 900;
-  font-family: 'Noto Sans TC', sans-serif;
-  color: inherit;
-  pointer-events: none;
+.pv2-dot, .pv2-tone {
+  font-size: 0.75rem;
+  min-width: 0.5em;
 }
 
-/* ── Context 尺寸 ── */
+/* 空格不可見 */
+.pv2-empty {
+  visibility: hidden;
+}
 
-/* 生字側邊大注音 */
-.char-card__zhuyin-side .pv2-sym  { font-size: 0.85rem; }
-.char-card__zhuyin-side .pv2-tone { font-size: 0.85rem; }
-.char-card__zhuyin-side .pv2-dot  { font-size: 0.85rem; }
-.char-card__zhuyin-side .pv2-a .pv2-col,
-.char-card__zhuyin-side .pv2-b .pv2-col,
-.char-card__zhuyin-side .pv2-c .pv2-col { height: auto; gap: 3px; }
+/* B規則：列1/列3有符號，列2空 → col 排列正確 */
+.pv2-b .pv2-r2 { visibility: hidden; }
 
-/* 多音字 tab */
-.poly-btn__zhuyin .pv2-sym  { font-size: 0.85rem; color: inherit; }
-.poly-btn__zhuyin .pv2-tone { font-size: 0.85rem; color: inherit; }
-.poly-btn__zhuyin .pv2-a .pv2-col,
-.poly-btn__zhuyin .pv2-b .pv2-col,
-.poly-btn__zhuyin .pv2-c .pv2-col { height: auto; gap: 2px; }
-
-/* poly-word-pron（生字詞語chip） */
-.poly-word-pron .pv2-sym  { font-size: 0.6rem; color: #E11D48; }
-.poly-word-pron .pv2-tone { font-size: 0.6rem; color: #E11D48; }
-.poly-word-pron .pv2-dot  { font-size: 0.6rem; color: #E11D48; }
-
-/* ── Context 尺寸覆蓋（統一用 rem 避免 em 累算） ── */
+/* ── Context 尺寸（rem，不受父層 em 影響）── */
 
 /* 生字旁大注音 */
-.char-card__zhuyin-side .pv2-sym,
-.char-card__zhuyin-side .pv2-empty { font-size: 0.82rem; }
-.char-card__zhuyin-side .pv2-tone  { font-size: 0.82rem; }
-.char-card__zhuyin-side .pv2-dot   { font-size: 0.85rem; top: -0.5em; }
-.char-card__zhuyin-side .pv2-col   { gap: 2px; }
+.char-card__zhuyin-side .pv2-r1,
+.char-card__zhuyin-side .pv2-r2,
+.char-card__zhuyin-side .pv2-r3 { font-size: 0.82rem; min-width: 0.9em; }
+.char-card__zhuyin-side .pv2-dot,
+.char-card__zhuyin-side .pv2-tone { font-size: 0.82rem; }
 
 /* 多音字讀音 tab */
-.poly-btn__zhuyin .pv2-sym,
-.poly-btn__zhuyin .pv2-empty { font-size: 0.78rem; color: inherit; }
-.poly-btn__zhuyin .pv2-tone  { font-size: 0.78rem; color: inherit; }
-.poly-btn__zhuyin .pv2-dot   { font-size: 0.78rem; top: -0.5em; color: inherit; }
-.poly-btn__zhuyin .pv2-col   { gap: 1px; }
+.poly-btn__zhuyin .pv2-r1,
+.poly-btn__zhuyin .pv2-r2,
+.poly-btn__zhuyin .pv2-r3 { font-size: 0.78rem; min-width: 0.85em; color: inherit; }
+.poly-btn__zhuyin .pv2-dot,
+.poly-btn__zhuyin .pv2-tone { font-size: 0.78rem; color: inherit; }
 
-/* poly chip 詞語 */
-.poly-word-pron .pv2-sym,
-.poly-word-pron .pv2-empty { font-size: 0.52rem; color: #E11D48; }
-.poly-word-pron .pv2-tone  { font-size: 0.52rem; color: #E11D48; }
-.poly-word-pron .pv2-dot   { font-size: 0.52rem; color: #E11D48; top: -0.5em; }
-.poly-word-pron .pv2-col   { gap: 0px; }
+/* poly chip 詞語（粉紅） */
+.poly-word-pron .pv2-r1,
+.poly-word-pron .pv2-r2,
+.poly-word-pron .pv2-r3 { font-size: 0.52rem; min-width: 0.6em; color: #E11D48; }
+.poly-word-pron .pv2-dot,
+.poly-word-pron .pv2-tone { font-size: 0.52rem; color: #E11D48; }
 
-/* 字義說明（ann-unit，漢字 1.25rem 旁）*/
-.ann-unit .pv2-sym,
-.ann-unit .pv2-empty { font-size: 0.48rem; }
-.ann-unit .pv2-tone  { font-size: 0.48rem; }
-.ann-unit .pv2-dot   { font-size: 0.48rem; top: -0.45em; }
-.ann-unit .pv2-col   { gap: 0px; }
+/* 字義說明（ann-unit，漢字 1.25rem） */
+.ann-unit .pv2-r1,
+.ann-unit .pv2-r2,
+.ann-unit .pv2-r3 { font-size: 0.48rem; min-width: 0.55em; }
+.ann-unit .pv2-dot,
+.ann-unit .pv2-tone { font-size: 0.48rem; }
 
-/* chip-ann-unit（漢字 1.3rem 旁）*/
-.chip-ann-unit .pv2-sym,
-.chip-ann-unit .pv2-empty { font-size: 0.52rem; }
-.chip-ann-unit .pv2-tone  { font-size: 0.52rem; }
-.chip-ann-unit .pv2-dot   { font-size: 0.52rem; top: -0.45em; }
-.chip-ann-unit .pv2-col   { gap: 0px; }
+/* 詞語 chip（chip-ann-unit，漢字 1.3rem） */
+.chip-ann-unit .pv2-r1,
+.chip-ann-unit .pv2-r2,
+.chip-ann-unit .pv2-r3 { font-size: 0.52rem; min-width: 0.6em; }
+.chip-ann-unit .pv2-dot,
+.chip-ann-unit .pv2-tone { font-size: 0.52rem; }
 
-/* 部首（漢字 1rem 旁）*/
-.radical-ann-unit .pv2-sym,
-.radical-ann-unit .pv2-empty { font-size: 0.44rem; color: #6366F1; }
-.radical-ann-unit .pv2-tone  { font-size: 0.44rem; color: #6366F1; }
-.radical-ann-unit .pv2-dot   { font-size: 0.44rem; color: #6366F1; top: -0.4em; }
-.radical-ann-unit .pv2-col   { gap: 0px; }
+/* 部首（漢字 1rem） */
+.radical-ann-unit .pv2-r1,
+.radical-ann-unit .pv2-r2,
+.radical-ann-unit .pv2-r3 { font-size: 0.44rem; min-width: 0.5em; color: #6366F1; }
+.radical-ann-unit .pv2-dot,
+.radical-ann-unit .pv2-tone { font-size: 0.44rem; color: #6366F1; }
 
-/* 詞語卡標題（漢字 2.8rem 旁）*/
-.word-title-pron .pv2-sym,
-.word-title-pron .pv2-empty { font-size: 0.72rem; color: #0E7490; }
-.word-title-pron .pv2-tone  { font-size: 0.72rem; color: #0E7490; }
-.word-title-pron .pv2-dot   { font-size: 0.72rem; color: #0E7490; top: -0.4em; }
-.word-title-pron .pv2-col   { gap: 1px; }
+/* 詞語卡標題（漢字 2.8rem） */
+.word-title-pron .pv2-r1,
+.word-title-pron .pv2-r2,
+.word-title-pron .pv2-r3 { font-size: 0.72rem; min-width: 0.8em; color: #0E7490; }
+.word-title-pron .pv2-dot,
+.word-title-pron .pv2-tone { font-size: 0.72rem; color: #0E7490; }
 
-/* poly 主字粉紅 */
-.mz-unit--poly .pv2-sym,
-.mz-unit--poly .pv2-empty,
-.mz-unit--poly .pv2-tone,
-.mz-unit--poly .pv2-dot { color: #ff4fa3; }
+/* poly 主字粉紅色 */
+.mz-unit--poly .pv2-r1,
+.mz-unit--poly .pv2-r2,
+.mz-unit--poly .pv2-r3,
+.mz-unit--poly .pv2-dot,
+.mz-unit--poly .pv2-tone { color: #ff4fa3; }
 
-/* multi-tone-bpmf */
-.multi-tone-bpmf .pv2-sym,
-.multi-tone-bpmf .pv2-empty { font-size: 0.58rem; color: #ff4fa3; }
-.multi-tone-bpmf .pv2-tone  { font-size: 0.58rem; color: #ff4fa3; }
-.multi-tone-bpmf .pv2-dot   { font-size: 0.58rem; color: #ff4fa3; top: -0.4em; }
-.multi-tone-bpmf .pv2-col   { gap: 1px; }
+/* multi-tone-bpmf（poly詞語chip主字） */
+.multi-tone-bpmf .pv2-r1,
+.multi-tone-bpmf .pv2-r2,
+.multi-tone-bpmf .pv2-r3 { font-size: 0.58rem; min-width: 0.65em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-dot,
+.multi-tone-bpmf .pv2-tone { font-size: 0.58rem; color: #ff4fa3; }
