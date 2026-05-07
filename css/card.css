@@ -768,11 +768,13 @@
   margin-left: 2px;
 }
 /* 成語注音：同 word-title-pron 尺寸 */
+.idiom-pron .pv2-col,
+.idiom-pron .pv2-tone-col { height: 2.8rem; }
 .idiom-pron .pv2-r1,
 .idiom-pron .pv2-r2,
-.idiom-pron .pv2-r3   { font-size: 0.72rem; color: #059669; }
+.idiom-pron .pv2-r3   { font-size: 0.85rem; color: #059669; min-width: 0.9em; }
 .idiom-pron .pv2-dot,
-.idiom-pron .pv2-tone  { font-size: 0.72rem; color: #059669; }
+.idiom-pron .pv2-tone  { font-size: 0.85rem; color: #059669; }
 
 /* 成語意思 / 典故 / 例句 */
 .idiom-card__meaning,
@@ -1093,7 +1095,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: stretch;
+  justify-content: space-between;
 }
 
 /* 聲調格：3個等高列（˙格/聲調格/空格） */
