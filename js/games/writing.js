@@ -682,46 +682,44 @@ export class WritingGame extends GameEngine {
   // ═══════════════════════════════════════════════════════
 
   /**
-   * 答對動畫：魔法書大放光芒，N顆★飛向右上角
+   * 答對動畫（規格 D.1 / 2.13）：
+   *   1. 魔法書大放光芒（glow）
+   *   2. ★★★★ 飛向右上角（數量 = stars 參數）
+   *   3. 更新 game-header 星星數字
    */
-  async playCorrectAnimation() {
+  async playCorrectAnimation(stars = 4) {
     const container = document.getElementById('writing-magic-book')
-    if (!container) return
-
-    // 移除答錯動畫 class（若有）
-    container.classList.remove('writing-book-shake', 'writing-book-close')
-
-    // 加入光芒動畫 class
-    container.classList.add('writing-book-glow')
-
-    // 在 canvas 上疊加大字「✓」反饋
-    const wrapper = container.querySelector('.writing-canvas-wrapper')
-    const feedback = document.createElement('div')
-    feedback.className = 'writing-correct-feedback'
-    feedback.textContent = '✓'
-    if (wrapper) wrapper.appendChild(feedback)
+    if (container) {
+      container.classList.remove('writing-book-shake', 'writing-book-close')
+      container.classList.add('writing-book-glow')
+    }
 
     // 播放答對音效
     if (AppState.settings?.soundOn !== false) {
       AudioManager.playEffect('correct')
     }
 
-    // 等待動畫完成
+    // ★ 飛向右上角（stars 顆，最多 8）
+    this._flyStarsToHeader(Math.min(Math.ceil(stars), 8))
+
+    // 等待光芒動畫完成
     await this._delay(1000)
-    container.classList.remove('writing-book-glow')
-    feedback.remove()
+    if (container) container.classList.remove('writing-book-glow')
+
+    // 更新 game-header 星星數字（讓小朋友看到即時反饋）
+    this._updateHeaderStars()
   }
 
   /**
-   * 答錯一次動畫：書本搖晃，清空重寫
+   * 答錯一次動畫（規格 D.1 / 2.13）：
+   *   書本搖晃，清空重寫
    */
   async playWrongAnimation() {
     const container = document.getElementById('writing-magic-book')
-    if (!container) return
-
-    // 書本搖晃
-    container.classList.remove('writing-book-glow')
-    container.classList.add('writing-book-shake')
+    if (container) {
+      container.classList.remove('writing-book-glow')
+      container.classList.add('writing-book-shake')
+    }
 
     // 播放答錯音效
     if (AppState.settings?.soundOn !== false) {
@@ -729,33 +727,101 @@ export class WritingGame extends GameEngine {
     }
 
     await this._delay(600)
-    container.classList.remove('writing-book-shake')
+    if (container) container.classList.remove('writing-book-shake')
 
     // 清空 canvas 供重寫
     this._handleClear()
   }
 
   /**
-   * 顯示正確答案：書本合起，顯示答案
+   * 答錯二次：書本合起，顯示正確答案（規格 D.1 / 2.13）
+   * GameEngine.onWrongSecondTime 呼叫，需等用戶按[下一題]才進下一題
    */
   async showCorrectAnswer() {
     const container = document.getElementById('writing-magic-book')
-    if (!container) return
+    if (container) {
+      container.classList.remove('writing-book-shake')
+      container.classList.add('writing-book-close')
+    }
 
-    // 書本合起動畫
-    container.classList.add('writing-book-close')
+    // 播放答錯音效
+    if (AppState.settings?.soundOn !== false) {
+      AudioManager.playEffect('wrong')
+    }
 
     // 顯示正確答案
     const revealDiv = document.getElementById('writing-correct-reveal')
-    if (revealDiv) {
-      revealDiv.style.display = 'flex'
-    }
+    if (revealDiv) revealDiv.style.display = 'flex'
 
-    // 隱藏手寫操作按鈕（已無需再寫）
+    // 隱藏手寫操作按鈕，改為顯示「下一題」按鈕
     const btnRow = document.getElementById('writing-btn-row')
     if (btnRow) btnRow.style.display = 'none'
 
+    // 插入「下一題」按鈕（若未存在）
+    if (!document.getElementById('btn-next-question')) {
+      const bookEl = document.getElementById('writing-magic-book')
+      if (bookEl) {
+        const nextBtn = document.createElement('button')
+        nextBtn.id = 'btn-next-question'
+        nextBtn.className = 'writing-btn writing-btn-primary'
+        nextBtn.style.cssText = 'margin-top:8px; width:100%; max-width:200px; padding:10px;'
+        nextBtn.textContent = '下一題 →'
+        nextBtn.addEventListener('click', () => {
+          nextBtn.disabled = true
+          this.nextQuestion()
+        })
+        bookEl.appendChild(nextBtn)
+      }
+    }
+
     await this._delay(500)
+  }
+
+  /**
+   * 星星飛向右上角動畫
+   * @param {number} count - 顆數
+   */
+  _flyStarsToHeader(count) {
+    if (typeof document === 'undefined' || count <= 0) return
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const star = document.createElement('div')
+        star.textContent = '★'
+        star.style.cssText = `
+          position: fixed;
+          font-size: 22px;
+          color: #FFD700;
+          text-shadow: 0 0 6px #FFA500;
+          pointer-events: none;
+          z-index: 9999;
+          left: ${25 + Math.random() * 50}%;
+          top: ${35 + Math.random() * 20}%;
+          transition: all 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          opacity: 1;
+        `
+        document.body.appendChild(star)
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          star.style.left = 'calc(100% - 100px)'
+          star.style.top = '10px'
+          star.style.opacity = '0'
+          star.style.fontSize = '10px'
+        }))
+        setTimeout(() => star.remove(), 900)
+      }, i * 80)
+    }
+  }
+
+  /**
+   * 更新 game-header 的星星數字顯示
+   */
+  _updateHeaderStars() {
+    const yellow = AppState.stars?.yellow_total ?? 0
+    const blue   = AppState.stars?.blue_total   ?? 0
+    const red    = AppState.stars?.red_total     ?? 0
+    const headerStar = document.getElementById('game-header-stars')
+    if (headerStar) {
+      headerStar.textContent = `🌟${yellow}`
+    }
   }
 
   // ═══════════════════════════════════════════════════════
@@ -856,6 +922,9 @@ export class WritingGame extends GameEngine {
     if (revealDiv) revealDiv.style.display = 'none'
     const hintContent = document.getElementById('writing-hint-content')
     if (hintContent) hintContent.style.display = 'none'
+    // 移除「下一題」按鈕（答錯二次才出現）
+    const nextBtn = document.getElementById('btn-next-question')
+    if (nextBtn) nextBtn.remove()
     // 恢復按鈕列
     const btnRow = document.getElementById('writing-btn-row')
     if (btnRow) btnRow.style.display = 'flex'
@@ -1159,27 +1228,6 @@ function injectWritingStyles() {
       font-size: 0.95rem;
       color: #5a4a00;
       line-height: 1.5;
-    }
-
-    /* ── 答對大字反饋 ── */
-    .writing-correct-feedback {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      font-size: 5rem;
-      color: #22c55e;
-      font-weight: 900;
-      z-index: 10;
-      animation: correctPop 0.9s ease-out forwards;
-      pointer-events: none;
-      text-shadow: 0 2px 12px rgba(34,197,94,0.5);
-    }
-
-    @keyframes correctPop {
-      0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-      40%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-      70%  { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1.0); opacity: 0; }
     }
 
     /* ── 動畫：魔法書光芒（答對） ── */
