@@ -490,6 +490,14 @@ const UIManager = {
     if (elYellow) elYellow.textContent = `★ ${yellowText}`
     if (elBlue)   elBlue.textContent   = `💙 ${blue_total}`
     if (elRed)    elRed.textContent    = `❤️ ${red_total}`
+
+    // 同步更新遊戲頁 header 星星（GameEngine._setupGameLayout 產生的 gh-* 元素）
+    const ghRed    = document.getElementById('gh-red')
+    const ghBlue   = document.getElementById('gh-blue')
+    const ghYellow = document.getElementById('gh-yellow')
+    if (ghRed)    ghRed.textContent    = `🔴★×${red_total}`
+    if (ghBlue)   ghBlue.textContent   = `🔵★×${blue_total}`
+    if (ghYellow) ghYellow.textContent = `⭐×${yellowText}`
   },
 
   // ────────────────────────────────────────

@@ -121,8 +121,28 @@ export class CardPage {
   /** 渲染頁面外框（header + 卡片容器），一次性操作 */
   _renderSkeleton() {
     const app = document.getElementById('app')
+
+    // 取目前星星數
+    const yellow = AppState.stars?.yellow_total ?? 0
+    const blue   = AppState.stars?.blue_total   ?? 0
+    const red    = AppState.stars?.red_total     ?? 0
+    const yellowFull = Math.floor(yellow)
+    const yellowHalf = (yellow % 1) >= 0.5
+    const yellowText = yellowHalf ? `${yellowFull}½` : `${yellowFull}`
+
     app.innerHTML = `
       <div class="card-page" id="card-page-root">
+
+        <!-- ★ 星星列（最上方） -->
+        <div class="card-page__stars-bar">
+          <span class="card-page__stars-item card-page__stars-item--red"
+                id="stars-red">❤️ ${red}</span>
+          <span class="card-page__stars-item card-page__stars-item--blue"
+                id="stars-blue">💙 ${blue}</span>
+          <span class="card-page__stars-item card-page__stars-item--yellow"
+                id="stars-yellow">★ ${yellowText}</span>
+        </div>
+
         <!-- 頂部導覽列 -->
         <div class="card-page__topbar">
           <button class="card-page__back-btn" id="card-back-btn" aria-label="返回">
@@ -156,6 +176,14 @@ export class CardPage {
 
         <!-- 底部計數器 -->
         <div class="card-page__counter" id="card-counter"></div>
+
+        <!-- 🏆 底部我的圖鑑入口（最下方） -->
+        <div class="card-page__bottom-bar">
+          <button class="card-page__pokedex-btn" id="card-pokedex-btn" aria-label="我的圖鑑">
+            🏆 我的圖鑑
+          </button>
+        </div>
+
       </div>
     `
 
@@ -164,6 +192,7 @@ export class CardPage {
     this._addListener('card-prev-btn', 'click', () => this.goPrev())
     this._addListener('card-next-btn', 'click', () => this.goNext())
     this._addListener('card-zhuyin-toggle', 'click', () => this._toggleZhuyin())
+    this._addListener('card-pokedex-btn', 'click', () => UIManager.navigate(PAGES.POKEDEX))
 
     // 類型分頁切換
     const tabs = document.querySelectorAll('.card-page__type-tab')

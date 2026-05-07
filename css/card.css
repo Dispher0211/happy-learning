@@ -1259,3 +1259,79 @@
 .writing-blank-pron .pv2-r3,
 .writing-blank-pron .pv2-tone,
 .writing-blank-pron .pv2-dot { color: #6366F1; }
+
+/* ══════════════════════════════════════════
+   星星列（最上方固定）
+   ══════════════════════════════════════════ */
+.card-page__stars-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 16px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 8px;
+}
+
+.card-page__stars-item {
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 16px;
+}
+
+.card-page__stars-item--yellow {
+  background: #FEF3C7;
+  color: #D97706;
+}
+.card-page__stars-item--blue {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+.card-page__stars-item--red {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+/* ══════════════════════════════════════════
+   底部圖鑑入口（最下方）
+   ══════════════════════════════════════════ */
+.card-page__bottom-bar {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px 24px;
+  margin-top: 8px;
+}
+
+.card-page__pokedex-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #7C3AED, #4F46E5);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99,91,255,0.4);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s, box-shadow 0.12s;
+  width: 100%;
+  max-width: 320px;
+  justify-content: center;
+}
+
+.card-page__pokedex-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 6px rgba(99,91,255,0.3);
+}
+
+@media (min-width: 600px) {
+  .card-page__stars-bar { gap: 20px; }
+  .card-page__stars-item { font-size: 1rem; padding: 5px 14px; }
+  .card-page__pokedex-btn { max-width: 360px; font-size: 1.05rem; }
+}

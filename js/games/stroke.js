@@ -118,8 +118,9 @@ export class StrokeGame extends GameEngine {
   // ════════════════════════════════════════════
   // renderQuestion
   // ════════════════════════════════════════════
-  renderQuestion() {
-    const q = this.getCurrentQuestion();
+  renderQuestion(question) {
+    // GameEngine 呼叫時傳入 question 參數；同時支援 this.currentQuestion 備援
+    const q = question || this.currentQuestion;
     if (!q) return;
 
     this._mode = q.mode;
@@ -127,10 +128,11 @@ export class StrokeGame extends GameEngine {
     this._quizCompleted = false;
     this._replayingAnimation = false;
 
-    const appEl = this._getContainer();
-    if (!appEl) return;
+    // 寫入遊戲內容容器（#game-content），不覆蓋 #app 整體 layout（含星星 header）
+    const container = this._getContainer();
+    if (!container) return;
 
-    appEl.innerHTML = this._buildHTML(q);
+    container.innerHTML = this._buildHTML(q);
     this._renderProgressBar();
     this._updateHintButton();
 
@@ -441,7 +443,7 @@ export class StrokeGame extends GameEngine {
   // judgeAnswer
   // ════════════════════════════════════════════
   async judgeAnswer(selected) {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) throw new Error('judgeAnswer: 無當前題目');
 
     if (q.mode === 1) {
@@ -457,7 +459,7 @@ export class StrokeGame extends GameEngine {
   // playCorrectAnimation
   // ════════════════════════════════════════════
   async playCorrectAnimation() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     const feedback = document.getElementById('sw-feedback');
     if (feedback) {
       const stars = q?.mode === 2 ? '★★' : '★';
@@ -488,7 +490,7 @@ export class StrokeGame extends GameEngine {
     }
 
     // 模式二：重啟測驗（不重建 instance）
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (q?.mode === 2) {
       this._quizCompleted = false;
       const hwm = getHWM();
@@ -513,7 +515,7 @@ export class StrokeGame extends GameEngine {
   // showCorrectAnswer — 答錯兩次顯示正確答案
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     const hwm = getHWM();
@@ -550,7 +552,7 @@ export class StrokeGame extends GameEngine {
   //   提示二：顯示完整筆劃動畫（模式二）或筆劃說明（模式一）
   // ════════════════════════════════════════════
   getHint() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
     const hintArea = document.getElementById('sw-hint-area');
     if (!hintArea) return;
