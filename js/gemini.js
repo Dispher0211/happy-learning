@@ -33,10 +33,11 @@ import { AppState } from './state.js'
 
 // ── 文字判斷 Fallback 鏈 ──
 const TEXT_MODEL_CHAIN = [
-  'gemini-3.1-flash-lite-preview',  // 首選：最快、免費額度高
-  'gemini-flash-latest',            // 備援：永不退役的 alias
-  'gemini-2.5-flash',               // 保險：穩定版
-  'gemini-2.5-flash-lite',          // 最終：RPD 最高（1000/天）
+  'gemini-flash-latest',            // 首選：永不退役 alias，穩定
+  'gemini-2.5-flash',               // 備援：穩定版
+  'gemini-2.5-flash-lite',          // 備援：RPD 最高（1000/天）
+  'gemini-3.1-flash-lite-preview',  // 最終：preview 版，服務不穩定
+]
 ]
 
 const API_URL = (model, key) =>

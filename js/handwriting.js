@@ -21,10 +21,10 @@ import { AppState } from './state.js'
 
 // ── Vision Fallback 模型鏈（與 gemini.js 保持一致）──
 const VISION_MODEL_CHAIN = [
-  'gemini-3.1-flash-lite-preview',
-  'gemini-flash-latest',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',            // 首選：永不退役 alias，穩定
+  'gemini-2.5-flash',               // 備援：穩定版
+  'gemini-2.5-flash-lite',          // 備援：RPD 最高
+  'gemini-3.1-flash-lite-preview',  // 最終：preview 版，服務不穩定
 ]
 
 const GEMINI_URL = (model, key) =>
