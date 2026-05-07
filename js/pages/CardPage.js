@@ -449,20 +449,34 @@ export class CardPage {
     let word, definition, example
     if (typeof wordObj === 'string') {
       word = wordObj
-      // 從 characters.json 反查：找哪個字的 pronunciations.words 包含此詞語
+      // 從 characters.json 反查：找包含此詞語的 definitions.ex 群組，取正確意思
       const allChars = JSONLoader.get('characters') || []
-      let found = null
-      for (const c of allChars) {
+      let foundDef = null
+      outer: for (const c of allChars) {
         for (const p of (c.pronunciations || [])) {
-          if ((p.words || []).includes(word)) {
-            found = p
-            break
+          for (const d of (p.definitions || [])) {
+            if ((d.ex || []).some(e => e.w === word)) {
+              foundDef = d
+              break outer
+            }
           }
         }
-        if (found) break
       }
-      definition = found?.meaning || ''
-      example    = ''
+      // fallback: 找 pronunciations.words（舊格式相容）
+      if (!foundDef) {
+        let foundP = null
+        outer2: for (const c of allChars) {
+          for (const p of (c.pronunciations || [])) {
+            if ((p.words || []).includes(word)) {
+              foundP = p; break outer2
+            }
+          }
+        }
+        definition = foundP?.meaning || ''
+      } else {
+        definition = foundDef.sense || ''
+      }
+      example = ''
     } else {
       word       = wordObj['詞語'] || wordObj.word || ''
       definition = wordObj['解釋'] || wordObj.definition || ''

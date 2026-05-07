@@ -768,13 +768,11 @@
   margin-left: 2px;
 }
 /* 成語注音：同 word-title-pron 尺寸 */
-.idiom-pron .pv2-col,
-.idiom-pron .pv2-tone-col { height: 2.8rem; }
 .idiom-pron .pv2-r1,
 .idiom-pron .pv2-r2,
-.idiom-pron .pv2-r3   { font-size: 0.85rem; color: #059669; min-width: 0.9em; }
+.idiom-pron .pv2-r3   { font-size: 0.72rem; color: #059669; }
 .idiom-pron .pv2-dot,
-.idiom-pron .pv2-tone  { font-size: 0.85rem; color: #059669; }
+.idiom-pron .pv2-tone  { font-size: 0.72rem; color: #059669; }
 
 /* 成語意思 / 典故 / 例句 */
 .idiom-card__meaning,
@@ -1067,139 +1065,115 @@
 
 /* ══════════════════════════════════════════
    pv2 方格注音系統
-   結構：
-   .pv2 > .pv2-col(注音格3列) + .pv2-tone-col(聲調格3列)
-   
-   列1(r1): 聲母 / 上格
-   列2(r2): 介音 / 中格（A規則的唯一符號）
-   列3(r3): 韻母 / 下格
-   
-   聲調格:
-   row1 = ˙輕聲位置
-   row2 = ˊˇˋ聲調位置
-   row3 = 空
+   漢字(橘) + 注音欄(綠,3格) + 聲調欄(藍/青)
+   每格高度 = 漢字高度 / 3
    ══════════════════════════════════════════ */
 
-/* 外容器：漢字+注音格+聲調格，flex row */
 .pv2 {
   display: inline-flex;
   flex-direction: row;
-  align-items: stretch;
-  vertical-align: middle;
+  align-items: flex-end;
+  vertical-align: bottom;
   white-space: nowrap;
   line-height: 1;
 }
 
-/* 注音格：3個等高列 */
 .pv2-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
-/* 聲調格：3個等高列（˙格/聲調格/空格） */
 .pv2-tone-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: stretch;
+  justify-content: space-around;
 }
 
-/* 各列格子：等高，文字置中 */
 .pv2-r1, .pv2-r2, .pv2-r3,
 .pv2-dot, .pv2-tone {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 700;
   line-height: 1;
-  min-height: 0;
   color: inherit;
 }
 
-/* 預設大小（由各 context 覆蓋） */
-.pv2-r1, .pv2-r2, .pv2-r3 {
-  font-size: 0.75rem;
-  min-width: 0.8em;
-}
-
-.pv2-dot, .pv2-tone {
-  font-size: 0.75rem;
-  min-width: 0.5em;
-}
-
-/* 空格不可見 */
-.pv2-empty {
-  visibility: hidden;
-}
-
-/* B規則：列1/列3有符號，列2空 → col 排列正確 */
 .pv2-b .pv2-r2 { visibility: hidden; }
+.pv2-empty { visibility: hidden; }
 
-/* ── Context 尺寸（rem，不受父層 em 影響）── */
+/* Context sizes: height = hanzi font-size, each row font = hanzi × 0.30 */
 
-/* 生字旁大注音 */
-.char-card__zhuyin-side .pv2-r1,
-.char-card__zhuyin-side .pv2-r2,
-.char-card__zhuyin-side .pv2-r3 { font-size: 0.82rem; min-width: 0.9em; }
-.char-card__zhuyin-side .pv2-dot,
-.char-card__zhuyin-side .pv2-tone { font-size: 0.82rem; }
-
-/* 多音字讀音 tab */
+.poly-btn__zhuyin .pv2-col,
+.poly-btn__zhuyin .pv2-tone-col { height: 0.85rem; }
 .poly-btn__zhuyin .pv2-r1,
 .poly-btn__zhuyin .pv2-r2,
-.poly-btn__zhuyin .pv2-r3 { font-size: 0.78rem; min-width: 0.85em; color: inherit; }
+.poly-btn__zhuyin .pv2-r3 { font-size: 0.26rem; min-width: 0.3em; color: inherit; }
 .poly-btn__zhuyin .pv2-dot,
-.poly-btn__zhuyin .pv2-tone { font-size: 0.78rem; color: inherit; }
+.poly-btn__zhuyin .pv2-tone { font-size: 0.26rem; color: inherit; }
 
-/* poly chip 詞語（粉紅） */
+.poly-word-pron .pv2-col,
+.poly-word-pron .pv2-tone-col { height: 1.3rem; }
 .poly-word-pron .pv2-r1,
 .poly-word-pron .pv2-r2,
-.poly-word-pron .pv2-r3 { font-size: 0.52rem; min-width: 0.6em; color: #E11D48; }
+.poly-word-pron .pv2-r3 { font-size: 0.4rem; min-width: 0.45em; color: #E11D48; }
 .poly-word-pron .pv2-dot,
-.poly-word-pron .pv2-tone { font-size: 0.52rem; color: #E11D48; }
+.poly-word-pron .pv2-tone { font-size: 0.4rem; color: #E11D48; }
 
-/* 字義說明（ann-unit，漢字 1.25rem） */
+.ann-unit .pv2-col,
+.ann-unit .pv2-tone-col { height: 1.25rem; }
 .ann-unit .pv2-r1,
 .ann-unit .pv2-r2,
-.ann-unit .pv2-r3 { font-size: 0.48rem; min-width: 0.55em; }
+.ann-unit .pv2-r3 { font-size: 0.38rem; min-width: 0.42em; }
 .ann-unit .pv2-dot,
-.ann-unit .pv2-tone { font-size: 0.48rem; }
+.ann-unit .pv2-tone { font-size: 0.38rem; }
 
-/* 詞語 chip（chip-ann-unit，漢字 1.3rem） */
+.chip-ann-unit .pv2-col,
+.chip-ann-unit .pv2-tone-col { height: 1.3rem; }
 .chip-ann-unit .pv2-r1,
 .chip-ann-unit .pv2-r2,
-.chip-ann-unit .pv2-r3 { font-size: 0.52rem; min-width: 0.6em; }
+.chip-ann-unit .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; }
 .chip-ann-unit .pv2-dot,
-.chip-ann-unit .pv2-tone { font-size: 0.52rem; }
+.chip-ann-unit .pv2-tone { font-size: 0.40rem; }
 
-/* 部首（漢字 1rem） */
+.radical-ann-unit .pv2-col,
+.radical-ann-unit .pv2-tone-col { height: 1.0rem; }
 .radical-ann-unit .pv2-r1,
 .radical-ann-unit .pv2-r2,
-.radical-ann-unit .pv2-r3 { font-size: 0.44rem; min-width: 0.5em; color: #6366F1; }
+.radical-ann-unit .pv2-r3 { font-size: 0.30rem; min-width: 0.34em; color: #6366F1; }
 .radical-ann-unit .pv2-dot,
-.radical-ann-unit .pv2-tone { font-size: 0.44rem; color: #6366F1; }
+.radical-ann-unit .pv2-tone { font-size: 0.30rem; color: #6366F1; }
 
-/* 詞語卡標題（漢字 2.8rem） */
+.word-title-pron .pv2-col,
+.word-title-pron .pv2-tone-col { height: 2.8rem; }
 .word-title-pron .pv2-r1,
 .word-title-pron .pv2-r2,
-.word-title-pron .pv2-r3 { font-size: 0.72rem; min-width: 0.8em; color: #0E7490; }
+.word-title-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #0E7490; }
 .word-title-pron .pv2-dot,
-.word-title-pron .pv2-tone { font-size: 0.72rem; color: #0E7490; }
+.word-title-pron .pv2-tone { font-size: 0.85rem; color: #0E7490; }
 
-/* poly 主字粉紅色 */
+.idiom-pron .pv2-col,
+.idiom-pron .pv2-tone-col { height: 2.8rem; }
+.idiom-pron .pv2-r1,
+.idiom-pron .pv2-r2,
+.idiom-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #059669; }
+.idiom-pron .pv2-dot,
+.idiom-pron .pv2-tone { font-size: 0.85rem; color: #059669; }
+
 .mz-unit--poly .pv2-r1,
 .mz-unit--poly .pv2-r2,
 .mz-unit--poly .pv2-r3,
 .mz-unit--poly .pv2-dot,
 .mz-unit--poly .pv2-tone { color: #ff4fa3; }
 
-/* multi-tone-bpmf（poly詞語chip主字） */
+.multi-tone-bpmf .pv2-col,
+.multi-tone-bpmf .pv2-tone-col { height: 1.3rem; }
 .multi-tone-bpmf .pv2-r1,
 .multi-tone-bpmf .pv2-r2,
-.multi-tone-bpmf .pv2-r3 { font-size: 0.58rem; min-width: 0.65em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; color: #ff4fa3; }
 .multi-tone-bpmf .pv2-dot,
-.multi-tone-bpmf .pv2-tone { font-size: 0.58rem; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-tone { font-size: 0.40rem; color: #ff4fa3; }
