@@ -60,6 +60,11 @@ export class WritingGame extends GameEngine {
      *   count   — 題數
      *   mode    — 'all' | 'custom'
      *   autoNext — 連續模式
+     *
+     * 注意：AppState.characters 為生字簿清單（精簡格式 {字, zhuyin}），
+     *       僅用於決定「出哪些字」及遺忘曲線排序。
+     *       題目的完整字典資料（pronunciations、definitions 等）
+     *       必須從 JSONLoader.get('characters')（完整字典）取得。
      */
     const count = config?.count ?? 10
 
@@ -69,8 +74,9 @@ export class WritingGame extends GameEngine {
       count
     )
 
-    // 取得 characters.json 字典供查詢詞語、部首等資訊
-    const charDict = this._buildCharDict(AppState.characters)
+    // 從完整字典（characters.json）建立查詢字典
+    const fullCharList = JSONLoader.get('characters') || []
+    const charDict = this._buildCharDict(fullCharList)
 
     // 組合每題資料
     this._questions = sorted.map(charEntry => {
@@ -153,13 +159,13 @@ export class WritingGame extends GameEngine {
   }
 
   /**
-   * 將 AppState.characters 陣列轉成以「字」為 key 的字典
-   * @param {Array} characters
+   * 將完整字典陣列（JSONLoader.get('characters')）轉成以「字」為 key 的查詢字典
+   * @param {Array} fullCharList - characters.json 完整資料陣列
    * @returns {Object}
    */
-  _buildCharDict(characters) {
+  _buildCharDict(fullCharList) {
     const dict = {}
-    for (const entry of (characters ?? [])) {
+    for (const entry of (fullCharList ?? [])) {
       const key = entry['字'] ?? entry.char
       if (key) dict[key] = entry
     }
@@ -298,7 +304,9 @@ export class WritingGame extends GameEngine {
         return `<span class="writing-char-placeholder">□</span>`
       }
 
-      const z = zhuyinOn ? getZhuyin(ch, idx) : ''
+      // 非目標字：生字簿字→純文字；非生字簿字+注音開→帶注音
+      const inWordbook = charSet.has(ch)
+      const z = (!inWordbook && zhuyinOn) ? getZhuyin(ch, idx) : ''
       if (z) {
         return `<span class="writing-char-unit">` +
           `<span class="writing-char-text">${ch}</span>` +
