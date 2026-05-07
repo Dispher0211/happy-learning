@@ -45,7 +45,13 @@ export const HandwritingManager = {
     const visionKeys = (AppState.settings?.api_keys?.vision   || []).filter(k => k?.trim())
     const geminiKeys = (AppState.settings?.api_keys?.gemini   || []).filter(k => k?.trim())
 
-    // ① MyScript（timeout 5000ms）
+    // ① Gemini Vision（免費額度高，優先使用）
+    if (geminiKeys.length > 0) {
+      const r = await this._callGeminiWithFallback(canvas, geminiKeys, mode)
+      if (r) return r
+    }
+
+    // ② MyScript（付費，有設定才嘗試）
     for (const key of msKeys) {
       try {
         const r = await this._callMyScript(canvas, key, mode)
@@ -55,7 +61,7 @@ export const HandwritingManager = {
       }
     }
 
-    // ② Google Vision
+    // ③ Google Vision（付費，有設定才嘗試）
     for (const key of visionKeys) {
       try {
         const r = await this._callVision(canvas, key)
@@ -63,12 +69,6 @@ export const HandwritingManager = {
       } catch (e) {
         console.warn('HandwritingManager: Google Vision 失敗', e.message)
       }
-    }
-
-    // ③ Gemini Vision（多模型 Fallback）
-    if (geminiKeys.length > 0) {
-      const r = await this._callGeminiWithFallback(canvas, geminiKeys, mode)
-      if (r) return r
     }
 
     return mode === 'zhuyin'

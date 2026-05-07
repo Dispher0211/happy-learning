@@ -57,7 +57,7 @@ export class ParentAPIPage {
             <span class="api-service-icon">🤖</span>
             <div>
               <h2 class="api-service-name">Google Gemini</h2>
-              <p class="api-service-desc">短句造詞 AI 評分（句型練習）</p>
+              <p class="api-service-desc">免費手寫辨識短句造詞 AI 評分（句型練習）</p>
             </div>
             <button class="btn-test" id="btn-test-gemini" data-service="gemini">測試</button>
           </div>
@@ -78,7 +78,7 @@ export class ParentAPIPage {
             <span class="api-service-icon">✍️</span>
             <div>
               <h2 class="api-service-name">MyScript</h2>
-              <p class="api-service-desc">手寫辨識（寫出國字、注音）</p>
+              <p class="api-service-desc">需付費手寫辨識（寫出國字、注音）</p>
             </div>
             <button class="btn-test" id="btn-test-myscript" data-service="myScript">測試</button>
           </div>
