@@ -1076,24 +1076,25 @@
   vertical-align: bottom;
   white-space: nowrap;
   line-height: 1;
+  position: relative;   /* 讓 pv2-dot 可絕對定位 */
 }
 
 .pv2-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 .pv2-tone-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;   /* 聲調置中 */
 }
 
 .pv2-r1, .pv2-r2, .pv2-r3,
-.pv2-dot, .pv2-tone {
+.pv2-tone, .pv2-tone-spacer {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1103,18 +1104,38 @@
   color: inherit;
 }
 
+/* 聲調欄的上下佔位格 */
+.pv2-tone-spacer {
+  flex: 1;
+  visibility: hidden;
+}
+
+/* 輕聲˙：絕對定位，浮在注音欄正上方中央 */
+.pv2-dot {
+  position: absolute;
+  top: -0.5em;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  color: inherit;
+  pointer-events: none;
+}
+
 .pv2-b .pv2-r2 { visibility: hidden; }
 .pv2-empty { visibility: hidden; }
 
 /* Context sizes: height = hanzi font-size, each row font = hanzi × 0.30 */
 
 .poly-btn__zhuyin .pv2-col,
-.poly-btn__zhuyin .pv2-tone-col { height: 1.6rem; }
+.poly-btn__zhuyin .pv2-tone-col { height: 2.0rem; }
 .poly-btn__zhuyin .pv2-r1,
 .poly-btn__zhuyin .pv2-r2,
-.poly-btn__zhuyin .pv2-r3 { font-size: 0.5rem; min-width: 0.56em; color: inherit; }
-.poly-btn__zhuyin .pv2-dot,
-.poly-btn__zhuyin .pv2-tone { font-size: 0.5rem; color: inherit; }
+.poly-btn__zhuyin .pv2-r3 { font-size: 0.62rem; min-width: 0.7em; color: inherit; }
+.poly-btn__zhuyin .pv2-dot { font-size: 0.65rem; top: -0.5em; color: inherit; }
+.poly-btn__zhuyin .pv2-tone { font-size: 0.62rem; color: inherit; }
 
 .poly-word-pron .pv2-col,
 .poly-word-pron .pv2-tone-col { height: 1.3rem; }
@@ -1129,40 +1150,40 @@
 .ann-unit .pv2-r1,
 .ann-unit .pv2-r2,
 .ann-unit .pv2-r3 { font-size: 0.38rem; min-width: 0.42em; }
-.ann-unit .pv2-dot,
 .ann-unit .pv2-tone { font-size: 0.38rem; }
+.ann-unit .pv2-dot { font-size: 0.38rem; top: -0.4em; }
 
 .chip-ann-unit .pv2-col,
 .chip-ann-unit .pv2-tone-col { height: 1.3rem; }
 .chip-ann-unit .pv2-r1,
 .chip-ann-unit .pv2-r2,
 .chip-ann-unit .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; }
-.chip-ann-unit .pv2-dot,
 .chip-ann-unit .pv2-tone { font-size: 0.40rem; }
+.chip-ann-unit .pv2-dot { font-size: 0.40rem; top: -0.4em; }
 
 .radical-ann-unit .pv2-col,
 .radical-ann-unit .pv2-tone-col { height: 1.0rem; }
 .radical-ann-unit .pv2-r1,
 .radical-ann-unit .pv2-r2,
 .radical-ann-unit .pv2-r3 { font-size: 0.30rem; min-width: 0.34em; color: #6366F1; }
-.radical-ann-unit .pv2-dot,
 .radical-ann-unit .pv2-tone { font-size: 0.30rem; color: #6366F1; }
+.radical-ann-unit .pv2-dot { font-size: 0.30rem; color: #6366F1; top: -0.4em; }
 
 .word-title-pron .pv2-col,
 .word-title-pron .pv2-tone-col { height: 2.8rem; }
 .word-title-pron .pv2-r1,
 .word-title-pron .pv2-r2,
 .word-title-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #0E7490; }
-.word-title-pron .pv2-dot,
 .word-title-pron .pv2-tone { font-size: 0.85rem; color: #0E7490; }
+.word-title-pron .pv2-dot { font-size: 0.85rem; color: #0E7490; top: -0.5em; }
 
 .idiom-pron .pv2-col,
 .idiom-pron .pv2-tone-col { height: 2.8rem; }
 .idiom-pron .pv2-r1,
 .idiom-pron .pv2-r2,
 .idiom-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #059669; }
-.idiom-pron .pv2-dot,
 .idiom-pron .pv2-tone { font-size: 0.85rem; color: #059669; }
+.idiom-pron .pv2-dot { font-size: 0.85rem; color: #059669; top: -0.5em; }
 
 .mz-unit--poly .pv2-r1,
 .mz-unit--poly .pv2-r2,
