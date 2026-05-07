@@ -1081,7 +1081,7 @@
 
 /* 有˙時上方留空，避免˙與注音重疊 */
 .pv2--dot {
-  padding-top: 0.45em;
+  padding-top: 0.15em;
 }
 
 .pv2-col {
