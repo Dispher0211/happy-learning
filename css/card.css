@@ -1109,12 +1109,12 @@
 /* Context sizes: height = hanzi font-size, each row font = hanzi × 0.30 */
 
 .poly-btn__zhuyin .pv2-col,
-.poly-btn__zhuyin .pv2-tone-col { height: 0.85rem; }
+.poly-btn__zhuyin .pv2-tone-col { height: 1.6rem; }
 .poly-btn__zhuyin .pv2-r1,
 .poly-btn__zhuyin .pv2-r2,
-.poly-btn__zhuyin .pv2-r3 { font-size: 0.26rem; min-width: 0.3em; color: inherit; }
+.poly-btn__zhuyin .pv2-r3 { font-size: 0.5rem; min-width: 0.56em; color: inherit; }
 .poly-btn__zhuyin .pv2-dot,
-.poly-btn__zhuyin .pv2-tone { font-size: 0.26rem; color: inherit; }
+.poly-btn__zhuyin .pv2-tone { font-size: 0.5rem; color: inherit; }
 
 .poly-word-pron .pv2-col,
 .poly-word-pron .pv2-tone-col { height: 1.3rem; }
