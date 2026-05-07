@@ -81,28 +81,49 @@ export const HandwritingManager = {
   // ─────────────────────────────────────────────
 
   async _callMyScript(canvas, key, mode) {
+    // MyScript key 格式：applicationKey:hmacKey（冒號分隔）
+    const colonIdx = key.indexOf(':')
+    if (colonIdx < 0) throw new Error('MyScript key 格式應為 applicationKey:hmacKey')
+    const applicationKey = key.slice(0, colonIdx).trim()
+    const hmacKey        = key.slice(colonIdx + 1).trim()
+    if (!applicationKey || !hmacKey) throw new Error('MyScript key 格式應為 applicationKey:hmacKey')
+
+    // 將 _strokeStack（{points:[{x,y}]}格式）轉為 MyScript 所需的 {x:[],y:[]} 格式
+    const strokes = this._strokeStack
+      .map((s, i) => {
+        const pts = s.points ?? []
+        return {
+          id: `s${i}`,
+          x:  pts.map(p => p.x),
+          y:  pts.map(p => p.y),
+        }
+      })
+      .filter(s => s.x.length > 0)
+
+    const body = JSON.stringify({
+      configuration: { lang: 'zh_TW' },
+      xDPI: 96, yDPI: 96,
+      contentType: 'Text',
+      height: canvas.height, width: canvas.width,
+      strokeGroups: [{ strokes }],
+    })
+
+    // HMAC-SHA512 簽名（Web Crypto API）
+    const hmacHex = await this._hmacSha512Hex(hmacKey, body)
+
     const controller = new AbortController()
-    const tid        = setTimeout(() => controller.abort(), 5000)
+    const tid        = setTimeout(() => controller.abort(), 10000)
     try {
       const res = await fetch('https://cloud.myscript.com/api/v4.0/iink/batch', {
         method:  'POST',
         headers: {
           'Accept':         'application/json,application/vnd.myscript.jiix',
           'Content-Type':   'application/json',
-          'applicationKey': key,
+          'applicationKey': applicationKey,
+          'hmac':           hmacHex,
         },
         signal: controller.signal,
-        body: JSON.stringify({
-          configuration: { lang: 'zh_TW' },
-          xDPI: 96, yDPI: 96,
-          contentType: 'Text',
-          height: canvas.height, width: canvas.width,
-          strokeGroups: [{
-            strokes: this._strokeStack
-              .map((s, i) => ({ id: `s${i}`, x: s.x || [], y: s.y || [] }))
-              .filter(s => s.x.length > 0),
-          }],
-        }),
+        body,
       })
       clearTimeout(tid)
       if (!res.ok) throw new Error(`MyScript HTTP ${res.status}`)
@@ -110,6 +131,25 @@ export const HandwritingManager = {
       const text = data?.label || data?.exports?.['application/vnd.myscript.jiix']?.label
       return text ? { text: text.trim() } : null
     } catch (e) { clearTimeout(tid); throw e }
+  },
+
+  // ─────────────────────────────────────────────
+  // HMAC-SHA512（Web Crypto API）
+  // ─────────────────────────────────────────────
+
+  async _hmacSha512Hex(secret, message) {
+    const enc     = new TextEncoder()
+    const keyData = enc.encode(secret)
+    const msgData = enc.encode(message)
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', keyData,
+      { name: 'HMAC', hash: 'SHA-512' },
+      false, ['sign']
+    )
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData)
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
   },
 
   // ─────────────────────────────────────────────
@@ -123,7 +163,7 @@ export const HandwritingManager = {
       {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal:  AbortSignal.timeout(5000),
+        signal:  AbortSignal.timeout(10000),
         body: JSON.stringify({
           requests: [{
             image:    { content: base64 },
@@ -170,7 +210,7 @@ export const HandwritingManager = {
     const res = await fetch(GEMINI_URL(model, key), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal:  AbortSignal.timeout(5000),
+      signal:  AbortSignal.timeout(15000),
       body: JSON.stringify({
         contents: [{
           parts: [
