@@ -379,40 +379,43 @@ export class StrokeGame extends GameEngine {
 
   // ════════════════════════════════════════════
   // _startQuiz — 模式二：啟動 HanziWriter 手寫測驗
+  //   instance 已由 _initHanziWriter 中的 switchChar 建立
+  //   直接用 restartQuiz 啟動 quiz，不重建 instance
   // ════════════════════════════════════════════
   _startQuiz(hwm, q) {
     const callbacks = {
       onMistake: (strokeData) => {
-        // 筆劃錯誤：顯示錯誤提示
         this._wrongCount++;
         AudioManager.playEffect?.('wrong').catch?.(() => {});
         this._flashFeedback('❌', false);
       },
       onCorrectStroke: (strokeData) => {
-        // 單筆正確：給予視覺回饋
         this._flashFeedback('✓', true);
       },
       onComplete: async (summaryData) => {
-        // 全部筆劃完成！
-        if (this._quizCompleted) return; // 防重複
+        if (this._quizCompleted) return;
         this._quizCompleted = true;
 
         const isCorrect = !summaryData?.totalMistakes ||
                           summaryData.totalMistakes === 0;
 
         if (isCorrect || summaryData?.totalMistakes <= 1) {
-          // 視為答對
           await this._playStrokeReplay(hwm, q);
           await this.submitAnswer('__quiz_complete__');
         } else {
-          // 錯誤較多，視為答錯
           await this._playStrokeReplay(hwm, q);
           await this.submitAnswer('__quiz_wrong__');
         }
       },
     };
 
-    hwm.startQuiz(q.char, HW_CONTAINER_ID, callbacks);
+    // 使用 restartQuiz（不重建 instance，直接在已有 instance 上啟動 quiz）
+    const ok = hwm.restartQuiz(HW_CONTAINER_ID, callbacks);
+    if (!ok) {
+      console.error('stroke.js: _startQuiz restartQuiz 失敗，嘗試 startQuiz fallback');
+      // Fallback：若 instance 不存在才用 startQuiz（會重建）
+      hwm.startQuiz(q.char, HW_CONTAINER_ID, callbacks);
+    }
   }
 
   // ════════════════════════════════════════════
