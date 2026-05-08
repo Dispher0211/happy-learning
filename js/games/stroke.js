@@ -52,8 +52,51 @@ const STROKE_OPTIONS_POOL = [
   { name: '提', zhuyin: 'ㄊㄧˊ' },
 ];
 
-// HanziWriter 容器 ID（固定，不重建）
+// HW 容器 ID（固定，不重建）
 const HW_CONTAINER_ID = 'stroke-hw-container';
+
+// ─────────────────────────────────────────────
+// _renderZhuyinPv2(pron) — 直式注音渲染（pv2 格式，與 CardPage 一致）
+// ─────────────────────────────────────────────
+function _renderZhuyinPv2(pron) {
+  if (!pron) return '';
+  const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ');
+  const MEDIALS  = new Set('ㄧㄨㄩ');
+  const TONES    = new Set(['ˊ','ˇ','ˋ','˙']);
+
+  let src = pron, tone = '';
+  if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1); }
+  else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+    tone = src[src.length - 1]; src = src.slice(0, -1);
+  }
+
+  let initial = '', medial = '', final = '';
+  for (const c of src) {
+    if (INITIALS.has(c))     initial = c;
+    else if (MEDIALS.has(c)) medial  = c;
+    else                     final  += c;
+  }
+
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const count = [initial, medial, final].filter(Boolean).length;
+  const hasDot  = tone === '˙';
+  const dotHtml = hasDot ? `<span class="pv2-dot">${esc(tone)}</span>` : '';
+  const toneHtml = (tone && tone !== '˙')
+    ? `<span class="pv2-tone">${esc(tone)}</span>`
+    : `<span class="pv2-tone pv2-empty"></span>`;
+  const toneCol = `<span class="pv2-tone-col"><span class="pv2-empty pv2-tone-spacer"></span>${toneHtml}<span class="pv2-empty pv2-tone-spacer"></span></span>`;
+  const dotCls  = hasDot ? ' pv2--dot' : '';
+
+  if (count <= 1) {
+    const sym = initial || medial || final || src;
+    return `<span class="pv2 pv2-a${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1 pv2-empty"></span><span class="pv2-r2">${esc(sym)}</span><span class="pv2-r3 pv2-empty"></span></span>${toneCol}</span>`;
+  }
+  if (count === 2) {
+    const slots = [initial, medial, final].filter(Boolean);
+    return `<span class="pv2 pv2-b${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(slots[0])}</span><span class="pv2-r2 pv2-empty"></span><span class="pv2-r3">${esc(slots[1])}</span></span>${toneCol}</span>`;
+  }
+  return `<span class="pv2 pv2-c${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(initial)}</span><span class="pv2-r2">${esc(medial)}</span><span class="pv2-r3">${esc(final)}</span></span>${toneCol}</span>`;
+}
 
 export class StrokeGame extends GameEngine {
   constructor() {
@@ -324,7 +367,7 @@ export class StrokeGame extends GameEngine {
               onclick="window.__swSelectOption(${i})"
               aria-label="${opt.name} ${opt.zhuyin}">
         <span class="sw-option-char">${opt.name}</span>
-        <span class="sw-option-zhuyin">${opt.zhuyin}</span>
+        <span class="sw-option-zhuyin bpmf-font">${_renderZhuyinPv2(opt.zhuyin)}</span>
       </button>
     `).join('');
 
@@ -534,16 +577,22 @@ export class StrokeGame extends GameEngine {
           <div class="sw-answer-reveal">
             ✅ 正確答案：
             <strong>${this._correctOption.name}</strong>
-            <span class="sw-zhuyin">${this._correctOption.zhuyin}</span>
+            <span class="sw-zhuyin bpmf-font">${_renderZhuyinPv2(this._correctOption.zhuyin)}</span>
           </div>
         `;
       }
+      // 2 秒後自動進下一題
+      await this._delay(2000);
+      await this.nextQuestion();
     } else if (q.mode === 2 && hwm) {
       // 播放完整筆順演示
       if (hintArea) {
         hintArea.innerHTML = `<div class="sw-answer-reveal">✅ 請觀看正確筆順</div>`;
       }
       await this._playStrokeReplay(hwm, q);
+      // 1.5 秒後自動進下一題
+      await this._delay(1500);
+      await this.nextQuestion();
     }
   }
 
@@ -820,10 +869,24 @@ export class StrokeGame extends GameEngine {
       color: #2c3e50;
     }
     .sw-option-zhuyin {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: #7f8c8d;
-      font-family: 'BpmfIVS', serif;
+      display: inline-flex;
+      justify-content: center;
     }
+
+    /* pv2 注音符號在 stroke 選項中的字體大小 */
+    .sw-option-zhuyin .pv2-r1,
+    .sw-option-zhuyin .pv2-r2,
+    .sw-option-zhuyin .pv2-r3,
+    .sw-option-zhuyin .pv2-tone { font-size: 0.85rem; min-width: 0.9em; }
+    .sw-option-zhuyin .pv2-dot  { font-size: 0.75rem; }
+
+    /* pv2 注音在答案揭示區 */
+    .sw-answer-reveal .pv2-r1,
+    .sw-answer-reveal .pv2-r2,
+    .sw-answer-reveal .pv2-r3,
+    .sw-answer-reveal .pv2-tone { font-size: 0.85rem; min-width: 0.9em; }
 
     .sw-option--correct {
       border-color: #27ae60 !important;
