@@ -418,7 +418,7 @@ export class StrokeGame extends GameEngine {
       });
       await this._delay(500);
       // 使用 restartQuiz 重啟，不重建 instance（T13 規格）
-      hwm.restartQuiz?.({
+      hwm.restartQuiz?.(HW_CONTAINER_ID, {
         onMistake: () => {
           this._wrongCount++;
           this._flashFeedback('❌', false);
@@ -497,7 +497,7 @@ export class StrokeGame extends GameEngine {
       const hwm = getHWM();
       if (hwm) {
         await this._delay(300);
-        hwm.restartQuiz?.({
+        hwm.restartQuiz?.(HW_CONTAINER_ID, {
           onMistake: () => this._flashFeedback('❌', false),
           onCorrectStroke: () => this._flashFeedback('✓', true),
           onComplete: async (summaryData) => {
@@ -579,7 +579,7 @@ export class StrokeGame extends GameEngine {
           }).then(() => {
             this._replayingAnimation = false;
             const hwm2 = getHWM();
-            hwm2?.restartQuiz?.({
+            hwm2?.restartQuiz?.(HW_CONTAINER_ID, {
               onMistake: () => this._flashFeedback('❌', false),
               onCorrectStroke: () => this._flashFeedback('✓', true),
               onComplete: async (s) => {
