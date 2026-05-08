@@ -26,11 +26,12 @@ import { GameEngine } from './GameEngine.js';
 import { AppState } from '../state.js';
 import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
+import { HanziWriterManager } from '../hanzi_writer_manager.js';
 
 // ─────────────────────────────────────────────
-// HanziWriterManager 透過 window 取得（CDN 注入後由 T13 掛載）
+// HanziWriterManager 直接從模組匯入（不透過 window）
 // ─────────────────────────────────────────────
-const getHWM = () => window.HanziWriterManager;
+const getHWM = () => HanziWriterManager;
 
 // 筆順名稱對照表（注音體）：1-32 筆的筆劃名稱
 // 注意：實際筆劃名稱從 HanziWriter 的 strokeData 取得，此為備用顯示用

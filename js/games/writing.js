@@ -711,7 +711,10 @@ export class WritingGame extends GameEngine {
     console.log('[WritingGame] 答錯一次動畫開始')
     const container = document.getElementById('writing-magic-book')
     if (container) {
-      container.classList.remove('writing-book-glow')
+      // 先移除所有動畫 class
+      container.classList.remove('writing-book-glow', 'writing-book-shake', 'writing-book-close')
+      // 強制 reflow：確保瀏覽器在移除後重新計算，使動畫每次都能重新播放
+      void container.offsetWidth
       container.classList.add('writing-book-shake')
     } else {
       console.warn('[WritingGame] 找不到 writing-magic-book')
@@ -731,7 +734,8 @@ export class WritingGame extends GameEngine {
     console.log('[WritingGame] 答錯二次，書本合起')
     const container = document.getElementById('writing-magic-book')
     if (container) {
-      container.classList.remove('writing-book-shake')
+      container.classList.remove('writing-book-shake', 'writing-book-glow')
+      void container.offsetWidth
       container.classList.add('writing-book-close')
     }
 
@@ -739,29 +743,48 @@ export class WritingGame extends GameEngine {
       AudioManager.playEffect('wrong')
     }
 
-    const revealDiv = document.getElementById('writing-correct-reveal')
-    if (revealDiv) revealDiv.style.display = 'flex'
+    // 等書本合起動畫結束（0.5s）
+    await this._delay(550)
 
-    const btnRow = document.getElementById('writing-btn-row')
-    if (btnRow) btnRow.style.display = 'none'
+    // 顯示魔法書圖片（等比例縮入寫字框大小）
+    const bookEl = document.getElementById('writing-magic-book')
+    if (bookEl) {
+      // 重置書本形變，讓圖片正常顯示
+      bookEl.classList.remove('writing-book-close')
+      void bookEl.offsetWidth
 
-    if (!document.getElementById('btn-next-question')) {
-      const bookEl = document.getElementById('writing-magic-book')
-      if (bookEl) {
-        const nextBtn = document.createElement('button')
-        nextBtn.id = 'btn-next-question'
-        nextBtn.className = 'writing-btn writing-btn-primary'
-        nextBtn.style.cssText = 'margin-top:8px; width:100%; max-width:200px; padding:10px;'
-        nextBtn.textContent = '下一題 →'
-        nextBtn.addEventListener('click', () => {
-          nextBtn.disabled = true
-          this.nextQuestion()
-        })
-        bookEl.appendChild(nextBtn)
-      }
+      // 覆蓋書本內容為魔法書圖片
+      bookEl.innerHTML = `
+        <div class="writing-book-reveal" style="
+          display:flex; flex-direction:column; align-items:center; gap:10px;
+          width:100%; padding:8px 0;
+        ">
+          <img
+            src="./images/magic-book.png"
+            alt="魔法書"
+            class="writing-magic-book-img"
+            style="
+              width: min(72vw, 220px);
+              height: min(72vw, 220px);
+              object-fit: contain;
+              border-radius: 12px;
+              animation: sw-appear 0.4s ease;
+            "
+          />
+          <div style="
+            font-size:1rem; font-weight:700; color:#5a4fcf;
+            background:#f0f4ff; border-radius:10px; padding:6px 16px;
+          ">
+            正確答案：<span style="font-size:2rem; color:#c0392b; font-weight:900;" id="writing-correct-char-reveal">${this.currentQuestion?.character || ''}</span>
+          </div>
+          <div style="font-size:0.82rem; color:#94a3b8; margin-top:4px;">即將進入下一題…</div>
+        </div>
+      `
     }
 
-    await this._delay(500)
+    // 2 秒後自動進下一題
+    await this._delay(2000)
+    this.nextQuestion()
   }
 
   /**
@@ -1252,6 +1275,11 @@ function injectWritingStyles() {
       20%  { opacity: 1; }
       70%  { opacity: 1; }
       100% { opacity: 0; }
+    }
+
+    @keyframes sw-appear {
+      from { opacity: 0; transform: scale(0.85) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
     }
     
       /* ── RWD 平板（≥600px）── */
