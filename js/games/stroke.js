@@ -215,7 +215,7 @@ export class StrokeGame extends GameEngine {
         </div>
 
         <!-- HanziWriter 容器 -->
-        <div class="sw-writer-area">
+        <div class="sw-writer-area" ${q.mode === 1 ? 'style="display:none"' : ''}>
           <div id="${HW_CONTAINER_ID}" class="sw-hw-container"
                aria-label="筆順練習區域"></div>
           ${q.mode === 2 ? '<div class="sw-writer-guide">✍️ 請依照筆順書寫</div>' : ''}
@@ -420,6 +420,7 @@ export class StrokeGame extends GameEngine {
       try {
         writer.hideCharacter({ duration: 0 });
         writer.showOutline({ duration: 0 });
+        await this._delay(50); // 等待 DOM 更新完成
       } catch (_e) { /* 忽略 */ }
     }
 
@@ -514,10 +515,10 @@ export class StrokeGame extends GameEngine {
 
     if (q.mode === 1) {
       // 模式一：比對筆劃名稱
-      return selected === this._correctOption?.name;
+      return { correct: selected === this._correctOption?.name };
     } else {
       // 模式二：由 onComplete 傳入特殊標記決定
-      return selected === '__quiz_complete__';
+      return { correct: selected === '__quiz_complete__' };
     }
   }
 
@@ -906,6 +907,36 @@ export class StrokeGame extends GameEngine {
       display: inline-flex;
       justify-content: center;
     }
+
+    /* pv2 直式注音核心（確保在遊戲頁生效）*/
+    .sw-option-zhuyin .pv2,
+    .sw-answer-reveal .pv2 {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: flex-start;
+      vertical-align: middle;
+      line-height: 1;
+      font-family: 'BpmfIVS', serif;
+    }
+    .sw-option-zhuyin .pv2-col,
+    .sw-answer-reveal .pv2-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sw-option-zhuyin .pv2-tone-col,
+    .sw-answer-reveal .pv2-tone-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0.7em;
+    }
+    .sw-option-zhuyin .pv2-empty { visibility: hidden; }
+    .sw-answer-reveal .pv2-empty { visibility: hidden; }
+    .sw-option-zhuyin .pv2-b .pv2-r2 { visibility: hidden; }
+    .sw-answer-reveal .pv2-b .pv2-r2 { visibility: hidden; }
 
     /* pv2 注音符號在 stroke 選項中的字體大小 */
     .sw-option-zhuyin .pv2-r1,
