@@ -387,7 +387,7 @@ export class StrokeGame extends GameEngine {
   //   instance 已由 _initHanziWriter 中的 switchChar 建立
   //   直接用 restartQuiz 啟動 quiz，不重建 instance
   // ════════════════════════════════════════════
-  _startQuiz(hwm, q) {
+  async _startQuiz(hwm, q) {
     const callbacks = {
       onMistake: (strokeData) => {
         this._wrongCount++;
