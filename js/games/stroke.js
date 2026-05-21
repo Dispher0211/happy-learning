@@ -232,13 +232,13 @@ export class StrokeGame extends GameEngine {
 
         <!-- 操作按鈕 -->
         <div class="sw-controls" id="sw-controls">
-          <button class="sw-btn sw-btn--hint" id="sw-hint-btn"
-                  onclick="window.__swHint()">
+          <button class="sw-btn sw-btn--hint" id="sw-hint-btn" disabled
+                  onclick="window.__swHint?.()">
             💡 提示（剩 ${2 - (this.usedHints || 0)} 次）
           </button>
           ${q.mode === 2 ? `
-          <button class="sw-btn sw-btn--replay" id="sw-replay-btn"
-                  onclick="window.__swReplay()">
+          <button class="sw-btn sw-btn--replay" id="sw-replay-btn" disabled
+                  onclick="window.__swReplay?.()">
             🔄 重新演示
           </button>` : ''}
         </div>
@@ -321,6 +321,11 @@ export class StrokeGame extends GameEngine {
     // 綁定全域事件
     window.__swHint = () => this.useHint();
     window.__swReplay = () => this._replayDemo(q);
+    // 啟用「重新演示」和「提示」按鈕（初始化完成後才可點擊）
+    const replayBtn = document.getElementById('sw-replay-btn');
+    const hintBtn   = document.getElementById('sw-hint-btn');
+    if (replayBtn) replayBtn.disabled = false;
+    if (hintBtn)   hintBtn.disabled   = false;
   }
 
   // ════════════════════════════════════════════
