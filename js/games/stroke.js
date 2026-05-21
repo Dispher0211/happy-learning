@@ -414,6 +414,15 @@ export class StrokeGame extends GameEngine {
       },
     };
 
+    // 確保字元隱藏、outline 顯示（quiz 模式需要）
+    const writer = hwm._instances?.[HW_CONTAINER_ID];
+    if (writer) {
+      try {
+        writer.hideCharacter({ duration: 0 });
+        writer.showOutline({ duration: 0 });
+      } catch (_e) { /* 忽略 */ }
+    }
+
     // 使用 restartQuiz（不重建 instance，直接在已有 instance 上啟動 quiz）
     const ok = hwm.restartQuiz(HW_CONTAINER_ID, callbacks);
     if (!ok) {
@@ -468,6 +477,11 @@ export class StrokeGame extends GameEngine {
         delayBetweenStrokes: 200,
       });
       await this._delay(500);
+      // 確保字元隱藏（quiz 模式需要）
+      const writerR = hwm._instances?.[HW_CONTAINER_ID];
+      if (writerR) {
+        try { writerR.hideCharacter({ duration: 0 }); writerR.showOutline({ duration: 0 }); } catch (_e) {}
+      }
       // 使用 restartQuiz 重啟，不重建 instance（T13 規格）
       hwm.restartQuiz?.(HW_CONTAINER_ID, {
         onMistake: () => {
@@ -548,6 +562,11 @@ export class StrokeGame extends GameEngine {
       const hwm = getHWM();
       if (hwm) {
         await this._delay(300);
+        // 確保字元隱藏（quiz 模式需要）
+        const writer2 = hwm._instances?.[HW_CONTAINER_ID];
+        if (writer2) {
+          try { writer2.hideCharacter({ duration: 0 }); writer2.showOutline({ duration: 0 }); } catch (_e) {}
+        }
         hwm.restartQuiz?.(HW_CONTAINER_ID, {
           onMistake: () => this._flashFeedback('❌', false),
           onCorrectStroke: () => this._flashFeedback('✓', true),
@@ -636,6 +655,11 @@ export class StrokeGame extends GameEngine {
           }).then(() => {
             this._replayingAnimation = false;
             const hwm2 = getHWM();
+            // 確保字元隱藏（quiz 模式需要）
+            const writer3 = hwm2?._instances?.[HW_CONTAINER_ID];
+            if (writer3) {
+              try { writer3.hideCharacter({ duration: 0 }); writer3.showOutline({ duration: 0 }); } catch (_e) {}
+            }
             hwm2?.restartQuiz?.(HW_CONTAINER_ID, {
               onMistake: () => this._flashFeedback('❌', false),
               onCorrectStroke: () => this._flashFeedback('✓', true),
