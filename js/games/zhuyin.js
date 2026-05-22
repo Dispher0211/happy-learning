@@ -636,19 +636,8 @@ export class ZhuyinGame extends GameEngine {
    */
   async _getHighestFailRateReading(char, readings) {
     if (readings.length <= 1) return readings[0] || ''
-    try {
-      let maxRate = -1
-      let target  = readings[0]
-      for (const pron of readings) {
-        const prog = await ForgettingCurve.getCharProgress(char, pron)
-        const rate = prog?.fail_rate ?? 0
-        if (rate > maxRate) { maxRate = rate; target = pron }
-      }
-      return target
-    } catch (e) {
-      console.warn('[ZhuyinGame] 取得 fail_rate 失敗，使用第一個讀音', e)
-      return readings[0]
-    }
+    // ForgettingCurve 無 getCharProgress API，隨機選一個讀音出題
+    return readings[Math.floor(Math.random() * readings.length)]
   }
 
   /**
