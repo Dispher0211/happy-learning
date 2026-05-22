@@ -46,6 +46,9 @@ export class StrokesCountGame extends GameEngine {
     this._phaseWrongCount = 0;   // 本射答錯次數（每射獨立計算）
     this._hintPending = false;   // 提示文字是否顯示中
 
+    // ── 點擊追蹤 ──
+    this._lastClickedIndex = -1; // 最後被點擊的靶 index
+
     // ── 動畫 ──
     this._targetAnimFrames = []; // requestAnimationFrame 的 id 陣列
     this._targetPositions = [];  // 每個靶的目前 X 位置（0~100%）
@@ -106,6 +109,7 @@ export class StrokesCountGame extends GameEngine {
     this._phase = 'first';
     this._phaseWrongCount = 0;
     this._hintPending = false;
+    this._lastClickedIndex = -1;
 
     const appEl = this._getContainer();
     if (!appEl) return;
@@ -212,7 +216,7 @@ export class StrokesCountGame extends GameEngine {
 
       const targetEl = document.getElementById(`sc-target-${i}`);
       if (targetEl) {
-        targetEl.classList.remove('sc-target--correct', 'sc-target--wrong', 'sc-target--glow');
+        targetEl.classList.remove('sc-target--correct', 'sc-target--wrong', 'sc-target--glow', 'sc-target--arrow', 'sc-target--broken');
         targetEl.setAttribute('aria-label', `靶 ${i + 1}，數字 ${numbers[i]}`);
       }
     }
@@ -318,7 +322,11 @@ export class StrokesCountGame extends GameEngine {
     // 使用 window 全域函式避免 ES Module 內 inline onclick 問題
     window.__scSelectTarget = (index) => {
       if (this.isAnswering) return; // 防重複點擊
+      this._lastClickedIndex = index; // 記錄被點擊的靶 index
       const selectedNumber = this._currentTargetNumbers[index];
+      // 立即播放射箭音效 + 顯示箭插入靶效果
+      this._playSound('archery');
+      this._showArrowOnTarget(index);
       this.submitAnswer(selectedNumber);
     };
 
@@ -433,18 +441,22 @@ export class StrokesCountGame extends GameEngine {
     const overlay = document.getElementById('sc-feedback-overlay');
     const archer = document.getElementById('sc-archer');
 
-    if (overlay) {
-      overlay.innerHTML = '<div class="sc-correct-burst">🎉 命中！★+1</div>';
-      overlay.classList.add('sc-feedback--visible');
-    }
     if (archer) archer.classList.add('sc-archer--celebrate');
 
-    // 高亮所有正確靶
-    for (let i = 0; i < TARGET_COUNT; i++) {
-      const targetEl = document.getElementById(`sc-target-${i}`);
-      if (targetEl && this._currentTargetNumbers[i] === this._correctAnswer) {
-        targetEl.classList.add('sc-target--correct');
+    // 被點擊的靶先停住，顯示碎裂效果 + broken 音效
+    if (this._lastClickedIndex !== -1) {
+      const hitTarget = document.getElementById(`sc-target-${this._lastClickedIndex}`);
+      if (hitTarget) {
+        hitTarget.classList.remove('sc-target--arrow');
+        hitTarget.classList.add('sc-target--broken');
+        this._playSound('broken');
       }
+    }
+
+    // 同時顯示命中特效文字
+    if (overlay) {
+      overlay.innerHTML = '<div class="sc-correct-burst">🎯 命中！</div>';
+      overlay.classList.add('sc-feedback--visible');
     }
 
     await this._delay(1200);
@@ -457,6 +469,15 @@ export class StrokesCountGame extends GameEngine {
   // playWrongAnimation — 答錯動畫
   // ════════════════════════════════════════════
   async playWrongAnimation() {
+    // 移除箭矢狀態，shake 動畫
+    if (this._lastClickedIndex !== -1) {
+      const hitTarget = document.getElementById(`sc-target-${this._lastClickedIndex}`);
+      if (hitTarget) {
+        hitTarget.classList.remove('sc-target--arrow');
+        hitTarget.classList.add('sc-target--wrong');
+        setTimeout(() => hitTarget?.classList.remove('sc-target--wrong'), 600);
+      }
+    }
     const archer = document.getElementById('sc-archer');
     if (archer) {
       archer.classList.add('sc-archer--miss');
@@ -541,17 +562,30 @@ export class StrokesCountGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _showArrowHit — 視覺效果：箭矢命中或落空
+  // _showArrowOnTarget — 讓靶顯示箭插入狀態（停止移動）
   // ════════════════════════════════════════════
-  _showArrowHit(isHit) {
-    const overlay = document.getElementById('sc-feedback-overlay');
-    if (!overlay) return;
+  _showArrowOnTarget(index) {
+    const targetEl = document.getElementById(`sc-target-${index}`);
+    if (!targetEl) return;
+    // 暫停該靶的位置（讓靶停住）
+    this._targetDirections[index] = 0;
+    targetEl.classList.add('sc-target--arrow');
+  }
 
-    overlay.innerHTML = isHit
-      ? '<div class="sc-hit-effect">🏹💥</div>'
-      : '<div class="sc-miss-effect">🏹❌</div>';
-    overlay.classList.add('sc-feedback--visible');
-    setTimeout(() => overlay.classList.remove('sc-feedback--visible'), 500);
+  // _showArrowHit — 舊版保留（不再使用，空實作避免錯誤）
+  // ════════════════════════════════════════════
+  _showArrowHit(_isHit) {
+    // 視覺效果已移至 _showArrowOnTarget / playCorrectAnimation / playWrongAnimation
+  }
+
+  // _playSound — 直接播放 MP3 音效（不經過 AudioManager 的 OGG 流程）
+  // ════════════════════════════════════════════
+  _playSound(name) {
+    if (typeof AppState !== 'undefined' && AppState.settings?.soundOn === false) return;
+    const prefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : '';
+    const audio = new Audio(`${prefix}/audio/effects/${name}.mp3`);
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
   }
 
   // ════════════════════════════════════════════
@@ -766,6 +800,46 @@ export class StrokesCountGame extends GameEngine {
 
     .sc-target--glow .sc-target-face {
       box-shadow: 0 0 40px 12px #ffd700;
+    }
+
+    /* 箭插入靶效果 */
+    .sc-target--arrow .sc-target-face {
+      box-shadow: 0 0 16px 4px rgba(255,165,0,0.8);
+      animation: sc-arrow-vibrate 0.15s ease 3;
+    }
+    .sc-target--arrow .sc-target-number::after {
+      content: '🏹';
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%) rotate(135deg);
+      font-size: 1.2rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    }
+    .sc-target-number {
+      position: relative;
+    }
+    @keyframes sc-arrow-vibrate {
+      0%, 100% { transform: rotate(0deg); }
+      25%       { transform: rotate(-3deg); }
+      75%       { transform: rotate(3deg); }
+    }
+
+    /* 靶碎裂效果 */
+    .sc-target--broken .sc-target-face {
+      animation: sc-break 0.5s ease forwards;
+      background:
+        radial-gradient(circle at center,
+          #ff8800 0%, #ff4400 30%,
+          #ffcc00 30%, #ff6600 60%,
+          #ffaa00 60%, #ff2200 100%
+        ) !important;
+    }
+    @keyframes sc-break {
+      0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+      30%  { transform: scale(1.3) rotate(-8deg); opacity: 0.9; }
+      60%  { transform: scale(0.9) rotate(12deg); opacity: 0.7; }
+      100% { transform: scale(0) rotate(20deg); opacity: 0; }
     }
 
     @keyframes sc-pulse-correct {
