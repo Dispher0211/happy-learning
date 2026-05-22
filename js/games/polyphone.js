@@ -242,8 +242,7 @@ export class PolyphoneGame extends GameEngine {
                aria-label="飛機">
             ✈️
           </div>
-          <!-- 光束子彈 -->
-          <div class="pp-beam" id="pp-beam" style="display:none; left:${this._planeX}%"></div>
+          <!-- 光束子彈由 JS 動態注入 -->
 
           <!-- 爆炸效果 -->
           <div class="pp-explosion" id="pp-explosion" style="display:none">💥</div>
@@ -482,18 +481,19 @@ export class PolyphoneGame extends GameEngine {
   // _showMissileEffect — 顯示飛彈飛行動畫（視覺）
   // ════════════════════════════════════════════
   _showMissileEffect(targetX, targetY) {
-    const beam = document.getElementById('pp-beam');
-    if (!beam) return;
+    const sky = document.getElementById('pp-sky');
+    if (!sky) return;
+
+    // 移除舊光束
+    sky.querySelectorAll('.pp-beam').forEach(el => el.remove());
+
+    // 動態建立光束元素（每次新建確保動畫重新播放）
+    const beam = document.createElement('div');
+    beam.className = 'pp-beam pp-beam--firing';
     beam.style.left = this._planeX + '%';
-    beam.style.display = 'block';
-    void beam.offsetWidth; // reflow
-    beam.classList.add('pp-beam--firing');
-    setTimeout(() => {
-      if (beam) {
-        beam.style.display = 'none';
-        beam.classList.remove('pp-beam--firing');
-      }
-    }, 350);
+    sky.appendChild(beam);
+
+    setTimeout(() => beam.remove(), 400);
   }
 
   // ════════════════════════════════════════════
@@ -885,23 +885,34 @@ export class PolyphoneGame extends GameEngine {
     /* 光束子彈 */
     .pp-beam {
       position: absolute;
-      bottom: 18%;           /* 從飛機上方開始 */
-      width: 6px;
+      width: 7px;
       height: 0;
+      bottom: 18%;
       transform: translateX(-50%);
-      border-radius: 3px;
-      background: linear-gradient(to top, #00e5ff, #ffffff, #00e5ff);
-      box-shadow: 0 0 8px 3px rgba(0,229,255,0.9), 0 0 20px 6px rgba(0,180,255,0.5);
+      border-radius: 4px 4px 2px 2px;
+      background: linear-gradient(to top,
+        rgba(0,229,255,0.3) 0%,
+        rgba(0,229,255,1) 30%,
+        #ffffff 60%,
+        rgba(0,229,255,1) 80%,
+        rgba(100,220,255,0.5) 100%
+      );
+      box-shadow:
+        0 0 6px 2px rgba(0,229,255,1),
+        0 0 16px 5px rgba(0,180,255,0.7),
+        0 0 30px 8px rgba(0,140,255,0.3);
       z-index: 20;
       pointer-events: none;
+      transform-origin: bottom center;
     }
     .pp-beam--firing {
-      animation: pp-beam-shoot 0.35s ease-out forwards;
+      animation: pp-beam-shoot 0.4s cubic-bezier(0.1, 0, 0.3, 1) forwards;
     }
     @keyframes pp-beam-shoot {
-      0%   { height: 0;     opacity: 1;   bottom: 18%; }
-      40%  { height: 55%;   opacity: 1;   bottom: 18%; }
-      100% { height: 55%;   opacity: 0;   bottom: 18%; }
+      0%   { height: 0;    opacity: 1; }
+      30%  { height: 65%;  opacity: 1; }
+      70%  { height: 65%;  opacity: 0.8; }
+      100% { height: 65%;  opacity: 0; }
     }
 
     /* 爆炸 */
