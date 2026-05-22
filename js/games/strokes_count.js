@@ -98,8 +98,8 @@ export class StrokesCountGame extends GameEngine {
   // ════════════════════════════════════════════
   // renderQuestion — 渲染當前題目到 #app
   // ════════════════════════════════════════════
-  renderQuestion() {
-    const q = this.getCurrentQuestion();
+  renderQuestion(question) {
+    const q = this.currentQuestion;
     if (!q) return;
 
     // 每次換題重置兩射狀態
@@ -350,7 +350,7 @@ export class StrokesCountGame extends GameEngine {
   // 此方法由 GameEngine.submitAnswer 在內部呼叫
   // ════════════════════════════════════════════
   async judgeAnswer(selectedNumber) {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) throw new Error('judgeAnswer: 無當前題目');
 
     const isCorrect = (selectedNumber === this._correctAnswer);
@@ -362,7 +362,7 @@ export class StrokesCountGame extends GameEngine {
   // GameEngine 在 judgeAnswer 回傳 true 後呼叫此方法
   // ════════════════════════════════════════════
   async onCorrectAnswer() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
 
     if (this._phase === 'first') {
       // ── 第一射答對：立即顯示第二射（猜部首筆劃）──
@@ -409,7 +409,7 @@ export class StrokesCountGame extends GameEngine {
     this._phaseWrongCount++;
     this._showArrowHit(false);
 
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
 
     if (this._phaseWrongCount === 1) {
       // ── 第一次答錯：給予提示，可再試 ──
@@ -485,7 +485,7 @@ export class StrokesCountGame extends GameEngine {
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
     this._stopTargetAnimation();
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     // 高亮正確靶
@@ -521,7 +521,7 @@ export class StrokesCountGame extends GameEngine {
   //   提示二：「部首是『...』（帶注音體）」
   // ════════════════════════════════════════════
   getHint() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     const hintArea = document.getElementById('sc-hint-area');
