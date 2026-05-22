@@ -72,15 +72,22 @@ export class StrokesCountGame extends GameEngine {
     // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
     const allChars = JSONLoader.get('characters') || [];
 
+    // 從 radicals.json 建立部首筆劃查找表（部首字 → 筆劃數）
+    const allRadicals = JSONLoader.get('radicals') || [];
+    const radicalStrokesMap = {};
+    for (const r of allRadicals) {
+      radicalStrokesMap[r.radical] = r.strokes;
+    }
+
     const questions = [];
     for (const char of chars) {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      // 確保有總筆劃和部首筆劃資料
-      const totalStrokes = charData.total_strokes || charData.strokes;          // 總筆劃數
-      const radicalStrokes = charData.radical_strokes; // 部首筆劃數
-      const radical = charData.radical;                // 部首字
+      const totalStrokes = charData.total_strokes || charData.strokes; // 總筆劃數
+      const radical = charData.radical;                                // 部首字
+      // 部首筆劃數：從 radicals.json 查（characters.json 記錄的是去除部首後的剩餘筆劃）
+      const radicalStrokes = radical ? radicalStrokesMap[radical] : undefined;
 
       if (!totalStrokes || !radicalStrokes || !radical) continue;
 
