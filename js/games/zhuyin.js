@@ -82,7 +82,13 @@ const ZHUYIN_KEYBOARD = {
  * @returns {string}
  */
 function normalizeZhuyin(str) {
-  return (str || '').replace(/\s/g, '').trim()
+  if (!str) return ''
+  // 去除空白後，只保留注音符號（U+3105–U+3129）和聲調符號（U+02CA–U+02D9）
+  // 過濾掉 Gemini 可能回傳的標點、漢字、英文等雜訊
+  return [...str.replace(/\s/g, '')].filter(c => {
+    const cp = c.charCodeAt(0)
+    return (cp >= 0x3105 && cp <= 0x3129) || (cp >= 0x02CA && cp <= 0x02D9)
+  }).join('')
 }
 
 /**

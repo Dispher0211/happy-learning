@@ -219,20 +219,27 @@ export const HandwritingManager = {
   },
 
   async _callGeminiOne(canvas, key, model, mode) {
-    const base64   = this._canvasToBase64(canvas)
-    const modeHint = mode === 'zhuyin' ? '注音符號（如ㄅㄆㄇㄈ）' : '中文字'
+    const base64 = this._canvasToBase64(canvas)
+
+    let prompt
+    if (mode === 'zhuyin') {
+      prompt = `這張圖片是小朋友在方格內手寫的台灣注音符號（ㄅㄆㄇ注音）。
+請仔細辨識圖片中的注音符號筆跡，只輸出注音符號本身。
+注音符號包含：聲母（ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ）、介音（ㄧㄨㄩ）、韻母（ㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ）、聲調（ˊˇˋ˙，一聲不加符號）。
+請直接輸出辨識到的注音符號，不要任何說明、標點、換行或其他文字。`
+    } else {
+      prompt = `這張圖片是小朋友手寫的中文字。請辨識圖片中的中文字，只輸出單一中文字，不要任何說明、標點或換行。`
+    }
 
     const res = await fetch(GEMINI_URL(model, key), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       signal:  AbortSignal.timeout(15000),
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inlineData: { mimeType: 'image/png', data: base64 } },
-            { text: `這是一個小朋友手寫的${modeHint}圖片。請辨識圖片中的${modeHint}，只輸出辨識結果，不要任何解釋、標點或換行。` },
-          ],
-        }],
+        contents: [{ parts: [
+          { inlineData: { mimeType: 'image/png', data: base64 } },
+          { text: prompt },
+        ]}],
         generationConfig: { temperature: 0, maxOutputTokens: 20 },
       }),
     })
@@ -244,7 +251,18 @@ export const HandwritingManager = {
       throw err
     }
     const data = await res.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    if (!text) return null
+
+    // 注音模式：過濾掉非注音字元，只保留 ㄅ–ㄩ（U+3105–U+3129）和聲調（U+02CA–U+02D9）
+    if (mode === 'zhuyin') {
+      text = [...text].filter(c => {
+        const cp = c.charCodeAt(0)
+        return (cp >= 0x3105 && cp <= 0x3129) || (cp >= 0x02CA && cp <= 0x02D9)
+      }).join('')
+    }
+
+    console.log(`[HandwritingManager] Gemini [${model}] 辨識結果：${JSON.stringify(text)}`)
     return text ? { text } : null
   },
 
