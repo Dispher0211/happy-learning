@@ -270,7 +270,15 @@ export class StrokesCountGame extends GameEngine {
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
 
-    return arr.slice(0, TARGET_COUNT);
+    const result = arr.slice(0, TARGET_COUNT);
+
+    // ── 最終防護：確保正確答案一定出現在靶上 ──
+    // （理論上 Set 已包含，但防止任何邊界情況）
+    if (!result.includes(correct)) {
+      result[Math.floor(Math.random() * TARGET_COUNT)] = correct;
+    }
+
+    return result;
   }
 
   // ════════════════════════════════════════════
