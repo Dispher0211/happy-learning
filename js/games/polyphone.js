@@ -156,7 +156,7 @@ export class PolyphoneGame extends GameEngine {
   // renderQuestion
   // ════════════════════════════════════════════
   renderQuestion() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     // 停止舊動畫
@@ -485,7 +485,7 @@ export class PolyphoneGame extends GameEngine {
   // onCorrectAnswer（覆寫）— 連續模式：飛機不降落
   // ════════════════════════════════════════════
   async onCorrectAnswer() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
 
     // 標記命中的泡泡爆炸
     const hitBubble = this._bubbles.find(b => b.text === this._correctPronunciation);
@@ -529,7 +529,7 @@ export class PolyphoneGame extends GameEngine {
   // showCorrectAnswer — 答錯兩次：飛機降落，顯示正確讀音
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     // 飛機降落動畫
@@ -568,7 +568,7 @@ export class PolyphoneGame extends GameEngine {
   //   提示二：高亮正確聲調
   // ════════════════════════════════════════════
   getHint() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
     const hintArea = document.getElementById('pp-hint-area');
     if (!hintArea) return;
