@@ -85,14 +85,17 @@ export class ListenGame extends GameEngine {
 
       questions.push({
         char,
-        pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
+        pronunciation: charData.pronunciations?.[0]?.zhuyin || '',
         words: charData.pronunciations?.[0]?.words || charData.words || [],
-        level: charData.level || 'medium',
+        level: { 1: 'easy', 2: 'medium' }[charData.grade] || 'medium',
         mode,
         distractors, // 3個干擾
       });
     }
 
+    if (questions.length === 0) {
+      throw new Error('listen: 無法從字典中取得題目資料，請確認 characters.json 已載入');
+    }
     this.questions = questions;
     return questions;
   }
@@ -108,9 +111,11 @@ export class ListenGame extends GameEngine {
 
     if (mode === 1) {
       // 模式一：優先找同音字，補充形近/隨機
+      const correctPronM1 = charData.pronunciations?.[0]?.zhuyin || '';
       const sameSound = allChars.filter(c =>
         (c['字'] || c.char) !== char &&
-        c.pronunciation === charData.pronunciation
+        (c.pronunciations?.[0]?.zhuyin || '') === correctPronM1 &&
+        correctPronM1 !== ''
       );
       for (const c of sameSound) {
         if (result.length >= 3) break;
@@ -130,29 +135,36 @@ export class ListenGame extends GameEngine {
       }
     } else {
       // 模式二：找相似注音（替換聲調或聲母）
-      const correctPron = charData.pronunciation || '';
+      const correctPron = charData.pronunciations?.[0]?.zhuyin || '';
       const similar = allChars
-        .filter(c => (c['字'] || c.char) !== char && c.pronunciation && c.pronunciation !== correctPron)
+        .filter(c => {
+          const pron = c.pronunciations?.[0]?.zhuyin || '';
+          return (c['字'] || c.char) !== char && pron && pron !== correctPron;
+        })
         .sort((a, b) => {
           // 優先選聲母相同但聲調不同的（干擾性更強）
-          const aScore = a.pronunciation[0] === correctPron[0] ? 1 : 0;
-          const bScore = b.pronunciation[0] === correctPron[0] ? 1 : 0;
+          const ap = a.pronunciations?.[0]?.zhuyin || '';
+          const bp = b.pronunciations?.[0]?.zhuyin || '';
+          const aScore = correctPron && ap[0] === correctPron[0] ? 1 : 0;
+          const bScore = correctPron && bp[0] === correctPron[0] ? 1 : 0;
           return bScore - aScore + Math.random() * 0.4 - 0.2;
         });
 
       for (const c of similar) {
         if (result.length >= 3) break;
-        if (!used.has(c.pronunciation)) {
-          result.push(c.pronunciation);
-          used.add(c.pronunciation);
+        const pron = c.pronunciations?.[0]?.zhuyin || '';
+        if (!used.has(pron)) {
+          result.push(pron);
+          used.add(pron);
         }
       }
-      // 補充
+      // 補充隨機注音
       for (const c of allChars.sort(() => Math.random() - 0.5)) {
         if (result.length >= 3) break;
-        if (c.pronunciation && !used.has(c.pronunciation) && c.pronunciation !== correctPron) {
-          result.push(c.pronunciation);
-          used.add(c.pronunciation);
+        const pron = c.pronunciations?.[0]?.zhuyin || '';
+        if (pron && !used.has(pron) && pron !== correctPron) {
+          result.push(pron);
+          used.add(pron);
         }
       }
     }
@@ -378,8 +390,9 @@ export class ListenGame extends GameEngine {
       // 模式二：播放詞語（逐字播放）
       for (const c of this._currentWord) {
         const charData = (JSONLoader.get('characters') || []).find(ch => (ch['字'] || ch.char) === c);
-        if (charData?.pronunciation) {
-          await AudioManager.play(charData.pronunciation).catch(() => {});
+        const pron = charData?.pronunciations?.[0]?.zhuyin || '';
+        if (pron) {
+          await AudioManager.play(pron).catch(() => {});
           await new Promise(r => setTimeout(r, 100)); // 字間停頓
         }
       }

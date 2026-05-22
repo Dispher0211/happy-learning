@@ -14,7 +14,7 @@ import { PAGES } from '../ui/pages.js'
 // ──────────────────────────────────────
 const GAME_LIST = [
   { gameId: 'writing',      icon: '✍️',  label: '寫國字',   stars: 4 },
-  { gameId: 'stroke',       icon: '🖊️',  label: '筆順訓練', stars: 2 },
+  { gameId: 'stroke',       icon: '🖊️',  label: '筆順訓練', stars: 1 },
   { gameId: 'zhuyin',       icon: '📝',  label: '寫出注音', stars: 2 },
   { gameId: 'polyphone',    icon: '🎵',  label: '多音判斷', stars: 4 },
   { gameId: 'radical',      icon: '🏠',  label: '部首選擇', stars: 1 },

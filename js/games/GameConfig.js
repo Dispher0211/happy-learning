@@ -54,23 +54,22 @@ export const GameConfig = {
     id: 'stroke',
     name: '筆順練習',
     icon: '🖊️',
-    // 主設定：以 stroke_handwrite 為代表
     stars: {
-      first: 2,
-      retry: 1,
+      first: 1,
+      retry: 0.5,
     },
     difficulty: 'medium',
-    needHandwriting: true,   // 手寫跟著畫模式需要手寫
+    needHandwriting: true,
   },
 
-  // stroke 手寫模式（供 GameEngine.calculateStars 使用）
+  // stroke 手寫模式
   stroke_handwrite: {
     id: 'stroke_handwrite',
     name: '筆順練習（手寫）',
     icon: '🖊️',
     stars: {
-      first: 2,
-      retry: 1,
+      first: 1,
+      retry: 0.5,
     },
     difficulty: 'medium',
     needHandwriting: true,

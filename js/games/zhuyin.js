@@ -226,8 +226,8 @@ export class ZhuyinGame extends GameEngine {
     // 從 characters.json 全字典查詢完整資料（部首、字義等）
     const allCharsDict = JSONLoader.get('characters') || []
 
-    // questionPool 由 GameEngine.init() 依遺忘曲線排好順序
-    const pool = (this.questionPool || []).slice(0, count * 3)
+    // questionChars 由 GameEngine.init() 從 AppState.characters 建立（字串陣列）
+    const pool = (this.questionChars || []).slice(0, count * 3)
 
     const questions = []
     for (const entry of pool) {
@@ -271,7 +271,7 @@ export class ZhuyinGame extends GameEngine {
     // 若遺忘曲線 pool 不足，從剩餘生字補齊
     if (questions.length < count) {
       const usedChars = new Set(questions.map(q => q.char))
-      for (const charData of characters) {
+      for (const charData of myChars) {
         if (questions.length >= count) break
         const char   = charData['字'] || charData.char || ''
         const zhuyin = charData['注音'] || charData.zhuyin || ''

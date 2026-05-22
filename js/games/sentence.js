@@ -67,29 +67,75 @@ export class SentenceGame extends GameEngine {
   // 載入題目（override GameEngine.loadQuestions）
   // ─────────────────────────────────────────────
   async loadQuestions(config) {
-    // 載入 sentences.json（第三波懶載入）
-    this._sentences = JSONLoader.get('sentences') || []
-    if (this._sentences.length === 0) {
-      await JSONLoader.load('sentences')
-      this._sentences = JSONLoader.get('sentences') || []
+    // 1. 確保 sentences 索引已載入（wave3）
+    const index = JSONLoader.get('sentences')
+    if (!index || !index.char_book || Object.keys(index.char_book).length === 0) {
+      await JSONLoader.wave3('sentences')
     }
 
-    // 以生字簿篩選（只出現在 my_characters 中的字）
+    // 2. 確定要用哪些字（生字簿優先，否則用索引全部字）
     const myChars = AppState.characters || []
-    let pool = myChars.length > 0
-      ? this._sentences.filter(s => myChars.includes(s.character))
-      : this._sentences
+    const indexData = JSONLoader.get('sentences')
+    const allIndexChars = Object.keys(indexData?.char_book || {})
+    const targetChars = myChars.length > 0
+      ? myChars.filter(c => allIndexChars.includes(c))
+      : allIndexChars
 
-    // 若過濾後沒有題目，退回全庫
-    if (pool.length === 0) pool = this._sentences
+    // 3. 若沒有符合索引的字，退回全部索引字
+    const charList = targetChars.length > 0 ? targetChars : allIndexChars
 
-    // 洗牌取前 config.count 筆
-    const count   = config?.count || 10
-    const shuffled = this._seededShuffle(pool)
-    this.questions = shuffled.slice(0, count).map(s => ({ ...s }))
+    // 4. 載入所有需要的冊次 fill + compose 資料
+    await Promise.all(charList.map(c => JSONLoader.loadSentencesForChar(c).catch(() => {})))
+
+    // 5. 也載入句型庫（模式3用）
+    await JSONLoader.loadPattern()
+
+    // 6. 收集所有可用題目（fill + compose）
+    const fillPool    = []
+    const composePool = []
+    for (const char of charList) {
+      const data = JSONLoader.getSentenceData(char)
+      for (const f of (data.fill || [])) {
+        fillPool.push({ ...f, _type: 'fill' })
+      }
+      for (const c of (data.compose || [])) {
+        composePool.push({ ...c, _type: 'compose' })
+      }
+    }
+
+    // 句型庫（模式3）：與 character 無關，整體取
+    const patternPool = (JSONLoader.get('sentences_pattern') || []).map(p => ({
+      ...p,
+      _type:           'pattern',
+      character:       p.character || '',
+      example_pattern: p.template,
+      example_sentence: p.example,
+    }))
+
+    // 7. 依四種模式比例組合題目
+    const count = config?.count || 10
+    const n1 = Math.max(1, Math.round(count * 0.15))   // 模式1 fill
+    const n2 = Math.max(1, Math.round(count * 0.15))   // 模式2 fill
+    const n3 = Math.max(1, Math.round(count * 0.35))   // 模式3 pattern
+    const n4 = count - n1 - n2 - n3                    // 模式4 compose
+
+    const pick = (pool, n) => {
+      if (pool.length === 0) return []
+      const s = this._seededShuffle([...pool])
+      return s.slice(0, Math.min(n, s.length))
+    }
+
+    const mode1q = pick(fillPool, n1).map(q => ({ ...q, _mode: 1 }))
+    const mode2q = pick(fillPool, n2).map(q => ({ ...q, _mode: 2 }))
+    const mode3q = pick(patternPool, n3).map(q => ({ ...q, _mode: 3 }))
+    const mode4q = pick(composePool, n4).map(q => ({ ...q, _mode: 4 }))
+
+    // 合併並洗牌
+    const combined = this._seededShuffle([...mode1q, ...mode2q, ...mode3q, ...mode4q])
+    this.questions = combined
 
     if (this.questions.length === 0) {
-      throw new Error('沒有可用的短句造詞題目，請先設定生字簿')
+      throw new Error('沒有可用的短句造詞題目，請先設定生字簿或補充句子資料')
     }
   }
 
@@ -108,7 +154,7 @@ export class SentenceGame extends GameEngine {
   // 渲染題目（override GameEngine.renderQuestion）
   // ─────────────────────────────────────────────
   renderQuestion(question) {
-    this._currentMode = this._pickMode()
+    this._currentMode = question._mode || this._pickMode()
     this._lastResult   = null
     this._selectedFill = null
 

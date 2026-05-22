@@ -526,7 +526,8 @@ export class TypoGame extends GameEngine {
     const confirmBtn = document.getElementById('typo-btn-confirm');
     if (confirmBtn) {
       this._hwConfirmHandler = async () => {
-        if (this._hwRecognizing || this.isAnswering) return;
+        // 防止重複觸發（辨識中）；但 isAnswering 不阻擋，因 fallback 後 isAnswering 仍可能為 true
+        if (this._hwRecognizing) return;
         if (!this._typoCanvas || this._typoStrokes.length === 0) {
           // 尚未繪製任何筆畫 → 提示
           const msg = document.querySelector('.typo-retry-msg');
@@ -540,6 +541,7 @@ export class TypoGame extends GameEngine {
           // 直接使用 import 的 HandwritingManager（不依賴 globalThis）
           const result = await HandwritingManager.recognize(this._typoCanvas, { mode: 'chinese' });
 
+          // 辨識失敗 → fallback: retry（不計入答錯，不走 submitAnswer）
           if (!result || (!result.text && !result.candidates?.length)) {
             await this._handleHwFallback(question);
             return;
@@ -550,6 +552,9 @@ export class TypoGame extends GameEngine {
             await this._handleHwFallback(question);
             return;
           }
+
+          // 辨識成功 → 確保 isAnswering=false 再走 submitAnswer
+          this.isAnswering = false;
           await this.submitAnswer({ recognized });
 
         } catch (err) {
@@ -557,8 +562,10 @@ export class TypoGame extends GameEngine {
           await this._handleHwFallback(question);
         } finally {
           this._hwRecognizing = false;
-          if (confirmBtn && !confirmBtn.closest('[data-destroyed]')) {
-            confirmBtn.disabled = false;
+          // 只在 DOM 仍存在且非 fallback 重建後更新按鈕（fallback 會重建整個 DOM）
+          const btn = document.getElementById('typo-btn-confirm');
+          if (btn && !btn.closest('[data-destroyed]')) {
+            btn.disabled = false;
           }
         }
       };
@@ -572,8 +579,12 @@ export class TypoGame extends GameEngine {
    * @param {object} question
    */
   async _handleHwFallback(question) {
+    // 確保 isAnswering / attemptCount 不受污染（fallback 不算一次作答）
+    this.isAnswering = false;
     this._hwRetrying = true;
     this._typoClearCanvas();
+    // 清除舊 listener 以防重複綁定
+    this._cleanupHandwritingListeners();
     this._renderMode2WriteStep(question);
   }
 

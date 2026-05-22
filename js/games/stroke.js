@@ -1,22 +1,11 @@
 /**
  * stroke.js — 筆順訓練 × ✍️ HanziWriter 遊戲
- * Task 19：繼承 GameEngine，實作兩種模式
+ * Task 19：繼承 GameEngine，純手寫筆順模式
  *
- * 遊戲規則（SECTION 9 D.2）：
- *   模式選擇（依筆劃數）：
- *     筆劃 ≤ 8  → 70% 手寫 / 30% 選擇
- *     筆劃 9-15 → 50% / 50%
- *     筆劃 ≥ 16 → 30% 手寫 / 70% 選擇
+ * 遊戲規則（SECTION 9 D.2 簡化版）：
+ *   全部題目 → 手寫模式（依筆順描繪完整字）
  *
- *   模式一（選擇）：「第N筆是什麼？」
- *     - 先顯示前 N-1 筆（HanziWriter animateOneStroke × N-1）
- *     - 4個選項帶注音體
- *
- *   模式二（手寫）：HanziWriter startQuiz
- *     - onComplete 後 animateStrokes 完整回放
- *     - restartQuiz 不重建 instance
- *
- *   星星：模式一 ★+1（首次）/0.5（重試）；模式二 ★+2（首次）/1（重試）
+ *   星星：★+1（首次答對）/ ★+0.5（重試答對）
  *   答對後：完整筆順自動回放一次
  *
  * 額外依賴：hanzi_writer_manager.js（T13）
@@ -32,25 +21,6 @@ import { HanziWriterManager } from '../hanzi_writer_manager.js';
 // HanziWriterManager 直接從模組匯入（不透過 window）
 // ─────────────────────────────────────────────
 const getHWM = () => HanziWriterManager;
-
-// 筆順名稱對照表（注音體）：1-32 筆的筆劃名稱
-// 注意：實際筆劃名稱從 HanziWriter 的 strokeData 取得，此為備用顯示用
-const STROKE_NAMES_ZH = {
-  '横': 'ㄏㄥˊ', '竖': 'ㄕㄨˋ', '撇': 'ㄆㄧㄝˇ', '捺': 'ㄋㄚˋ',
-  '折': 'ㄓㄜˊ', '钩': 'ㄍㄡ', '点': 'ㄉㄧㄢˇ', '提': 'ㄊㄧˊ',
-};
-
-// 基本筆劃選項池（含注音體），供模式一干擾選項用
-const STROKE_OPTIONS_POOL = [
-  { name: '橫', zhuyin: 'ㄏㄥˊ' },
-  { name: '豎', zhuyin: 'ㄕㄨˋ' },
-  { name: '撇', zhuyin: 'ㄆㄧㄝˇ' },
-  { name: '捺', zhuyin: 'ㄋㄚˋ' },
-  { name: '折', zhuyin: 'ㄓㄜˊ' },
-  { name: '鉤', zhuyin: 'ㄍㄡ' },
-  { name: '點', zhuyin: 'ㄉㄧㄢˇ' },
-  { name: '提', zhuyin: 'ㄊㄧˊ' },
-];
 
 // HW 容器 ID（固定，不重建）
 const HW_CONTAINER_ID = 'stroke-hw-container';
@@ -102,12 +72,8 @@ export class StrokeGame extends GameEngine {
   constructor() {
     super('stroke');
 
-    this._mode = 2;              // 1=選擇 2=手寫
-    this._quizCompleted = false; // 手寫模式完成旗標
-    this._targetStrokeIndex = 0; // 模式一：出題的筆劃索引（0-based）
+    this._quizCompleted = false; // 手寫完成旗標
     this._wrongCount = 0;
-    this._currentOptions = [];   // 模式一的4個選項
-    this._correctOption = null;  // 模式一正確答案
     this._replayingAnimation = false; // 是否正在回放動畫（防重複觸發）
   }
 
@@ -120,7 +86,6 @@ export class StrokeGame extends GameEngine {
       throw new Error('stroke: 題目字元為空');
     }
 
-    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
     const allCharsDict = JSONLoader.get('characters') || [];
     const questions = [];
 
@@ -128,30 +93,14 @@ export class StrokeGame extends GameEngine {
       const charData = allCharsDict.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      const strokes = charData.total_strokes || charData.strokes || 5; // 總筆劃數
-
-      // 依筆劃數決定模式機率
-      let mode;
-      if (strokes <= 8) {
-        mode = Math.random() < 0.7 ? 2 : 1; // 70% 手寫
-      } else if (strokes <= 15) {
-        mode = Math.random() < 0.5 ? 2 : 1; // 50% 手寫
-      } else {
-        mode = Math.random() < 0.3 ? 2 : 1; // 30% 手寫
-      }
-
-      // 模式一：隨機選一筆（第2筆以後，至少有前N-1筆可展示）
-      const targetStrokeIndex = strokes > 1
-        ? Math.floor(Math.random() * (strokes - 1)) + 1 // 1-based，至少第2筆
-        : 1;
+      const strokes = charData.total_strokes || charData.strokes || 5;
 
       questions.push({
         char,
         strokes,
         pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
         level: charData.level || 'medium',
-        mode,
-        targetStrokeIndex, // 模式一出題筆劃（1-based）
+        mode: 2, // 純手寫模式
       });
     }
 
@@ -163,16 +112,22 @@ export class StrokeGame extends GameEngine {
   // renderQuestion
   // ════════════════════════════════════════════
   renderQuestion(question) {
-    // GameEngine 呼叫時傳入 question 參數；同時支援 this.currentQuestion 備援
     const q = question || this.currentQuestion;
     if (!q) return;
 
-    this._mode = q.mode;
     this._wrongCount = 0;
     this._quizCompleted = false;
     this._replayingAnimation = false;
 
-    // 寫入遊戲內容容器（#game-content），不覆蓋 #app 整體 layout（含星星 header）
+    // 清除舊 HanziWriter instance（DOM 即將被替換，必須先釋放）
+    const hwm = getHWM();
+    if (hwm) {
+      try { hwm._safeStop?.(hwm._instances?.[HW_CONTAINER_ID]); } catch (_e) {}
+      if (hwm._instances) delete hwm._instances[HW_CONTAINER_ID];
+      if (hwm._requestIds) delete hwm._requestIds[HW_CONTAINER_ID];
+      if (hwm._lastQuizCallbacks) delete hwm._lastQuizCallbacks[HW_CONTAINER_ID];
+    }
+
     const container = this._getContainer();
     if (!container) return;
 
@@ -180,7 +135,6 @@ export class StrokeGame extends GameEngine {
     this._renderProgressBar();
     this._updateHintButton();
 
-    // 初始化 HanziWriter（非同步，等 DOM 就緒）
     requestAnimationFrame(() => this._initHanziWriter(q));
   }
 
@@ -189,10 +143,6 @@ export class StrokeGame extends GameEngine {
   // ════════════════════════════════════════════
   _buildHTML(q) {
     const levelLabel = { hard: '困難', medium: '中等', easy: '簡單', easy_plus: '加強' }[q.level] || '中等';
-    const modeLabel = q.mode === 1 ? '選擇模式' : '手寫模式';
-    const questionText = q.mode === 1
-      ? `「${q.char}」的第 ${q.targetStrokeIndex} 筆是什麼？`
-      : `請按照正確筆順寫出「${q.char}」`;
 
     return `
       <div class="sw-game" id="sw-game-root">
@@ -200,9 +150,9 @@ export class StrokeGame extends GameEngine {
         <div class="sw-header">
           <div class="sw-char-display">${q.char}</div>
           <div class="sw-meta">
-            <div class="sw-question-text">${questionText}</div>
+            <div class="sw-question-text">請按照正確筆順寫出「${q.char}」</div>
             <div class="sw-badges">
-              <span class="sw-badge sw-badge--mode">${modeLabel}</span>
+              <span class="sw-badge sw-badge--mode">手寫模式</span>
               <span class="sw-badge sw-badge--${q.level}">${levelLabel}</span>
               <span class="sw-badge sw-badge--strokes">${q.strokes} 劃</span>
             </div>
@@ -215,16 +165,10 @@ export class StrokeGame extends GameEngine {
         </div>
 
         <!-- HanziWriter 容器 -->
-        <div class="sw-writer-area" ${q.mode === 1 ? 'style="display:none"' : ''}>
+        <div class="sw-writer-area">
           <div id="${HW_CONTAINER_ID}" class="sw-hw-container"
                aria-label="筆順練習區域"></div>
-          ${q.mode === 2 ? '<div class="sw-writer-guide">✍️ 請依照筆順書寫</div>' : ''}
-        </div>
-
-        <!-- 模式一：選項區（初始隱藏，等動畫播完後顯示） -->
-        <div class="sw-options-area" id="sw-options-area"
-             style="display: ${q.mode === 1 ? 'none' : 'none'}">
-          <!-- 選項由 JS 動態填入 -->
+          <div class="sw-writer-guide">✍️ 請依照筆順書寫</div>
         </div>
 
         <!-- 提示區 -->
@@ -236,11 +180,10 @@ export class StrokeGame extends GameEngine {
                   onclick="window.__swHint?.()">
             💡 提示（剩 ${2 - (this.usedHints || 0)} 次）
           </button>
-          ${q.mode === 2 ? `
           <button class="sw-btn sw-btn--replay" id="sw-replay-btn" disabled
                   onclick="window.__swReplay?.()">
             🔄 重新演示
-          </button>` : ''}
+          </button>
         </div>
 
         <!-- 回饋遮罩 -->
@@ -277,42 +220,23 @@ export class StrokeGame extends GameEngine {
     };
 
     try {
-      if (q.mode === 1) {
-        // ── 模式一：先展示前 N-1 筆，再顯示選項 ──
-        await hwm.switchChar(q.char, HW_CONTAINER_ID, {
-          ...writerOptions,
-          showOutline: true,
-          showCharacter: false,
-        });
+      // 純手寫模式：先展示完整筆順動畫，再啟動 quiz
+      await hwm.switchChar(q.char, HW_CONTAINER_ID, {
+        ...writerOptions,
+        showOutline: true,
+        showCharacter: false,
+      });
 
-        // 逐筆動畫到第 targetStrokeIndex-1 筆
-        const showUpTo = q.targetStrokeIndex - 1;
-        if (showUpTo > 0) {
-          await this._animateUpToStroke(hwm, q.char, showUpTo);
-        }
+      // 展示一次完整筆順供學生參考
+      await hwm.animateStrokes(q.char, HW_CONTAINER_ID, {
+        strokeAnimationSpeed: 0.8,
+        delayBetweenStrokes: 150,
+      });
+      await this._delay(600);
 
-        // 動畫完畢，顯示選項
-        await this._delay(300);
-        this._showMode1Options(q);
+      // 開始手寫測驗
+      await this._startQuiz(hwm, q);
 
-      } else {
-        // ── 模式二：手寫測驗 ──
-        await hwm.switchChar(q.char, HW_CONTAINER_ID, {
-          ...writerOptions,
-          showOutline: true,
-          showCharacter: false,
-        });
-
-        // 短暫展示一次動畫讓學生看範例
-        await hwm.animateStrokes(q.char, HW_CONTAINER_ID, {
-          strokeAnimationSpeed: 0.8,
-          delayBetweenStrokes: 150,
-        });
-        await this._delay(600);
-
-        // 開始測驗（startQuiz）
-        this._startQuiz(hwm, q);
-      }
     } catch (err) {
       console.error('stroke.js: HanziWriter 初始化失敗', err);
       this._showHWFallback(q);
@@ -321,7 +245,7 @@ export class StrokeGame extends GameEngine {
     // 綁定全域事件
     window.__swHint = () => this.useHint();
     window.__swReplay = () => this._replayDemo(q);
-    // 啟用「重新演示」和「提示」按鈕（初始化完成後才可點擊）
+    // 啟用按鈕（初始化完成後才可點擊）
     const replayBtn = document.getElementById('sw-replay-btn');
     const hintBtn   = document.getElementById('sw-hint-btn');
     if (replayBtn) replayBtn.disabled = false;
@@ -329,61 +253,8 @@ export class StrokeGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _animateUpToStroke — 逐筆動畫到指定筆數
   // ════════════════════════════════════════════
-  async _animateUpToStroke(hwm, char, upTo) {
-    for (let i = 0; i < upTo; i++) {
-      try {
-        await hwm.animateOneStroke(char, HW_CONTAINER_ID, i);
-        await this._delay(200);
-      } catch (e) {
-        // 部分字的筆劃資料可能不完整，跳過
-        break;
-      }
-    }
-  }
-
-  // ════════════════════════════════════════════
-  // _showMode1Options — 顯示模式一的4個選項（帶注音體）
-  // ════════════════════════════════════════════
-  _showMode1Options(q) {
-    // 正確答案：從 strokePool 隨機選一個（實際應從 HanziWriter 資料取，此處以隨機模擬）
-    // 正確筆劃名稱：取 STROKE_OPTIONS_POOL 中第 (targetStrokeIndex % pool.length) 個
-    // 注意：HanziWriter 不直接提供筆劃名稱，此處以「筆劃順序提示」為主
-    const poolIdx = (q.targetStrokeIndex - 1) % STROKE_OPTIONS_POOL.length;
-    const correct = STROKE_OPTIONS_POOL[poolIdx];
-    this._correctOption = correct;
-
-    // 產生3個干擾
-    const distractors = STROKE_OPTIONS_POOL
-      .filter((_, i) => i !== poolIdx)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-
-    // 打亂順序
-    this._currentOptions = [correct, ...distractors].sort(() => Math.random() - 0.5);
-
-    const optionsArea = document.getElementById('sw-options-area');
-    if (!optionsArea) return;
-
-    optionsArea.style.display = 'grid';
-    optionsArea.innerHTML = this._currentOptions.map((opt, i) => `
-      <button class="sw-option-btn" data-index="${i}"
-              onclick="window.__swSelectOption(${i})"
-              aria-label="${opt.name} ${opt.zhuyin}">
-        <span class="sw-option-char">${opt.name}</span>
-        <span class="sw-option-zhuyin bpmf-font">${_renderZhuyinPv2(opt.zhuyin)}</span>
-      </button>
-    `).join('');
-
-    window.__swSelectOption = (index) => {
-      if (this.isAnswering) return;
-      this.submitAnswer(this._currentOptions[index].name);
-    };
-  }
-
-  // ════════════════════════════════════════════
-  // _startQuiz — 模式二：啟動 HanziWriter 手寫測驗
+  // _startQuiz — 啟動 HanziWriter 手寫測驗
   //   instance 已由 _initHanziWriter 中的 switchChar 建立
   //   直接用 restartQuiz 啟動 quiz，不重建 instance
   // ════════════════════════════════════════════
@@ -510,16 +381,8 @@ export class StrokeGame extends GameEngine {
   // judgeAnswer
   // ════════════════════════════════════════════
   async judgeAnswer(selected) {
-    const q = this.currentQuestion;
-    if (!q) throw new Error('judgeAnswer: 無當前題目');
-
-    if (q.mode === 1) {
-      // 模式一：比對筆劃名稱
-      return { correct: selected === this._correctOption?.name };
-    } else {
-      // 模式二：由 onComplete 傳入特殊標記決定
-      return { correct: selected === '__quiz_complete__' };
-    }
+    // 手寫模式：由 onComplete 傳入特殊標記決定
+    return { correct: selected === '__quiz_complete__' };
   }
 
   // ════════════════════════════════════════════
@@ -593,35 +456,13 @@ export class StrokeGame extends GameEngine {
     const hwm = getHWM();
     const hintArea = document.getElementById('sw-hint-area');
 
-    if (q.mode === 1 && this._correctOption) {
-      // 高亮正確選項
-      document.querySelectorAll('.sw-option-btn').forEach((btn, i) => {
-        if (this._currentOptions[i]?.name === this._correctOption.name) {
-          btn.classList.add('sw-option--correct');
-        }
-      });
-      if (hintArea) {
-        hintArea.innerHTML = `
-          <div class="sw-answer-reveal">
-            ✅ 正確答案：
-            <strong>${this._correctOption.name}</strong>
-            <span class="sw-zhuyin bpmf-font">${_renderZhuyinPv2(this._correctOption.zhuyin)}</span>
-          </div>
-        `;
-      }
-      // 2 秒後自動進下一題
-      await this._delay(2000);
-      await this.nextQuestion();
-    } else if (q.mode === 2 && hwm) {
-      // 播放完整筆順演示
-      if (hintArea) {
-        hintArea.innerHTML = `<div class="sw-answer-reveal">✅ 請觀看正確筆順</div>`;
-      }
-      await this._playStrokeReplay(hwm, q);
-      // 1.5 秒後自動進下一題
-      await this._delay(1500);
-      await this.nextQuestion();
+    // 播放完整筆順演示後自動進下一題
+    if (hintArea) {
+      hintArea.innerHTML = `<div class="sw-answer-reveal">✅ 請觀看正確筆順</div>`;
     }
+    if (hwm) await this._playStrokeReplay(hwm, q);
+    await this._delay(1500);
+    await this.nextQuestion();
   }
 
   // ════════════════════════════════════════════
@@ -636,61 +477,42 @@ export class StrokeGame extends GameEngine {
     if (!hintArea) return;
 
     if (this.usedHints === 0) {
-      if (q.mode === 1) {
-        // 模式一提示一：縮小選項範圍（排除2個干擾）
-        hintArea.innerHTML = `
-          <div class="sw-hint sw-hint--1">
-            💡 提示：這個字共有 <strong>${q.strokes}</strong> 劃，
-            第 ${q.targetStrokeIndex} 筆是主要筆劃之一
-          </div>
-        `;
-      } else {
-        // 模式二提示一：重新播放動畫（慢速）
-        hintArea.innerHTML = `<div class="sw-hint sw-hint--1">💡 請觀看慢速筆順示範</div>`;
-        const hwm = getHWM();
-        if (hwm && !this._replayingAnimation) {
-          this._replayingAnimation = true;
-          hwm.animateStrokes(q.char, HW_CONTAINER_ID, {
-            strokeAnimationSpeed: 0.4,
-            delayBetweenStrokes: 500,
-          }).then(() => {
-            this._replayingAnimation = false;
-            const hwm2 = getHWM();
-            // 確保字元隱藏（quiz 模式需要）
-            const writer3 = hwm2?._instances?.[HW_CONTAINER_ID];
-            if (writer3) {
-              try { writer3.hideCharacter({ duration: 0 }); writer3.showOutline({ duration: 0 }); } catch (_e) {}
-            }
-            hwm2?.restartQuiz?.(HW_CONTAINER_ID, {
-              onMistake: () => this._flashFeedback('❌', false),
-              onCorrectStroke: () => this._flashFeedback('✓', true),
-              onComplete: async (s) => {
-                if (this._quizCompleted) return;
-                this._quizCompleted = true;
-                await this._playStrokeReplay(hwm2, q);
-                await this.submitAnswer(
-                  (!s?.totalMistakes || s.totalMistakes <= 1) ? '__quiz_complete__' : '__quiz_wrong__'
-                );
-              },
-            });
-          }).catch(() => { this._replayingAnimation = false; });
-        }
+      // 提示一：慢速重播筆順
+      hintArea.innerHTML = `<div class="sw-hint sw-hint--1">💡 請觀看慢速筆順示範</div>`;
+      const hwm = getHWM();
+      if (hwm && !this._replayingAnimation) {
+        this._replayingAnimation = true;
+        hwm.animateStrokes(q.char, HW_CONTAINER_ID, {
+          strokeAnimationSpeed: 0.4,
+          delayBetweenStrokes: 500,
+        }).then(() => {
+          this._replayingAnimation = false;
+          const hwm2 = getHWM();
+          const writer3 = hwm2?._instances?.[HW_CONTAINER_ID];
+          if (writer3) {
+            try { writer3.hideCharacter({ duration: 0 }); writer3.showOutline({ duration: 0 }); } catch (_e) {}
+          }
+          hwm2?.restartQuiz?.(HW_CONTAINER_ID, {
+            onMistake: () => this._flashFeedback('❌', false),
+            onCorrectStroke: () => this._flashFeedback('✓', true),
+            onComplete: async (s) => {
+              if (this._quizCompleted) return;
+              this._quizCompleted = true;
+              await this._playStrokeReplay(hwm2, q);
+              await this.submitAnswer(
+                (!s?.totalMistakes || s.totalMistakes <= 1) ? '__quiz_complete__' : '__quiz_wrong__'
+              );
+            },
+          });
+        }).catch(() => { this._replayingAnimation = false; });
       }
     } else if (this.usedHints === 1) {
-      if (q.mode === 1) {
-        hintArea.innerHTML = `
-          <div class="sw-hint sw-hint--2">
-            🔑 提示：正確答案的注音聲母是
-            <strong>${this._correctOption?.zhuyin?.[0] || '?'}</strong>
-          </div>
-        `;
-      } else {
-        hintArea.innerHTML = `
-          <div class="sw-hint sw-hint--2">
-            🔑 每一筆的方向請觀察輪廓線，由上到下、由左到右為基本原則
-          </div>
-        `;
-      }
+      // 提示二：文字提示
+      hintArea.innerHTML = `
+        <div class="sw-hint sw-hint--2">
+          🔑 每一筆的方向請觀察輪廓線，由上到下、由左到右為基本原則
+        </div>
+      `;
     }
   }
 
@@ -717,10 +539,6 @@ export class StrokeGame extends GameEngine {
           <div class="sw-fallback-note">（筆順動畫載入中...）</div>
         </div>
       `;
-    }
-    // 如果是模式一，仍可顯示選項
-    if (q.mode === 1) {
-      this._showMode1Options(q);
     }
   }
 

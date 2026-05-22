@@ -21,6 +21,7 @@ import { GameConfig } from './GameConfig.js';
 import { AppState } from '../state.js';
 import { AudioManager } from '../audio.js';
 import { ForgettingCurve } from '../forgetting.js';
+import { JSONLoader } from '../json_loader.js';
 
 // ─────────────────────────────────────────────
 // 靶移動速度對應表（毫秒/遍歷一輪）
@@ -86,7 +87,7 @@ export class StrokesCountGame extends GameEngine {
         radicalStrokes,    // 部首筆劃
         radical,           // 部首
         pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
-        level: charData.level || 'medium',
+        level: (await ForgettingCurve.getLevel(char)) || 'medium',
       });
     }
 

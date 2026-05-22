@@ -24,6 +24,7 @@
 import { GameEngine } from './GameEngine.js';
 import { AppState } from '../state.js';
 import { AudioManager } from '../audio.js';
+import { JSONLoader } from '../json_loader.js';
 
 // ─────────────────────────────────────────────
 // 飛機移動速度（px/ms，依遺忘等級）
@@ -84,26 +85,38 @@ export class PolyphoneGame extends GameEngine {
   // loadQuestions — 從 polyphones.json 載入多音字資料
   // ════════════════════════════════════════════
   async loadQuestions() {
-    const chars = this.questionChars;
-    if (!chars || chars.length === 0) {
-      throw new Error('polyphone: 題目字元為空');
+    // 取得多音字資料：優先從 JSONLoader 快取取得；若未載入則先觸發載入
+    let polyData = JSONLoader.get('polyphones') || AppState.polyphones || {};
+    if (!polyData || Object.keys(polyData).length === 0) {
+      // 第二波背景載入尚未完成，主動等待
+      await JSONLoader.load('polyphones');
+      polyData = JSONLoader.get('polyphones') || {};
+    }
+    const allPolyKeys = Object.keys(polyData);
+
+    if (allPolyKeys.length === 0) {
+      throw new Error('polyphone: 無多音字資料');
     }
 
-    // 取得多音字資料（已由 JSONLoader 載入到 AppState.polyphones）
-    const polyData = AppState.polyphones || {};
-    // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
-    const allChars = JSONLoader.get('characters') || [];
+    // 候選字：先從生字簿中過濾出多音字
+    const chars = (this.questionChars || []).filter(c => polyData[c] && polyData[c].readings?.length >= 2);
+
+    // 若生字簿中無多音字，改用所有多音字資料中隨機取樣
+    const sourceChars = chars.length > 0
+      ? chars
+      : allPolyKeys.filter(k => polyData[k]?.readings?.length >= 2);
+
+    if (sourceChars.length === 0) {
+      throw new Error('polyphone: 無有效多音字題目');
+    }
+
     const questions = [];
 
-    for (const char of chars) {
+    for (const char of sourceChars) {
       const poly = polyData[char];
       if (!poly || !poly.readings || poly.readings.length < 2) continue;
 
-      const charData = allChars.find(c => (c['字'] || c.char) === char);
-
-      // 從所有讀音中，選一個讀音作為本題目標
-      // 優先選 fail_rate 最高的讀音（若有遺忘資料）
-      // 簡化實作：隨機選一個讀音
+      // 從所有讀音中，選一個讀音作為本題目標（隨機選）
       const targetIdx = Math.floor(Math.random() * poly.readings.length);
       const targetReading = poly.readings[targetIdx];
 
@@ -115,12 +128,18 @@ export class PolyphoneGame extends GameEngine {
         targetPronunciation: targetReading.zhuyin,  // 正確讀音
         exampleWord,                                  // 出題詞語
         allReadings: poly.readings,                   // 所有讀音
-        level: charData?.level || 'medium',
+        level: 'medium',
       });
     }
 
-    this.questions = questions;
-    return questions;
+    // 打亂並截取所需數量
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+
+    this.questions = questions.slice(0, this.totalQuestions || 10);
+    return this.questions;
   }
 
   // ════════════════════════════════════════════

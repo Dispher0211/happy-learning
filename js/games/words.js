@@ -90,8 +90,8 @@ export class WordsGame extends GameEngine {
 
     // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
     const allChars = JSONLoader.get('characters') || [];
-    // my_words 優先（家長自訂）
-    const myWords = AppState.myWords || [];
+    // my_words 優先（家長自訂）；AppState.words 是家長設定的詞語清單
+    const myWords = AppState.words || [];
     const questions = [];
 
     for (const char of chars) {
@@ -107,8 +107,12 @@ export class WordsGame extends GameEngine {
         words = [char + '字']; // 備用詞語
       }
 
-      // 取得干擾詞語：來自 confusables 或形近字
-      const confusables = charData.confusables || [];
+      // 取得干擾詞語：來自 confusables.json（related_characters）或形近字
+      const confusablesData = JSONLoader.get('confusables') || [];
+      const confusables = confusablesData
+        .filter(e => e.correct === char || (e.related_characters && e.related_characters.includes(char)))
+        .flatMap(e => e.related_characters || [])
+        .filter(c => c !== char);
       const wrongWords = this._buildWrongWords(char, words, confusables, allChars);
 
       // 模式決定
@@ -149,13 +153,13 @@ export class WordsGame extends GameEngine {
 
     // 補充：用隨機字取代
     const pool = allChars
-      .filter(c => c.char !== char)
+      .filter(c => c['字'] !== char)
       .sort(() => Math.random() - 0.5);
 
     for (const c of pool) {
       if (result.length >= 4) break;
       const base = correctWords[0] || char + '字';
-      const wrongWord = base.replace(char, c.char);
+      const wrongWord = base.replace(char, c['字']);
       if (!used.has(wrongWord)) {
         result.push(wrongWord);
         used.add(wrongWord);
@@ -424,15 +428,18 @@ export class WordsGame extends GameEngine {
     this._mode2Correct = q.char;
 
     // 4個選項：1正確 + 3形近字
-    const confusables = (q.words[0] ? [] : []).concat(
-      (AppState.characters || [])
-        .filter(c => c.char !== q.char)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map(c => c.char)
-    );
-    // 補充到3個干擾
-    const distractors = confusables.slice(0, 3);
+    // AppState.characters 是字串陣列（['大','小',...]）；
+    // confusables 優先，不足時從 allChars 補充
+    const confusablesData2 = JSONLoader.get('confusables') || [];
+    const relatedChars = confusablesData2
+      .filter(e => e.correct === q.char || (e.related_characters && e.related_characters.includes(q.char)))
+      .flatMap(e => e.related_characters || [])
+      .filter(c => c !== q.char);
+    const fallbackPool = (JSONLoader.get('characters') || [])
+      .map(c => c['字'])
+      .filter(c => c && c !== q.char);
+    const combined = [...new Set([...relatedChars, ...fallbackPool])];
+    const distractors = combined.sort(() => Math.random() - 0.5).slice(0, 3);
     while (distractors.length < 3) distractors.push('？');
 
     this._mode2Options = [q.char, ...distractors].sort(() => Math.random() - 0.5);

@@ -524,14 +524,13 @@ export class RadicalGame extends GameEngine {
       .rg-opt:hover:not(.disabled) { background:#eaf4fb; }
       .rg-opt:active:not(.disabled) { transform:scale(.93); }
       /* 注音：用 sans-serif 避免雙層渲染；部首字：用 BpmfIVS 顯示注音體字型 */
-      .rg-opt-zhuyin { font-size:13px; color:#aaa; margin-bottom:4px; font-family:'Noto Sans TC',sans-serif; }
+      .rg-opt-zhuyin { display:none; }
       .rg-opt-char   { font-size:38px; color:#2c3e50; font-family:'BpmfIVS','Noto Sans TC',sans-serif; }
 
       .rg-opt.correct {
         background:#2ecc71; border-color:#27ae60;
         animation:rgCorrect .45s ease;
       }
-      .rg-opt.correct .rg-opt-zhuyin,
       .rg-opt.correct .rg-opt-char { color:#fff; }
       @keyframes rgCorrect {
         0%,100%{transform:scale(1)} 50%{transform:scale(1.1)}
@@ -541,7 +540,6 @@ export class RadicalGame extends GameEngine {
         background:#e74c3c; border-color:#c0392b;
         animation:rgWrong .4s ease;
       }
-      .rg-opt.wrong .rg-opt-zhuyin,
       .rg-opt.wrong .rg-opt-char { color:#fff; }
       @keyframes rgWrong {
         0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
@@ -550,7 +548,6 @@ export class RadicalGame extends GameEngine {
       .rg-opt.reveal {
         background:#f39c12; border-color:#e67e22;
       }
-      .rg-opt.reveal .rg-opt-zhuyin,
       .rg-opt.reveal .rg-opt-char { color:#fff; }
       .rg-opt.disabled { pointer-events:none; opacity:.5; }
 
