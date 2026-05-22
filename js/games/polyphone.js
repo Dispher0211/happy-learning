@@ -498,9 +498,17 @@ export class PolyphoneGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // onCorrect（覆寫）— 連續模式：飛機不降落
+  // onCorrect（覆寫）— 不需額外動作，由 playCorrectAnimation 處理爆炸
   // ════════════════════════════════════════════
   async onCorrect(result) {
+    // 直接呼叫父類；爆炸效果由 playCorrectAnimation() 覆寫處理
+    await super.onCorrect(result);
+  }
+
+  // ════════════════════════════════════════════
+  // playCorrectAnimation — 爆炸特效（由 GameEngine.onCorrect 呼叫）
+  // ════════════════════════════════════════════
+  async playCorrectAnimation() {
     // 標記命中的泡泡爆炸
     const hitBubble = this._bubbles.find(b => b.text === this._correctPronunciation);
     if (hitBubble) {
@@ -509,21 +517,12 @@ export class PolyphoneGame extends GameEngine {
       AudioManager.playEffect('bubble').catch(() => {});
     }
 
-    // 連續模式：飛機維持飛行（不降落）
-    // → 呼叫父類處理星星、遺忘曲線等
-    await super.onCorrect(result);
-  }
-
-  // ════════════════════════════════════════════
-  // playCorrectAnimation — 爆炸特效
-  // ════════════════════════════════════════════
-  async playCorrectAnimation() {
     const feedback = document.getElementById('pp-feedback');
     if (feedback) {
       feedback.innerHTML = '<div class="pp-correct-text">💥 命中！</div>';
       feedback.classList.add('pp-feedback--show');
     }
-    await this._delay(800);
+    await this._delay(600);
     if (feedback) feedback.classList.remove('pp-feedback--show');
   }
 
@@ -854,6 +853,8 @@ export class PolyphoneGame extends GameEngine {
       cursor: default;
       user-select: none;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+      writing-mode: horizontal-tb; /* 防止繼承 bubble-text 的 vertical-rl */
+      text-orientation: mixed;
     }
 
     .pp-plane--shake {
@@ -878,6 +879,7 @@ export class PolyphoneGame extends GameEngine {
       transform: translateX(-50%);
       font-size: 1.2rem;
       animation: pp-missile-fly 0.3s ease forwards;
+      writing-mode: horizontal-tb;
     }
     @keyframes pp-missile-fly {
       from { top: -10px; opacity: 1; }
