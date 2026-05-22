@@ -629,7 +629,7 @@
   font-family: var(--font-zhuyin);
   font-size: 2.8rem;
   font-weight: 700;
-  color: #0E7490;
+  color: #1e293b;
   text-align: center;
   margin: 12px 0 8px;
 }
@@ -645,7 +645,7 @@
   font-family: var(--font-body);
   font-size: 2.8rem;
   font-weight: 700;
-  color: #0E7490;
+  color: #1e293b;
   letter-spacing: 0;
   line-height: 1;
   display: inline-flex;
@@ -930,8 +930,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 3.2em;
-  color: #ff4fa3;
+  color: #1e293b;
   font-size: 0.55em;
   line-height: 1;
   position: relative;
@@ -951,7 +950,6 @@
   }
 
   .multi-tone-bpmf {
-    min-height: 3em;
     font-size: 0.52em;
   }
 }
@@ -1033,7 +1031,7 @@
 .word-title-char-unit {
   display: inline-flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   white-space: nowrap;
 }
 .word-title-han {
@@ -1046,22 +1044,22 @@
 .word-title-pron {
   margin-left: 1px;
 }
-.word-title-pron .pv-char { font-size: 0.28em; line-height: 1.1; color: #0E7490; }
-.word-title-pron .pv-tone-side { font-size: 0.28em; color: #0E7490; }
-.word-title-pron .pv-tone-top { font-size: 0.3em; color: #0E7490; }
+.word-title-pron .pv-char { font-size: 0.28em; line-height: 1.1; color: #1e293b; }
+.word-title-pron .pv-tone-side { font-size: 0.28em; color: #1e293b; }
+.word-title-pron .pv-tone-top { font-size: 0.3em; color: #1e293b; }
 
 /* poly 主字：粉紅色 */
-.word-card__word .multi-tone-bpmf .pv-char { color: #ff4fa3; font-size: 0.28em; }
-.word-card__word .multi-tone-bpmf .pv-tone-side { color: #ff4fa3; font-size: 0.28em; }
-.word-card__word .multi-tone-bpmf .pv-tone-top { color: #ff4fa3; font-size: 0.3em; }
+.word-card__word .multi-tone-bpmf .pv-char { color: #1e293b; font-size: 0.28em; }
+.word-card__word .multi-tone-bpmf .pv-tone-side { color: #1e293b; font-size: 0.28em; }
+.word-card__word .multi-tone-bpmf .pv-tone-top { color: #1e293b; font-size: 0.3em; }
 
-.mz-unit--poly .pv2-tone-side { color: #ff4fa3; }
+.mz-unit--poly .pv2-tone-side { color: #1e293b; }
 
 /* multi-tone-bpmf（多音字詞語 chip poly 主字）*/
 .multi-tone-bpmf .pv2-top,
 .multi-tone-bpmf .pv2-mid,
-.multi-tone-bpmf .pv2-bot  { font-size: 0.55em; color: #ff4fa3; }
-.multi-tone-bpmf .pv2-tone-side { font-size: 0.55em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-bot  { font-size: 0.55em; color: #1e293b; }
+.multi-tone-bpmf .pv2-tone-side { font-size: 0.55em; color: #1e293b; }
 
 /* ══════════════════════════════════════════
    pv2 方格注音系統
@@ -1174,9 +1172,9 @@
 .word-title-pron .pv2-tone-col { height: 2.8rem; }
 .word-title-pron .pv2-r1,
 .word-title-pron .pv2-r2,
-.word-title-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #0E7490; }
-.word-title-pron .pv2-tone { font-size: 0.85rem; color: #0E7490; }
-.word-title-pron .pv2-dot { font-size: 0.85rem; color: #0E7490; top: -0.5em; }
+.word-title-pron .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #1e293b; }
+.word-title-pron .pv2-tone { font-size: 0.85rem; color: #1e293b; }
+.word-title-pron .pv2-dot { font-size: 0.85rem; color: #1e293b; top: -0.5em; }
 
 .idiom-pron .pv2-col,
 .idiom-pron .pv2-tone-col { height: 2.8rem; }
@@ -1190,15 +1188,15 @@
 .mz-unit--poly .pv2-r2,
 .mz-unit--poly .pv2-r3,
 .mz-unit--poly .pv2-dot,
-.mz-unit--poly .pv2-tone { color: #ff4fa3; }
+.mz-unit--poly .pv2-tone { color: #1e293b; }
 
 .multi-tone-bpmf .pv2-col,
 .multi-tone-bpmf .pv2-tone-col { height: 1.3rem; }
 .multi-tone-bpmf .pv2-r1,
 .multi-tone-bpmf .pv2-r2,
-.multi-tone-bpmf .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-r3 { font-size: 0.40rem; min-width: 0.44em; color: #1e293b; }
 .multi-tone-bpmf .pv2-dot,
-.multi-tone-bpmf .pv2-tone { font-size: 0.40rem; color: #ff4fa3; }
+.multi-tone-bpmf .pv2-tone { font-size: 0.40rem; color: #1e293b; }
 /* ── 寫國字遊戲：詞語+注音 ── */
 .writing-word-display {
   display: flex;

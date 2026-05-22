@@ -550,18 +550,7 @@ export class CardPage {
             ${AppState.settings?.soundOn !== false ? '🔊' : '🔇'}
           </button>
         </div>
-        ${hasPolyChar ? `
-          <div class="char-card__poly-bar" id="word-poly-bar">
-            ${polyCharProns.map((p, i) => `
-              <button class="poly-btn ${i === this._wordPolyIdx ? 'active' : ''}"
-                      data-word-pron-idx="${i}"
-                      aria-label="切換到${p.zhuyin}">
-                <span class="poly-btn__indicator">${i === this._wordPolyIdx ? '●' : '○'}</span>
-                <span class="poly-btn__zhuyin">${this._renderZhuyinVerticalInline(p.zhuyin)}</span>
-              </button>
-            `).join('')}
-          </div>
-        ` : ''}
+        <!-- 詞語卡不顯示多音切換，直接顯示正確讀音 -->
         ${definition ? `<div class="word-card__def">【意思】${this._escapeHtml(definition)}</div>` : ''}
         ${example    ? `<div class="word-card__ex">【例句】${this._escapeHtml(example)}</div>` : ''}
         <button class="char-card__game-btn" id="card-game-btn">🎮 翻面挑戰</button>
@@ -573,30 +562,6 @@ export class CardPage {
       if (AppState.settings?.soundOn !== false) AudioManager.playWord?.(word)
     })
 
-    // 詞語破音字切換
-    if (hasPolyChar) {
-      const polyBar = document.getElementById('word-poly-bar')
-      if (polyBar) {
-        const handler = (e) => {
-          const btn = e.target.closest('[data-word-pron-idx]')
-          if (!btn) return
-          const idx = Number(btn.dataset.wordPronIdx)
-          if (idx === this._wordPolyIdx) return
-          this._wordPolyIdx = idx
-          // 更新詞語標題注音
-          const titleEl = document.getElementById('word-card-title')
-          if (titleEl) titleEl.innerHTML = this._renderWordWithPolyIdx(word, polyChar, polyCharProns, idx)
-          // 更新按鈕狀態
-          polyBar.querySelectorAll('[data-word-pron-idx]').forEach(b => {
-            const i = Number(b.dataset.wordPronIdx)
-            b.classList.toggle('active', i === idx)
-            b.querySelector('.poly-btn__indicator').textContent = i === idx ? '●' : '○'
-          })
-        }
-        polyBar.addEventListener('click', handler)
-        this._listeners.push({ el: polyBar, type: 'click', handler })
-      }
-    }
   }
 
   /**
