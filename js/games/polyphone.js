@@ -50,7 +50,7 @@ export class PolyphoneGame extends GameEngine {
 
     // ── 炮台狀態 ──
     this._cannonAngle = 90;      // 炮台角度（度，90=直上）
-    this._cannonX     = 50;      // 炮台 X（%，固定中央）
+    this._cannonX     = 50;      // 炮台 X（%，可左右移動）
     this._missiles    = [];      // 飛行中子彈
     this._missileId   = 0;
     this._planeLanded = false;   // GameEngine 相容
@@ -92,21 +92,50 @@ export class PolyphoneGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _renderBubbleZhuyin — 泡泡注音 HTML（˙固定最上方）
+  // _renderBubbleZhuyin — 泡泡注音 HTML
+  // 台灣直式注音規範：
+  //   ˙（輕聲）→ 最上方獨立行
+  //   ˊˇˋ（2/3/4聲）→ 主符號右側中央
+  //   主注音符號 → 由上到下 block 排列
   // ════════════════════════════════════════════
   _renderBubbleZhuyin(z) {
-    const norm = this._normZhuyin(z);
-    const hasDot = norm.endsWith('˙');
-    const body = hasDot ? norm.slice(0, -1) : norm;
+    if (!z) return '';
+    const norm = this._normZhuyin(z);  // 確保˙在尾
+
+    const TONES = new Set(['ˊ', 'ˇ', 'ˋ', '˙']);
+
+    // 分離聲調與主體
+    let tone = '';
+    let body = norm;
+    if (body.endsWith('˙')) { tone = '˙'; body = body.slice(0, -1); }
+    else if (body.length > 0 && TONES.has(body[body.length - 1])) {
+      tone = body[body.length - 1];
+      body = body.slice(0, -1);
+    }
+
+    const hasDot = tone === '˙';
+    const hasRegTone = tone && !hasDot;
     const chars = [...body];
-    // 直式：˙在最上方，其他符號由上到下
+
+    // 輕聲˙：最上方獨立行
     const dotHtml = hasDot
-      ? `<span style="font-size:0.7em;line-height:1;display:block;text-align:center;">˙</span>`
+      ? `<span style="font-size:0.65em;line-height:1;display:block;text-align:center;margin-bottom:1px;">˙</span>`
       : '';
+
+    // 主體符號：由上到下
     const bodyHtml = chars.map(c =>
       `<span style="display:block;text-align:center;line-height:1.2;">${c}</span>`
     ).join('');
-    return dotHtml + bodyHtml;
+
+    // ˊˇˋ：右側中央，用 flex row 包住
+    if (hasRegTone) {
+      return dotHtml + `<span style="display:inline-flex;flex-direction:row;align-items:center;gap:0;">` +
+        `<span style="display:flex;flex-direction:column;align-items:center;">${bodyHtml}</span>` +
+        `<span style="font-size:0.65em;line-height:1;align-self:center;">${tone}</span>` +
+        `</span>`;
+    }
+
+    return dotHtml + `<span style="display:flex;flex-direction:column;align-items:center;">${bodyHtml}</span>`;
   }
 
   // ════════════════════════════════════════════
@@ -198,7 +227,7 @@ export class PolyphoneGame extends GameEngine {
 
   // constructor 欄位（覆蓋飛機相關，改為炮台）
   _cannonAngle = 90;   // 炮台角度（度，90=直上，0=右，180=左）
-  _cannonX     = 50;   // 炮台 X 位置（%，固定中央）
+  _cannonX     = 50;   // 炮台 X 位置（%，可左右移動）
   _missiles    = [];   // 飛行中的子彈 [{x,y,vx,vy,id}]
   _missileId   = 0;
   _bubbles     = [];
@@ -280,7 +309,7 @@ export class PolyphoneGame extends GameEngine {
         <!-- 操控說明 -->
         <div class="pp-controls">
           <span class="pp-control-tip">
-            📱 滑動瞄準，點擊發射 &nbsp;|&nbsp; ⌨️ ←→ 瞄準，空白鍵發射
+            📱 左右拖動，點擊發射 &nbsp;|&nbsp; ⌨️ ←→ 移動，空白鍵發射
           </span>
           <button class="pp-btn pp-btn--hint" id="pp-hint-btn"
                   onclick="window.__ppHint()">
@@ -516,7 +545,7 @@ export class PolyphoneGame extends GameEngine {
     // 天空寬高比（px），補正 x/y % 到實際距離比
     const aspectX = skyW / 100; // px per %x
     const aspectY = skyH / 100; // px per %y
-    const speed = 0.055; // px/ms（實際像素速度）
+    const speed = 0.13; // px/ms（實際像素速度，加速版）
 
     const vx = Math.sin(rad) * speed / aspectX; // %/ms
     const vy = -Math.cos(rad) * speed / aspectY; // %/ms，負=向上
@@ -552,14 +581,14 @@ export class PolyphoneGame extends GameEngine {
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup',   this._onKeyUp);
 
-    // 連續按鍵移動炮台
-    const ANGLE_SPEED = 0.08; // deg/ms
+    // 連續按鍵移動炮台底座
+    const BASE_SPEED = 0.25; // %/frame — 底座橫移速度
     const keyLoop = () => {
       if (!this._gameAnimRunning) return;
       if (this._keysDown['ArrowLeft']  || this._keysDown['Left'])
-        this._cannonAngle = Math.max(30, this._cannonAngle - 1.5);
+        this._cannonX = Math.max(8,  this._cannonX - BASE_SPEED);
       if (this._keysDown['ArrowRight'] || this._keysDown['Right'])
-        this._cannonAngle = Math.min(150, this._cannonAngle + 1.5);
+        this._cannonX = Math.min(92, this._cannonX + BASE_SPEED);
       requestAnimationFrame(keyLoop);
     };
     requestAnimationFrame(keyLoop);
@@ -576,7 +605,11 @@ export class PolyphoneGame extends GameEngine {
         if (this._lastTouchX === null) return;
         const dx = e.touches[0].clientX - this._lastTouchX;
         this._lastTouchX = e.touches[0].clientX;
-        this._cannonAngle = Math.max(20, Math.min(160, this._cannonAngle + dx * 0.5));
+        const sky2 = document.getElementById('pp-sky');
+        const skyW2 = sky2?.clientWidth || 300;
+        // 觸控拖移底座橫向移動
+        const dxPct = (dx / skyW2) * 100;
+        this._cannonX = Math.max(8, Math.min(92, this._cannonX + dxPct));
         e.preventDefault();
       };
       this._onTouchEnd = (e) => {
