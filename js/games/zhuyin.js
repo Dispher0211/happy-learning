@@ -41,6 +41,7 @@ import { AppState } from '../state.js'
 import { JSONLoader } from '../json_loader.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { AudioManager } from '../audio.js'
+import { HandwritingManager } from '../handwriting.js'
 
 // ─── 注音鍵盤佈局定義 ───────────────────────────────────────────────────────
 
@@ -314,6 +315,7 @@ export class ZhuyinGame extends GameEngine {
     this._kbFinal    = ''
     this._kbTone     = ''
     this._strokeHistory = []
+    HandwritingManager.clearStrokes()
 
     app.innerHTML = `
       <div class="zy-game" id="zy-root">
@@ -487,6 +489,7 @@ export class ZhuyinGame extends GameEngine {
     // 清空 canvas 讓玩家重新書寫
     this._clearCanvas()
     this._strokeHistory = []
+    HandwritingManager.clearStrokes()
   }
 
   /**
@@ -673,6 +676,8 @@ export class ZhuyinGame extends GameEngine {
       this._isDrawing = false
       if (currentStroke.length > 0) {
         this._strokeHistory.push([...currentStroke])
+        // 同步通知 HandwritingManager（MyScript API 需要 stroke 座標）
+        HandwritingManager.recordStroke({ points: currentStroke })
       }
     }
 
@@ -741,6 +746,7 @@ export class ZhuyinGame extends GameEngine {
     reg('zy-clear-btn',  'click', () => {
       this._clearCanvas()
       this._strokeHistory = []
+      HandwritingManager.clearStrokes()
     })
     reg('zy-submit-btn', 'click', () => this._handleHandwritingSubmit(question))
     reg('zy-hint-btn-1', 'click', () => this.useHint(1))
@@ -762,7 +768,7 @@ export class ZhuyinGame extends GameEngine {
 
     try {
       let recognized = null
-      const HWM = window.HandwritingManager
+      const HWM = HandwritingManager
 
       if (HWM) {
         try {
@@ -793,7 +799,7 @@ export class ZhuyinGame extends GameEngine {
   _handleUndo() {
     if (this._strokeHistory.length === 0) return
     // 通知 HandwritingManager 撤銷其內部狀態
-    window.HandwritingManager?.undoLastStroke?.()
+    HandwritingManager?.undoLastStroke?.()
     // 移除本地最後一筆
     this._strokeHistory.pop()
     // 依剩餘筆跡重繪
