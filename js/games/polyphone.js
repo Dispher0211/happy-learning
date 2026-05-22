@@ -301,7 +301,7 @@ export class PolyphoneGame extends GameEngine {
              id="pp-bubble-${b.id}"
              style="left:${b.x}%;top:${b.y}%"
              data-id="${b.id}">
-          <span class="pp-bubble-text">${b.text}</span>
+          <span class="pp-bubble-text bpmf-font">${b.text}</span>
         </div>
       `).join('');
   }
@@ -478,15 +478,14 @@ export class PolyphoneGame extends GameEngine {
   // judgeAnswer
   // ════════════════════════════════════════════
   async judgeAnswer(selectedText) {
-    return selectedText === this._correctPronunciation;
+    const correct = selectedText === this._correctPronunciation;
+    return { correct };
   }
 
   // ════════════════════════════════════════════
-  // onCorrectAnswer（覆寫）— 連續模式：飛機不降落
+  // onCorrect（覆寫）— 連續模式：飛機不降落
   // ════════════════════════════════════════════
-  async onCorrectAnswer() {
-    const q = this.currentQuestion;
-
+  async onCorrect(result) {
     // 標記命中的泡泡爆炸
     const hitBubble = this._bubbles.find(b => b.text === this._correctPronunciation);
     if (hitBubble) {
@@ -496,7 +495,7 @@ export class PolyphoneGame extends GameEngine {
 
     // 連續模式：飛機維持飛行（不降落）
     // → 呼叫父類處理星星、遺忘曲線等
-    await super.onCorrectAnswer();
+    await super.onCorrect(result);
   }
 
   // ════════════════════════════════════════════
