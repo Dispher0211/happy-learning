@@ -348,28 +348,12 @@ export class ZhuyinGame extends GameEngine {
               : ''}
           </div>
           <p class="zy-instruction">
-            請用手寫方式寫出「${escapeHTML(question.char)}」的注音
+            請輸入「${escapeHTML(question.char)}」的注音
           </p>
         </div>
 
-        <!-- ── 手寫區 ── -->
-        <div class="zy-write-area" id="zy-write-area">
-          <div class="zy-canvas-wrap">
-            <canvas id="zy-canvas" class="zy-canvas"
-              width="320" height="200"
-              aria-label="手寫注音畫布"></canvas>
-            <span class="zy-canvas-watermark">在此書寫注音</span>
-          </div>
-          <div class="zy-toolbar">
-            <button class="zy-btn zy-btn-undo"   id="zy-undo-btn"   title="撤銷上一筆">↩ 撤銷</button>
-            <button class="zy-btn zy-btn-clear"  id="zy-clear-btn"  title="清空重寫">🗑 清空</button>
-            <button class="zy-btn zy-btn-submit" id="zy-submit-btn">確認 ✓</button>
-          </div>
-        </div>
-
-        <!-- ── 注音鍵盤備援（預設隱藏） ── -->
-        <div class="zy-kb-fallback" id="zy-kb-fallback" style="display:none;" aria-live="polite">
-          <div class="zy-kb-notice">⌨️ 手寫辨識失敗，請使用按鍵輸入</div>
+        <!-- ── 注音鍵盤輸入區（直接顯示） ── -->
+        <div class="zy-kb-fallback" id="zy-kb-fallback" style="display:block;" aria-live="polite">
           <div id="zy-kb-root"></div>
           <div class="zy-kb-preview bpmf-font" id="zy-kb-preview">——</div>
           <div class="zy-kb-actions">
@@ -400,13 +384,15 @@ export class ZhuyinGame extends GameEngine {
       </div>
     `
 
-    // 初始化 canvas 手寫功能
-    this._canvas = document.getElementById('zy-canvas')
-    this._ctx    = this._canvas?.getContext('2d') ?? null
-    this._initCanvas()
+    // 直接啟動注音鍵盤（不使用手寫辨識）
+    this._canvas = null
+    this._ctx    = null
 
     // 綁定所有按鈕事件
     this._bindEvents(question)
+
+    // 啟動鍵盤（在 _bindEvents 之後，避免事件重複綁定）
+    this._activateKeyboardFallback(question)
   }
 
   /**
