@@ -241,8 +241,9 @@ export class PolyphoneGame extends GameEngine {
                style="left: ${this._planeX}%; top: ${this._planeY}%"
                aria-label="飛機">
             ✈️
-            <div class="pp-missile" id="pp-missile" style="display:none">🚀</div>
           </div>
+          <!-- 子彈（獨立於飛機外，避免被裁切）-->
+          <div class="pp-missile" id="pp-missile" style="display:none; left:${this._planeX}%">🚀</div>
 
           <!-- 爆炸效果 -->
           <div class="pp-explosion" id="pp-explosion" style="display:none">💥</div>
@@ -457,7 +458,7 @@ export class PolyphoneGame extends GameEngine {
     for (const b of this._bubbles) {
       if (b.exploded) continue;
       const dist = Math.abs(b.x - this._planeX);
-      if (dist < 12 && dist < minDist) { // 12% 範圍內視為命中
+      if (dist < 20 && dist < minDist) { // 20% 範圍內視為命中
         minDist = dist;
         closest = b;
       }
@@ -483,10 +484,19 @@ export class PolyphoneGame extends GameEngine {
   _showMissileEffect(targetX, targetY) {
     const missile = document.getElementById('pp-missile');
     if (!missile) return;
+    // 起始位置對齊飛機
+    missile.style.left = this._planeX + '%';
+    missile.style.top = this._planeY + '%';
     missile.style.display = 'block';
+    // 觸發 reflow 後加動畫 class
+    void missile.offsetWidth;
+    missile.classList.add('pp-missile--firing');
     setTimeout(() => {
-      if (missile) missile.style.display = 'none';
-    }, 300);
+      if (missile) {
+        missile.style.display = 'none';
+        missile.classList.remove('pp-missile--firing');
+      }
+    }, 400);
   }
 
   // ════════════════════════════════════════════
@@ -573,7 +583,11 @@ export class PolyphoneGame extends GameEngine {
       `;
     }
 
-    await this._delay(400);
+    await this._delay(1800);
+
+    // 答錯兩次後自動換下一題
+    this._planeLanded = false;
+    await this.nextQuestion();
   }
 
   // ════════════════════════════════════════════
@@ -874,16 +888,18 @@ export class PolyphoneGame extends GameEngine {
     /* 飛彈 */
     .pp-missile {
       position: absolute;
-      top: -24px;
-      left: 50%;
       transform: translateX(-50%);
-      font-size: 1.2rem;
-      animation: pp-missile-fly 0.3s ease forwards;
+      font-size: 1.8rem;
+      z-index: 20;
       writing-mode: horizontal-tb;
+      pointer-events: none;
+    }
+    .pp-missile--firing {
+      animation: pp-missile-fly 0.4s ease forwards;
     }
     @keyframes pp-missile-fly {
-      from { top: -10px; opacity: 1; }
-      to   { top: -80px; opacity: 0; }
+      from { transform: translateX(-50%) translateY(0); opacity: 1; }
+      to   { transform: translateX(-50%) translateY(-120px); opacity: 0; }
     }
 
     /* 爆炸 */
