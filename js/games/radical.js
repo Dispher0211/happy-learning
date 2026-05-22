@@ -18,8 +18,17 @@
  *      第5題起重置（新一棟）
  *  - 答錯一次：房子搖晃動畫
  *  - 答錯二次：顯示正確部首 + 字義說明
- *  - 提示一：「部首有N劃」
+ *  - 提示一：「部首有N劃」（不顯示正確答案）
  *  - 提示二：「部首佔全字N/M劃」
+ *
+ * 蓋房子動畫流程（v2）：
+ *  1. 初始：進度列只有4個空灰框（無圖案）
+ *  2. 答對 → 畫布展開成全螢幕建築場景
+ *  3. 展示對應階段大圖（含人物 + 煙霧效果）
+ *  4. 播放 built.mp3
+ *  5. 場景縮小收回進度列（對應圖案亮起）
+ *  6. 進度列刷新後出新題
+ *  7. 第 4 題完成 → 完整房屋場景 + ★+0.5 獎勵
  */
 
 import { GameEngine } from './GameEngine.js';
@@ -60,6 +69,199 @@ const RADICAL_ZHUYIN_MAP = {
 };
 
 // ────────────────────────────────────────────────
+// 蓋房子各階段定義（emoji + SVG場景 + 說明）
+// ────────────────────────────────────────────────
+const HOUSE_STAGES = [
+  {
+    label: '打地基',
+    emoji: '🧱',
+    // SVG場景：地基階段 —— 工人挖地、磚塊、煙霧
+    scene: `
+      <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" class="rg-scene-svg">
+        <!-- 天空 -->
+        <rect width="320" height="180" fill="#87CEEB"/>
+        <!-- 雲 -->
+        <ellipse cx="60" cy="40" rx="35" ry="18" fill="white" opacity=".9"/>
+        <ellipse cx="85" cy="30" rx="28" ry="16" fill="white" opacity=".9"/>
+        <ellipse cx="240" cy="55" rx="28" ry="14" fill="white" opacity=".85"/>
+        <!-- 地面 -->
+        <rect y="180" width="320" height="80" fill="#8B6914"/>
+        <rect y="180" width="320" height="12" fill="#A0784A"/>
+        <!-- 地基磚塊 -->
+        <rect x="60" y="155" width="200" height="28" rx="4" fill="#CC8844"/>
+        <line x1="110" y1="155" x2="110" y2="183" stroke="#AA6622" stroke-width="2"/>
+        <line x1="160" y1="155" x2="160" y2="183" stroke="#AA6622" stroke-width="2"/>
+        <line x1="210" y1="155" x2="210" y2="183" stroke="#AA6622" stroke-width="2"/>
+        <line x1="60" y1="169" x2="260" y2="169" stroke="#AA6622" stroke-width="1.5"/>
+        <!-- 工人（右側） -->
+        <circle cx="265" cy="140" r="13" fill="#FFDAB9"/>
+        <rect x="255" cy="152" width="20" height="26" rx="4" fill="#FF6B35" y="152"/>
+        <rect x="252" y="170" width="8" height="16" rx="3" fill="#4169E1"/>
+        <rect x="264" y="170" width="8" height="16" rx="3" fill="#4169E1"/>
+        <!-- 安全帽 -->
+        <ellipse cx="265" cy="131" rx="14" ry="8" fill="#FFD700"/>
+        <!-- 工具 -->
+        <line x1="255" y1="162" x2="235" y2="150" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+        <!-- 煙霧粒子 -->
+        <circle cx="180" cy="148" r="8" fill="#CCC" opacity=".5" class="rg-smoke rg-smoke1"/>
+        <circle cx="195" cy="138" r="6" fill="#DDD" opacity=".4" class="rg-smoke rg-smoke2"/>
+        <circle cx="165" cy="136" r="7" fill="#BBB" opacity=".45" class="rg-smoke rg-smoke3"/>
+        <!-- 完成標語 -->
+        <text x="160" y="222" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFF" font-family="Noto Sans TC,sans-serif">🧱 地基完成！</text>
+      </svg>`,
+  },
+  {
+    label: '砌牆壁',
+    emoji: '🏗️',
+    scene: `
+      <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" class="rg-scene-svg">
+        <rect width="320" height="180" fill="#87CEEB"/>
+        <ellipse cx="70" cy="45" rx="38" ry="18" fill="white" opacity=".9"/>
+        <ellipse cx="98" cy="33" rx="30" ry="16" fill="white"/>
+        <ellipse cx="230" cy="50" rx="32" ry="15" fill="white" opacity=".85"/>
+        <!-- 地面 -->
+        <rect y="180" width="320" height="80" fill="#8B6914"/>
+        <rect y="180" width="320" height="12" fill="#A0784A"/>
+        <!-- 地基 -->
+        <rect x="60" y="155" width="200" height="28" rx="4" fill="#CC8844"/>
+        <!-- 牆壁 -->
+        <rect x="75" y="85" width="170" height="72" rx="3" fill="#E8C89A"/>
+        <!-- 磚紋 -->
+        <line x1="75" y1="103" x2="245" y2="103" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="75" y1="121" x2="245" y2="121" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="75" y1="139" x2="245" y2="139" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="120" y1="85" x2="120" y2="103" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="170" y1="85" x2="170" y2="103" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="100" y1="103" x2="100" y2="121" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="155" y1="103" x2="155" y2="121" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="205" y1="103" x2="205" y2="121" stroke="#C8A070" stroke-width="1.5"/>
+        <!-- 鷹架 -->
+        <line x1="58" y1="75" x2="58" y2="183" stroke="#888" stroke-width="4"/>
+        <line x1="262" y1="75" x2="262" y2="183" stroke="#888" stroke-width="4"/>
+        <line x1="50" y1="105" x2="270" y2="105" stroke="#888" stroke-width="3"/>
+        <!-- 工人 -->
+        <circle cx="268" cy="88" r="12" fill="#FFDAB9"/>
+        <rect x="258" y="99" width="18" height="24" rx="4" fill="#E74C3C"/>
+        <rect x="256" y="116" width="7" height="14" rx="3" fill="#4169E1"/>
+        <rect x="267" y="116" width="7" height="14" rx="3" fill="#4169E1"/>
+        <ellipse cx="268" cy="80" rx="13" ry="7" fill="#FFD700"/>
+        <!-- 煙霧 -->
+        <circle cx="145" cy="80" r="9" fill="#DDD" opacity=".5" class="rg-smoke rg-smoke1"/>
+        <circle cx="162" cy="70" r="7" fill="#CCC" opacity=".4" class="rg-smoke rg-smoke2"/>
+        <circle cx="128" cy="68" r="8" fill="#BBB" opacity=".45" class="rg-smoke rg-smoke3"/>
+        <text x="160" y="222" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFF" font-family="Noto Sans TC,sans-serif">🏗️ 牆壁砌好！</text>
+      </svg>`,
+  },
+  {
+    label: '蓋屋頂',
+    emoji: '🏚️',
+    scene: `
+      <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" class="rg-scene-svg">
+        <rect width="320" height="180" fill="#87CEEB"/>
+        <ellipse cx="80" cy="38" rx="38" ry="18" fill="white" opacity=".9"/>
+        <ellipse cx="108" cy="27" rx="30" ry="16" fill="white"/>
+        <ellipse cx="245" cy="48" rx="30" ry="14" fill="white" opacity=".85"/>
+        <rect y="180" width="320" height="80" fill="#8B6914"/>
+        <rect y="180" width="320" height="12" fill="#A0784A"/>
+        <!-- 地基 -->
+        <rect x="60" y="155" width="200" height="28" rx="4" fill="#CC8844"/>
+        <!-- 牆壁 -->
+        <rect x="75" y="100" width="170" height="58" rx="3" fill="#E8C89A"/>
+        <line x1="75" y1="118" x2="245" y2="118" stroke="#C8A070" stroke-width="1.5"/>
+        <line x1="75" y1="136" x2="245" y2="136" stroke="#C8A070" stroke-width="1.5"/>
+        <!-- 屋頂 -->
+        <polygon points="50,100 160,48 270,100" fill="#B22222"/>
+        <line x1="50" y1="100" x2="160" y2="48" stroke="#8B0000" stroke-width="2"/>
+        <line x1="270" y1="100" x2="160" y2="48" stroke="#8B0000" stroke-width="2"/>
+        <!-- 煙囪 -->
+        <rect x="190" y="56" width="18" height="30" rx="2" fill="#888"/>
+        <ellipse cx="199" cy="56" rx="9" ry="4" fill="#666"/>
+        <!-- 煙霧從煙囪冒出 -->
+        <circle cx="199" cy="45" r="8" fill="#DDD" opacity=".55" class="rg-smoke rg-smoke1"/>
+        <circle cx="205" cy="33" r="7" fill="#CCC" opacity=".45" class="rg-smoke rg-smoke2"/>
+        <circle cx="192" cy="25" r="9" fill="#BBB" opacity=".4" class="rg-smoke rg-smoke3"/>
+        <!-- 工人在屋頂 -->
+        <circle cx="125" cy="66" r="12" fill="#FFDAB9"/>
+        <rect x="116" y="77" width="17" height="22" rx="4" fill="#27AE60"/>
+        <ellipse cx="125" cy="58" rx="13" ry="7" fill="#FFD700"/>
+        <!-- 鷹架 -->
+        <line x1="58" y1="90" x2="58" y2="183" stroke="#888" stroke-width="4"/>
+        <line x1="262" y1="90" x2="262" y2="183" stroke="#888" stroke-width="4"/>
+        <text x="160" y="222" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFF" font-family="Noto Sans TC,sans-serif">🏚️ 屋頂蓋好！</text>
+      </svg>`,
+  },
+  {
+    label: '完成！',
+    emoji: '🏠',
+    scene: `
+      <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" class="rg-scene-svg">
+        <!-- 晴天 -->
+        <rect width="320" height="180" fill="#87CEEB"/>
+        <!-- 太陽 -->
+        <circle cx="40" cy="38" r="22" fill="#FFD700" opacity=".9"/>
+        <line x1="40" y1="8" x2="40" y2="0" stroke="#FFD700" stroke-width="3"/>
+        <line x1="40" y1="68" x2="40" y2="76" stroke="#FFD700" stroke-width="3"/>
+        <line x1="10" y1="38" x2="2" y2="38" stroke="#FFD700" stroke-width="3"/>
+        <line x1="70" y1="38" x2="78" y2="38" stroke="#FFD700" stroke-width="3"/>
+        <line x1="19" y1="17" x2="13" y2="11" stroke="#FFD700" stroke-width="3"/>
+        <line x1="61" y1="59" x2="67" y2="65" stroke="#FFD700" stroke-width="3"/>
+        <line x1="61" y1="17" x2="67" y2="11" stroke="#FFD700" stroke-width="3"/>
+        <line x1="19" y1="59" x2="13" y2="65" stroke="#FFD700" stroke-width="3"/>
+        <!-- 白雲 -->
+        <ellipse cx="190" cy="38" rx="38" ry="18" fill="white" opacity=".9"/>
+        <ellipse cx="218" cy="28" rx="30" ry="16" fill="white"/>
+        <ellipse cx="270" cy="48" rx="28" ry="14" fill="white" opacity=".85"/>
+        <!-- 地面 草地 -->
+        <rect y="180" width="320" height="80" fill="#5D8A3C"/>
+        <rect y="180" width="320" height="10" fill="#6AAF44"/>
+        <!-- 完成房子 -->
+        <!-- 地基 -->
+        <rect x="65" y="158" width="190" height="25" rx="4" fill="#CC8844"/>
+        <!-- 牆壁 -->
+        <rect x="78" y="103" width="164" height="58" rx="3" fill="#FAE5C0"/>
+        <!-- 窗戶 -->
+        <rect x="92" y="115" width="34" height="30" rx="4" fill="#AEE0F5" stroke="#888" stroke-width="2"/>
+        <line x1="109" y1="115" x2="109" y2="145" stroke="#888" stroke-width="1.5"/>
+        <line x1="92" y1="130" x2="126" y2="130" stroke="#888" stroke-width="1.5"/>
+        <!-- 門 -->
+        <rect x="146" y="122" width="28" height="39" rx="4" fill="#8B4513" stroke="#5C2E00" stroke-width="2"/>
+        <circle cx="168" cy="142" r="3" fill="#FFD700"/>
+        <!-- 窗戶右 -->
+        <rect x="194" y="115" width="34" height="30" rx="4" fill="#AEE0F5" stroke="#888" stroke-width="2"/>
+        <line x1="211" y1="115" x2="211" y2="145" stroke="#888" stroke-width="1.5"/>
+        <line x1="194" y1="130" x2="228" y2="130" stroke="#888" stroke-width="1.5"/>
+        <!-- 屋頂 -->
+        <polygon points="52,103 160,46 268,103" fill="#C0392B"/>
+        <line x1="52" y1="103" x2="160" y2="46" stroke="#922B21" stroke-width="2.5"/>
+        <line x1="268" y1="103" x2="160" y2="46" stroke="#922B21" stroke-width="2.5"/>
+        <!-- 煙囪 -->
+        <rect x="195" y="58" width="16" height="28" rx="2" fill="#888"/>
+        <ellipse cx="203" cy="58" rx="8" ry="4" fill="#666"/>
+        <!-- 煙霧（慶祝煙霧） -->
+        <circle cx="203" cy="46" r="9" fill="#FFF" opacity=".6" class="rg-smoke rg-smoke1"/>
+        <circle cx="210" cy="34" r="8" fill="#FFF" opacity=".5" class="rg-smoke rg-smoke2"/>
+        <circle cx="196" cy="26" r="10" fill="#FFF" opacity=".45" class="rg-smoke rg-smoke3"/>
+        <!-- 工人（旁邊慶祝） -->
+        <circle cx="282" cy="152" r="13" fill="#FFDAB9"/>
+        <rect x="272" y="164" width="20" height="18" rx="4" fill="#E74C3C"/>
+        <rect x="270" y="178" width="7" height="12" rx="3" fill="#4169E1"/>
+        <rect x="283" y="178" width="7" height="12" rx="3" fill="#4169E1"/>
+        <!-- 舉手慶祝 -->
+        <line x1="272" y1="168" x2="258" y2="155" stroke="#FFDAB9" stroke-width="4" stroke-linecap="round"/>
+        <line x1="292" y1="168" x2="305" y2="155" stroke="#FFDAB9" stroke-width="4" stroke-linecap="round"/>
+        <!-- 彩帶 -->
+        <circle cx="100" cy="185" r="4" fill="#E74C3C" opacity=".8"/>
+        <circle cx="130" cy="192" r="3" fill="#3498DB" opacity=".8"/>
+        <circle cx="155" cy="187" r="4" fill="#F39C12" opacity=".8"/>
+        <circle cx="180" cy="193" r="3" fill="#2ECC71" opacity=".8"/>
+        <circle cx="210" cy="186" r="4" fill="#9B59B6" opacity=".8"/>
+        <circle cx="240" cy="191" r="3" fill="#E74C3C" opacity=".8"/>
+        <text x="160" y="225" text-anchor="middle" font-size="20" font-weight="bold" fill="#FFF" font-family="Noto Sans TC,sans-serif">🏠 房子蓋完了！★+0.5</text>
+      </svg>`,
+  },
+];
+
+// ────────────────────────────────────────────────
 // 部首選擇遊戲主類別
 // ────────────────────────────────────────────────
 export class RadicalGame extends GameEngine {
@@ -73,16 +275,11 @@ export class RadicalGame extends GameEngine {
     /** 蓋房子完成獎勵 */
     this._HOUSE_BONUS = 0.5;
 
-    /** 蓋房子各階段 */
-    this._HOUSE_STAGES = [
-      { label: '地基', emoji: '🧱' },
-      { label: '牆壁', emoji: '🏗️' },
-      { label: '屋頂', emoji: '🏚️' },
-      { label: '完成', emoji: '🏠' },
-    ];
-
     /** 記錄最後點擊的選項（供 playWrongAnimation 使用） */
     this._lastClickedOption = null;
+
+    /** built 音效 Audio 物件 */
+    this._builtAudio = null;
   }
 
   // ──────────────────────────────────────────────
@@ -94,20 +291,11 @@ export class RadicalGame extends GameEngine {
 
   // ──────────────────────────────────────────────
   // loadQuestions
-  //   GameEngine 傳入的每個元素格式（已預處理）：
-  //   { char, radical, radicalStrokes, totalStrokes,
-  //     firstStroke, radicalInfo: { zhuyin, meaning, strokes } }
-  //
-  //   ⚠️ config 參數由 GameEngine.init() 傳入，不是 characters 陣列
-  //      需自行從 JSONLoader 取得生字清單
   // ──────────────────────────────────────────────
   async loadQuestions(config) {
-    // ── 題目來自生字簿（AppState.characters），而非全字典 ──
-    // 從 characters.json 全字典查詢完整資料（部首、筆畫等）
     const { JSONLoader } = await import('../json_loader.js');
     const allCharsDict = JSONLoader.get('characters') || [];
 
-    // AppState.characters = my_characters（家長設定的生字簿）
     const myChars = AppState.characters || [];
     if (myChars.length === 0) {
       this.questions = [];
@@ -116,7 +304,6 @@ export class RadicalGame extends GameEngine {
 
     const count = config?.count || 10;
 
-    // 將生字簿中每個字對應到 characters.json 的完整資料
     const myCharKeys = myChars.map(c => c['字'] || c.char || '').filter(Boolean);
     const myMapped = myCharKeys
       .map(ch => {
@@ -141,13 +328,11 @@ export class RadicalGame extends GameEngine {
       return this.questions;
     }
 
-    // 收集全字典部首供干擾選項（不限於生字簿）
     const allRadicals = new Map();
     for (const c of allCharsDict) {
       if (c.radical) allRadicals.set(c.radical, this._lookupZhuyin(c.radical));
     }
 
-    // 洗牌後取前 count 題，並補上選項
     const shuffled = this._shuffle(myMapped).slice(0, count);
     this.questions = shuffled.map(q => ({
       ...q,
@@ -167,16 +352,21 @@ export class RadicalGame extends GameEngine {
       ${this._styles()}
       <div class="rg-wrap">
 
-        <!-- 蓋房子進度 -->
+        <!-- 蓋房子進度列（4個灰框，答對後亮起） -->
         <div class="rg-house-bar" id="rg-house-bar">
           ${this._houseBarHTML()}
+        </div>
+
+        <!-- 建築場景覆蓋層（答對時展開，預設隱藏） -->
+        <div class="rg-scene-overlay" id="rg-scene-overlay" style="display:none">
+          <div class="rg-scene-inner" id="rg-scene-inner"></div>
         </div>
 
         <!-- 題目字 -->
         <div class="rg-char">${question.char}</div>
         <div class="rg-prompt">這個字的部首是？</div>
 
-        <!-- 選項（永遠帶注音體） -->
+        <!-- 選項（永遠帶注音體；小字已隱藏） -->
         <div class="rg-options" id="rg-options">
           ${question.options.map((opt, i) => `
             <button class="rg-opt" id="rg-opt-${i}" data-value="${opt.radical}">
@@ -202,7 +392,6 @@ export class RadicalGame extends GameEngine {
       </div>
     `;
 
-    // 綁定事件（addEventListener，避免 inline onclick）
     document.querySelectorAll('.rg-opt').forEach(btn => {
       btn.addEventListener('click', () => this._onOptionClick(btn.dataset.value));
     });
@@ -218,13 +407,13 @@ export class RadicalGame extends GameEngine {
   // judgeAnswer
   // ──────────────────────────────────────────────
   async judgeAnswer(answer) {
-    // ⚠️ GameEngine.submitAnswer 預期回傳 { correct: boolean }
     const correct = answer === this.currentQuestion?.correctRadical;
     return { correct };
   }
 
   // ──────────────────────────────────────────────
   // playCorrectAnimation
+  //   流程：高亮選項 → 播放建築場景動畫 → 進度列更新
   // ──────────────────────────────────────────────
   async playCorrectAnimation() {
     const q = this.currentQuestion;
@@ -233,18 +422,26 @@ export class RadicalGame extends GameEngine {
     this._highlightOpt(q.correctRadical, 'correct');
     this._playSound('correct');
 
-    // 更新蓋房子進度
-    this._houseProgress += 1;
-    const stageIdx = (this._houseProgress - 1) % 4;
-    this._refreshHouseBar(stageIdx);
+    // 計算當前是第幾步（0-3）
+    const stageIdx = this._houseProgress % 4; // 0=地基,1=牆壁,2=屋頂,3=完成
 
-    // 每 4 題完成一棟
-    if (this._houseProgress % 4 === 0) {
-      await this._playHouseComplete();
+    // 更新蓋房子進度計數
+    this._houseProgress += 1;
+
+    const isComplete = (this._houseProgress % 4 === 0);
+
+    // 播放建築場景動畫
+    await this._playBuildScene(stageIdx, isComplete);
+
+    // 刷新進度列（場景收回後才更新）
+    this._refreshHouseBar();
+
+    // 若完成一棟，加獎勵
+    if (isComplete) {
       await this._addHouseBonus();
     }
 
-    await this._delay(600);
+    await this._delay(400);
   }
 
   // ──────────────────────────────────────────────
@@ -293,7 +490,7 @@ export class RadicalGame extends GameEngine {
   }
 
   // ──────────────────────────────────────────────
-  // getHint
+  // getHint（不顯示正確答案，只給間接提示）
   // ──────────────────────────────────────────────
   getHint(hintLevel) {
     const q = this.currentQuestion;
@@ -302,7 +499,8 @@ export class RadicalGame extends GameEngine {
     const hintEl = document.getElementById('rg-hint');
 
     if (hintLevel === 1) {
-      const text = `💡 提示：部首「${q.correctRadical}」有 ${q.radicalStrokes} 劃`;
+      // 只說筆劃數，不點名哪個是答案
+      const text = `💡 提示：部首有 ${q.radicalStrokes} 劃`;
       if (hintEl) hintEl.textContent = text;
 
       // 解鎖提示二
@@ -312,9 +510,8 @@ export class RadicalGame extends GameEngine {
     }
 
     if (hintLevel === 2) {
-      const text = q.firstStroke
-        ? `💡 提示：部首第一筆是「${q.firstStroke}」`
-        : `💡 提示：部首佔全字 ${q.radicalStrokes} / ${q.totalStrokes} 劃`;
+      // 說部首佔全字比例，仍不直接給出答案
+      const text = `💡 提示：部首佔全字 ${q.radicalStrokes} / ${q.totalStrokes} 劃`;
       if (hintEl) hintEl.textContent = text;
       return text;
     }
@@ -328,6 +525,10 @@ export class RadicalGame extends GameEngine {
   destroy() {
     this._houseProgress = 0;
     this._lastClickedOption = null;
+    if (this._builtAudio) {
+      this._builtAudio.pause();
+      this._builtAudio = null;
+    }
     super.destroy();
   }
 
@@ -368,7 +569,6 @@ export class RadicalGame extends GameEngine {
   _buildOptions(correctRadical, correctZhuyin, allRadicals) {
     const correct = { radical: correctRadical, zhuyin: correctZhuyin };
 
-    // 排除正確部首後隨機抽 3 個干擾
     const pool = [...allRadicals.entries()]
       .filter(([r]) => r !== correctRadical)
       .map(([r, z]) => ({ radical: r, zhuyin: z }));
@@ -376,7 +576,6 @@ export class RadicalGame extends GameEngine {
     const shuffled = this._shuffle(pool);
     const distractors = shuffled.slice(0, 3);
 
-    // 資料不足時補備用部首
     const fallbacks = ['口', '手', '木', '水', '火', '土', '金', '人', '目', '心'];
     for (const fb of fallbacks) {
       if (distractors.length >= 3) break;
@@ -398,35 +597,82 @@ export class RadicalGame extends GameEngine {
     return a;
   }
 
-  /** 蓋房子進度條 HTML */
+  /**
+   * 蓋房子進度列 HTML
+   * 初始：4個空灰框（無 emoji），答對後逐一亮起
+   */
   _houseBarHTML() {
     const done = this._houseProgress % 4;
-    return this._HOUSE_STAGES.map((s, i) =>
-      `<span class="rg-stage ${i < done ? 'on' : ''}" id="rg-stage-${i}" title="${s.label}">${s.emoji}</span>`
+    // _houseProgress 剛好是4的倍數時（含0）：全滅重置；非倍數：lit = done
+    const lit = (this._houseProgress > 0 && done === 0) ? 4 : done;
+    return HOUSE_STAGES.map((s, i) =>
+      `<span class="rg-stage ${i < lit ? 'on' : ''}" id="rg-stage-${i}" title="${s.label}">${i < lit ? s.emoji : '□'}</span>`
     ).join('');
   }
 
-  /** 刷新進度條（點亮新階段） */
-  _refreshHouseBar(newIdx) {
+  /** 刷新進度列 */
+  _refreshHouseBar() {
     const bar = document.getElementById('rg-house-bar');
     if (!bar) return;
     bar.innerHTML = this._houseBarHTML();
-    document.getElementById(`rg-stage-${newIdx}`)?.classList.add('on');
   }
 
-  /** 房子完成大動畫 */
-  async _playHouseComplete() {
-    const bar = document.getElementById('rg-house-bar');
-    if (bar) {
-      bar.classList.add('rg-complete');
-      setTimeout(() => bar.classList.remove('rg-complete'), 900);
-    }
-    const hint = document.getElementById('rg-hint');
-    if (hint) {
-      hint.innerHTML = `<b style="color:#f39c12;font-size:18px">🏠 房子蓋完！額外 ★+0.5</b>`;
-      setTimeout(() => { if (hint) hint.textContent = ''; }, 2500);
-    }
-    await this._delay(900);
+  /**
+   * 播放建築場景動畫
+   *  1. 覆蓋層展開（填滿畫面）
+   *  2. 顯示對應階段的 SVG 場景
+   *  3. 播放 built.mp3
+   *  4. 等待用戶看清後，覆蓋層縮小收回進度列位置
+   */
+  async _playBuildScene(stageIdx, isComplete) {
+    const overlay = document.getElementById('rg-scene-overlay');
+    const inner   = document.getElementById('rg-scene-inner');
+    if (!overlay || !inner) return;
+
+    const stage = HOUSE_STAGES[stageIdx];
+
+    // 填入 SVG 場景
+    inner.innerHTML = stage.scene;
+
+    // 展開覆蓋層
+    overlay.style.display = 'flex';
+    overlay.classList.remove('rg-scene-shrink');
+    overlay.classList.add('rg-scene-expand');
+
+    // 播放 built 音效
+    this._playBuiltSound();
+
+    // 等待展開動畫完成後停留展示
+    await this._delay(300); // 等展開
+
+    // 觸發煙霧動畫
+    inner.querySelectorAll('.rg-smoke').forEach((el, i) => {
+      el.style.animationDelay = `${i * 0.15}s`;
+      el.classList.add('rg-smoke-rise');
+    });
+
+    // 完成階段多等一點
+    await this._delay(isComplete ? 2200 : 1600);
+
+    // 縮小收回
+    overlay.classList.remove('rg-scene-expand');
+    overlay.classList.add('rg-scene-shrink');
+
+    await this._delay(500); // 等縮小動畫
+    overlay.style.display = 'none';
+    overlay.classList.remove('rg-scene-shrink');
+  }
+
+  /** 播放 built.mp3 */
+  _playBuiltSound() {
+    try {
+      if (!AppState?.settings?.soundOn) return;
+      if (!this._builtAudio) {
+        this._builtAudio = new Audio('./audio/effects/built.mp3');
+      }
+      this._builtAudio.currentTime = 0;
+      this._builtAudio.play().catch(() => {});
+    } catch (_) { /* 靜默 */ }
   }
 
   /** 加入房子完成獎勵 ★+0.5 */
@@ -486,30 +732,82 @@ export class RadicalGame extends GameEngine {
         background:linear-gradient(180deg,#e8f4fd 0%,#fef9e7 100%);
         font-family:'Noto Sans TC',sans-serif;
         user-select:none; box-sizing:border-box;
+        position:relative; overflow:hidden;
       }
-      /* 進度條 */
+
+      /* ── 進度條 ── */
       .rg-house-bar {
         display:flex; gap:10px; padding:8px 20px;
         background:rgba(255,255,255,.7); border-radius:24px;
-        margin-bottom:14px;
+        margin-bottom:14px; z-index:2; position:relative;
       }
-      .rg-stage { font-size:28px; opacity:.2; transition:opacity .35s,transform .3s; }
-      .rg-stage.on { opacity:1; transform:scale(1.2); }
+      .rg-stage {
+        font-size:28px; opacity:.25; transition:opacity .35s, transform .3s;
+        display:inline-flex; align-items:center; justify-content:center;
+        width:36px; height:36px;
+      }
+      .rg-stage.on { opacity:1; transform:scale(1.25); }
+
       @keyframes rgShake {
         0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg)} 75%{transform:rotate(6deg)}
       }
       .rg-shake { animation:rgShake .5s ease; }
-      @keyframes rgComplete {
-        0%{transform:scale(1)} 40%{transform:scale(1.5) rotate(-12deg)}
-        70%{transform:scale(1.5) rotate(12deg)} 100%{transform:scale(1)}
-      }
-      .rg-complete { animation:rgComplete .9s ease; }
 
-      /* 題目字：不使用 BpmfIVS，避免字旁出現注音標記 */
-      .rg-char { font-size:100px; line-height:1.1; color:#2c3e50; margin-bottom:4px; font-family:'Noto Sans TC','PingFang TC',sans-serif; }
+      /* ── 建築場景覆蓋層 ── */
+      .rg-scene-overlay {
+        position:fixed; z-index:100;
+        display:flex; align-items:center; justify-content:center;
+        background:linear-gradient(160deg,#1a3c5e 0%,#2d6a9f 100%);
+        border-radius:24px;
+        box-shadow:0 8px 40px rgba(0,0,0,.4);
+        /* 初始位置：進度列附近（頂部中央小框） */
+        top:16px; left:50%; transform:translateX(-50%);
+        width:240px; height:56px;
+        overflow:hidden;
+      }
+      .rg-scene-inner {
+        width:100%; height:100%;
+        display:flex; align-items:center; justify-content:center;
+      }
+      .rg-scene-svg {
+        width:100%; height:100%;
+        display:block;
+      }
+
+      /* 展開動畫：從進度列小框展開到大場景 */
+      @keyframes rgSceneExpand {
+        0%   { top:16px; left:50%; transform:translateX(-50%); width:240px; height:56px; border-radius:24px; }
+        100% { top:50%; left:50%; transform:translate(-50%,-50%); width:min(340px,92vw); height:min(280px,70vw); border-radius:20px; }
+      }
+      .rg-scene-expand {
+        animation:rgSceneExpand .35s cubic-bezier(.4,0,.2,1) forwards;
+      }
+
+      /* 縮小收回動畫 */
+      @keyframes rgSceneShrink {
+        0%   { top:50%; left:50%; transform:translate(-50%,-50%); width:min(340px,92vw); height:min(280px,70vw); border-radius:20px; }
+        100% { top:16px; left:50%; transform:translateX(-50%); width:240px; height:56px; border-radius:24px; }
+      }
+      .rg-scene-shrink {
+        animation:rgSceneShrink .4s cubic-bezier(.4,0,.2,1) forwards;
+      }
+
+      /* ── 煙霧粒子上升動畫 ── */
+      @keyframes rgSmokeRise {
+        0%   { transform:translateY(0) scale(1);   opacity:.55; }
+        100% { transform:translateY(-28px) scale(1.5); opacity:0; }
+      }
+      .rg-smoke { transition:none; }
+      .rg-smoke-rise { animation:rgSmokeRise 1.4s ease-out infinite; }
+      .rg-smoke1.rg-smoke-rise { animation-delay:0s; }
+      .rg-smoke2.rg-smoke-rise { animation-delay:.15s; }
+      .rg-smoke3.rg-smoke-rise { animation-delay:.3s; }
+
+      /* ── 題目字 ── */
+      .rg-char   { font-size:100px; line-height:1.1; color:#2c3e50; margin-bottom:4px; font-family:'Noto Sans TC','PingFang TC',sans-serif; }
       .rg-prompt { font-size:17px; color:#666; margin-bottom:20px; font-family:'Noto Sans TC',sans-serif; }
 
-      /* 選項 */
+      /* ── 選項 ── */
       .rg-options {
         display:grid; grid-template-columns:1fr 1fr; gap:12px;
         width:100%; max-width:340px; margin-bottom:14px;
@@ -523,7 +821,8 @@ export class RadicalGame extends GameEngine {
       }
       .rg-opt:hover:not(.disabled) { background:#eaf4fb; }
       .rg-opt:active:not(.disabled) { transform:scale(.93); }
-      /* 注音：用 sans-serif 避免雙層渲染；部首字：用 BpmfIVS 顯示注音體字型 */
+
+      /* 注音小字隱藏（上次修正保留） */
       .rg-opt-zhuyin { display:none; }
       .rg-opt-char   { font-size:38px; color:#2c3e50; font-family:'BpmfIVS','Noto Sans TC',sans-serif; }
 
@@ -551,11 +850,11 @@ export class RadicalGame extends GameEngine {
       .rg-opt.reveal .rg-opt-char { color:#fff; }
       .rg-opt.disabled { pointer-events:none; opacity:.5; }
 
-      /* 提示與結果 */
+      /* ── 提示與結果 ── */
       .rg-hint   { min-height:30px; font-size:15px; color:#7f8c8d; text-align:center; margin-bottom:4px; }
       .rg-result { min-height:28px; font-size:15px; text-align:center; margin-bottom:10px; }
 
-      /* 按鈕列 */
+      /* ── 按鈕列 ── */
       .rg-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
       .rg-btn-hint {
         padding:8px 16px; border-radius:20px;
@@ -568,16 +867,26 @@ export class RadicalGame extends GameEngine {
         border:2px solid #3498db; background:#3498db;
         color:#fff; font-size:14px; cursor:pointer;
       }
-            /* ── RWD 平板（≥600px）── */
-      @media (min-width: 600px) {
-        .rg-char    { font-size: 130px; }
-        .rg-options { max-width: 460px; }
-        .rg-opt     { min-height: 104px; }
-        .rg-opt-char { font-size: 46px; }
+
+      /* ── RWD 平板（≥600px）── */
+      @media (min-width:600px) {
+        .rg-char    { font-size:130px; }
+        .rg-options { max-width:460px; }
+        .rg-opt     { min-height:104px; }
+        .rg-opt-char { font-size:46px; }
+        @keyframes rgSceneExpand {
+          0%   { top:16px; left:50%; transform:translateX(-50%); width:240px; height:56px; border-radius:24px; }
+          100% { top:50%; left:50%; transform:translate(-50%,-50%); width:400px; height:300px; border-radius:20px; }
+        }
+        @keyframes rgSceneShrink {
+          0%   { top:50%; left:50%; transform:translate(-50%,-50%); width:400px; height:300px; border-radius:20px; }
+          100% { top:16px; left:50%; transform:translateX(-50%); width:240px; height:56px; border-radius:24px; }
+        }
       }
-/* ── RWD 桌面（≥1024px）── */
-      @media (min-width: 1024px) {
-        .rg-wrap { max-width: 760px; margin: 0 auto; }
+
+      /* ── RWD 桌面（≥1024px）── */
+      @media (min-width:1024px) {
+        .rg-wrap { max-width:760px; margin:0 auto; }
       }
     </style>`;
   }
