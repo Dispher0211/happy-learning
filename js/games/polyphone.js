@@ -355,6 +355,9 @@ export class PolyphoneGame extends GameEngine {
       if (el) {
         el.style.left = m.x + '%';
         el.style.top  = m.y + '%';
+        // 保持旋轉方向
+        const rot = (m.angle || 90) - 90;
+        el.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
       }
 
       // 出界移除
@@ -474,14 +477,24 @@ export class PolyphoneGame extends GameEngine {
     // 子彈初始位置：炮口
     const cx = this._cannonX;
     const cy = 88; // % — 炮台 Y
-    const angleRad = ((this._cannonAngle - 90) * Math.PI) / 180;
-    const speed = 0.12; // %/ms
 
-    const vx =  Math.cos(angleRad - Math.PI/2) * speed * (100/skyW) * skyH;
-    const vy =  Math.sin(angleRad - Math.PI/2) * speed;
+    // cannonAngle: 90=直上, 0=右, 180=左（與 Canvas 定義一致）
+    // 轉換到螢幕方向：x% 和 y% 直接計算
+    // angle=90 → sin(90°)=1向右，cos(90°)=0，但我們要直上
+    // 使用標準數學角：從"上"算起，順時針為正
+    const angleDeg = this._cannonAngle; // 90=up, <90=left, >90=right
+    const rad = (angleDeg - 90) * Math.PI / 180; // 0 = straight up
+
+    // 天空寬高比（px），補正 x/y % 到實際距離比
+    const aspectX = skyW / 100; // px per %x
+    const aspectY = skyH / 100; // px per %y
+    const speed = 0.055; // px/ms（實際像素速度）
+
+    const vx = Math.sin(rad) * speed / aspectX; // %/ms
+    const vy = -Math.cos(rad) * speed / aspectY; // %/ms，負=向上
 
     const id = ++this._missileId;
-    this._missiles.push({ id, x: cx, y: cy, vx, vy });
+    this._missiles.push({ id, x: cx, y: cy, vx, vy, angle: angleDeg });
 
     // 建立子彈 DOM
     const missileEl = document.createElement('div');
@@ -489,6 +502,9 @@ export class PolyphoneGame extends GameEngine {
     missileEl.className = 'pp-shot';
     missileEl.style.left = cx + '%';
     missileEl.style.top  = cy + '%';
+    // 旋轉子彈方向，與炮管方向一致
+    const shotRot = angleDeg - 90; // 0=直上
+    missileEl.style.transform = `translate(-50%, -50%) rotate(${shotRot}deg)`;
     sky?.appendChild(missileEl);
   }
 
@@ -923,19 +939,21 @@ export class PolyphoneGame extends GameEngine {
     /* ── 子彈（發射後的 DOM 元素）── */
     .pp-shot {
       position: absolute;
-      width: 8px;
-      height: 20px;
-      border-radius: 4px;
+      width: 12px;
+      height: 28px;
+      border-radius: 6px 6px 3px 3px;
       transform: translate(-50%, -50%);
       background: linear-gradient(to top,
-        rgba(0,229,255,0.5) 0%,
-        rgba(0,229,255,1)   30%,
-        #ffffff             60%,
+        rgba(0,229,255,0.4) 0%,
+        rgba(0,229,255,1)   20%,
+        #b0f0ff             50%,
+        #ffffff             65%,
         rgba(0,229,255,1)   85%
       );
       box-shadow:
-        0 0 8px 3px rgba(0,229,255,1),
-        0 0 18px 5px rgba(0,160,255,0.7);
+        0 0 10px 4px rgba(0,229,255,1),
+        0 0 24px 8px rgba(0,160,255,0.8),
+        0 0 40px 12px rgba(0,100,255,0.4);
       z-index: 15;
       pointer-events: none;
     }
