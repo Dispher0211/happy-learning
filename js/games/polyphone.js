@@ -82,6 +82,34 @@ export class PolyphoneGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
+  // _normZhuyin — 正規化注音字串，確保輕聲˙在最後
+  // ════════════════════════════════════════════
+  _normZhuyin(z) {
+    if (!z) return z;
+    // 若 ˙ 在最前面，移到最後（˙ㄉㄜ → ㄉㄜ˙）
+    if (z.startsWith('˙')) return z.slice(1) + '˙';
+    return z;
+  }
+
+  // ════════════════════════════════════════════
+  // _renderBubbleZhuyin — 泡泡注音 HTML（˙固定最上方）
+  // ════════════════════════════════════════════
+  _renderBubbleZhuyin(z) {
+    const norm = this._normZhuyin(z);
+    const hasDot = norm.endsWith('˙');
+    const body = hasDot ? norm.slice(0, -1) : norm;
+    const chars = [...body];
+    // 直式：˙在最上方，其他符號由上到下
+    const dotHtml = hasDot
+      ? `<span style="font-size:0.7em;line-height:1;display:block;text-align:center;">˙</span>`
+      : '';
+    const bodyHtml = chars.map(c =>
+      `<span style="display:block;text-align:center;line-height:1.2;">${c}</span>`
+    ).join('');
+    return dotHtml + bodyHtml;
+  }
+
+  // ════════════════════════════════════════════
   // loadQuestions — 從 polyphones.json 載入多音字資料
   // ════════════════════════════════════════════
   async loadQuestions() {
@@ -312,7 +340,7 @@ export class PolyphoneGame extends GameEngine {
              id="pp-bubble-${b.id}"
              style="left:${b.x}%;top:${b.y}%"
              data-id="${b.id}">
-          <span class="pp-bubble-text bpmf-font">${b.text}</span>
+          <div class="pp-bubble-text bpmf-font">${this._renderBubbleZhuyin(b.text)}</div>
         </div>
       `).join('');
   }
@@ -915,13 +943,12 @@ export class PolyphoneGame extends GameEngine {
       font-size: 0.82rem;
       font-weight: 700;
       color: #1e3a8a;
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-      letter-spacing: 0.05em;
-      min-height: 2.8em;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 2.8em;
+      line-height: 1.2;
     }
 
     /* 提示：高亮正確聲調 */

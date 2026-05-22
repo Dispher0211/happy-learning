@@ -27,7 +27,7 @@ const GAME_STARS = {
   stroke_handwrite: { first: 2,   retry: 1   },
   stroke_choice:    { first: 1,   retry: 0.5 },
   zhuyin:           { first: 2,   retry: 1   },
-  polyphone:        { first: 4,   retry: 2   },
+  polyphone:        { first: 0.5, retry: 0   },
   radical:          { first: 1,   retry: 0.5 },
   strokes_count:    { first: 1,   retry: 0.5 },
   typo:             { first: 4,   retry: 2   },
