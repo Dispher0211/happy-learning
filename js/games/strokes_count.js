@@ -354,14 +354,14 @@ export class StrokesCountGame extends GameEngine {
     if (!q) throw new Error('judgeAnswer: 無當前題目');
 
     const isCorrect = (selectedNumber === this._correctAnswer);
-    return isCorrect;
+    return { correct: isCorrect };
   }
 
   // ════════════════════════════════════════════
-  // onCorrectAnswer — 覆寫：處理兩射流程
-  // GameEngine 在 judgeAnswer 回傳 true 後呼叫此方法
+  // onCorrect — 覆寫：處理兩射流程
+  // GameEngine 在 judgeAnswer 回傳 { correct: true } 後呼叫此方法
   // ════════════════════════════════════════════
-  async onCorrectAnswer() {
+  async onCorrect(result) {
     const q = this.currentQuestion;
 
     if (this._phase === 'first') {
@@ -381,6 +381,9 @@ export class StrokesCountGame extends GameEngine {
         labelEl.textContent = `🎯 第二射：「${q.char}」的部首「${q.radical}」有幾劃？`;
       }
 
+      // 重置 attemptCount，讓第二射重新從第一次嘗試開始計算
+      this.attemptCount = 0;
+
       // 重新初始化靶（換成部首筆劃題目）
       const level = q.level || 'medium';
       const speedMs = TARGET_SPEEDS[level] || TARGET_SPEEDS.medium;
@@ -391,7 +394,7 @@ export class StrokesCountGame extends GameEngine {
       const hintArea = document.getElementById('sc-hint-area');
       if (hintArea) hintArea.innerHTML = '';
 
-      // 第一射答對不呼叫 super.onCorrectAnswer()，不給星星，繼續等第二射
+      // 第一射答對不呼叫 super.onCorrect()，不給星星，繼續等第二射
       return;
     }
 
@@ -399,44 +402,26 @@ export class StrokesCountGame extends GameEngine {
     this._showArrowHit(true);
 
     // 呼叫 GameEngine 的答對流程（計算星星、更新遺忘曲線等）
-    await super.onCorrectAnswer();
+    await super.onCorrect(result);
   }
 
   // ════════════════════════════════════════════
-  // onWrongAnswer — 覆寫：處理兩射答錯邏輯
+  // onWrongFirstTime — 覆寫：第一次答錯，顯示錯誤動畫，可再試
   // ════════════════════════════════════════════
-  async onWrongAnswer(selectedNumber) {
+  async onWrongFirstTime(result) {
     this._phaseWrongCount++;
     this._showArrowHit(false);
+    await super.onWrongFirstTime(result);
+    // isAnswering 已由 super 重置，玩家可繼續點擊
+  }
 
-    const q = this.currentQuestion;
-
-    if (this._phaseWrongCount === 1) {
-      // ── 第一次答錯：給予提示，可再試 ──
-      await super.onWrongFirstTime();
-
-      // 高亮被點擊的錯誤靶
-      const wrongIndex = this._currentTargetNumbers.indexOf(selectedNumber);
-      if (wrongIndex !== -1) {
-        const wrongTarget = document.getElementById(`sc-target-${wrongIndex}`);
-        wrongTarget?.classList.add('sc-target--wrong');
-        // 0.8秒後移除紅色高亮，讓玩家繼續嘗試
-        setTimeout(() => wrongTarget?.classList.remove('sc-target--wrong'), 800);
-      }
-
-      // 若第一射答錯 → 整題失敗（不進第二射）
-      // 根據規格：「第一射答錯 → 整題失敗（不進第二射），onWrongFirstTime」
-      // 此處規格意為：第一次答錯允許再試，若第二次再錯才 onWrongSecondTime
-      // 但「第一射答錯 → 整題失敗」代表第一射沒有第二次機會進入第二射
-      // 解釋：「第一射答錯」指在第一射中任何一次答錯 → 整題失敗，不進第二射
-      //       「再試」指的是同一射的重試（onWrongFirstTime = 仍可再試本射）
-      // 根據 D.6：「任一射錯第一次→再試；再試仍錯→onWrongSecondTime」
-      // → 所以第一射也可以錯一次後再試，再錯才算整題失敗
-      return;
-    }
-
-    // ── 第二次答錯：整題失敗（不論哪一射）──
-    await super.onWrongSecondTime();
+  // ════════════════════════════════════════════
+  // onWrongSecondTime — 覆寫：第二次答錯，整題失敗
+  // ════════════════════════════════════════════
+  async onWrongSecondTime(result) {
+    this._phaseWrongCount++;
+    this._showArrowHit(false);
+    await super.onWrongSecondTime(result);
   }
 
   // ════════════════════════════════════════════
