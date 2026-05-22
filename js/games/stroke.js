@@ -273,15 +273,10 @@ export class StrokeGame extends GameEngine {
         this._quizCompleted = true;
 
         const isCorrect = !summaryData?.totalMistakes ||
-                          summaryData.totalMistakes === 0;
+                          summaryData.totalMistakes <= 1;
 
-        if (isCorrect || summaryData?.totalMistakes <= 1) {
-          await this._playStrokeReplay(hwm, q);
-          await this.submitAnswer('__quiz_complete__');
-        } else {
-          await this._playStrokeReplay(hwm, q);
-          await this.submitAnswer('__quiz_wrong__');
-        }
+        // 直接評分，不在此處重播（playCorrectAnimation 負責動畫和聲音）
+        await this.submitAnswer(isCorrect ? '__quiz_complete__' : '__quiz_wrong__');
       },
     };
 
@@ -364,7 +359,6 @@ export class StrokeGame extends GameEngine {
         onComplete: async (summaryData) => {
           if (this._quizCompleted) return;
           this._quizCompleted = true;
-          await this._playStrokeReplay(hwm, q);
           const isCorrect = !summaryData?.totalMistakes || summaryData.totalMistakes <= 1;
           await this.submitAnswer(isCorrect ? '__quiz_complete__' : '__quiz_wrong__');
         },
@@ -388,23 +382,57 @@ export class StrokeGame extends GameEngine {
   // ════════════════════════════════════════════
   // playCorrectAnimation
   // ════════════════════════════════════════════
-  async playCorrectAnimation() {
-    const q = this.currentQuestion;
+  async playCorrectAnimation(stars = 1) {
+    // 答對音效
+    if (AppState.settings?.soundOn !== false) {
+      AudioManager.playEffect?.('correct')?.catch?.(() => {});
+    }
+
+    // 星星飛行動畫（飛向右上角星星計數器）
+    this._flyStarsToHeader(Math.min(Math.ceil(stars), 4));
+
+    // 畫面回饋
     const feedback = document.getElementById('sw-feedback');
     if (feedback) {
-      const stars = q?.mode === 2 ? '★★' : '★';
-      feedback.innerHTML = `<div class="sw-correct-burst">🎉 答對了！${stars}</div>`;
+      feedback.innerHTML = `<div class="sw-correct-burst">🎉 答對了！${'★'.repeat(Math.ceil(stars))}</div>`;
       feedback.classList.add('sw-feedback--show');
     }
 
-    // 模式二答對後，若尚未回放則補回放
-    if (q?.mode === 2 && !this._replayingAnimation) {
-      const hwm = getHWM();
-      if (hwm) await this._playStrokeReplay(hwm, q);
-    }
-
-    await this._delay(1000);
+    await this._delay(900);
     if (feedback) feedback.classList.remove('sw-feedback--show');
+  }
+
+  // ════════════════════════════════════════════
+  // _flyStarsToHeader — 星星飛向右上角計數器
+  // ════════════════════════════════════════════
+  _flyStarsToHeader(count) {
+    if (typeof document === 'undefined' || count <= 0) return;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const star = document.createElement('div');
+        star.textContent = '★';
+        star.style.cssText = `
+          position: fixed;
+          font-size: 22px;
+          color: #FFD700;
+          text-shadow: 0 0 6px #FFA500;
+          pointer-events: none;
+          z-index: 9999;
+          left: ${25 + Math.random() * 50}%;
+          top: ${40 + Math.random() * 20}%;
+          transition: all 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          opacity: 1;
+        `;
+        document.body.appendChild(star);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          star.style.left = 'calc(100% - 80px)';
+          star.style.top = '8px';
+          star.style.opacity = '0';
+          star.style.fontSize = '10px';
+        }));
+        setTimeout(() => star.remove(), 900);
+      }, i * 100);
+    }
   }
 
   // ════════════════════════════════════════════
@@ -437,7 +465,6 @@ export class StrokeGame extends GameEngine {
           onComplete: async (summaryData) => {
             if (this._quizCompleted) return;
             this._quizCompleted = true;
-            await this._playStrokeReplay(hwm, q);
             const isCorrect = !summaryData?.totalMistakes || summaryData.totalMistakes <= 1;
             await this.submitAnswer(isCorrect ? '__quiz_complete__' : '__quiz_wrong__');
           },
@@ -498,10 +525,8 @@ export class StrokeGame extends GameEngine {
             onComplete: async (s) => {
               if (this._quizCompleted) return;
               this._quizCompleted = true;
-              await this._playStrokeReplay(hwm2, q);
-              await this.submitAnswer(
-                (!s?.totalMistakes || s.totalMistakes <= 1) ? '__quiz_complete__' : '__quiz_wrong__'
-              );
+              const isCorrect = !s?.totalMistakes || s.totalMistakes <= 1;
+              await this.submitAnswer(isCorrect ? '__quiz_complete__' : '__quiz_wrong__');
             },
           });
         }).catch(() => { this._replayingAnimation = false; });
