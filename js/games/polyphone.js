@@ -85,30 +85,40 @@ export class PolyphoneGame extends GameEngine {
   // loadQuestions — 從 polyphones.json 載入多音字資料
   // ════════════════════════════════════════════
   async loadQuestions() {
-    // 取得多音字資料：優先從 JSONLoader 快取取得；若未載入則先觸發載入
-    let polyData = JSONLoader.get('polyphones') || AppState.polyphones || {};
-    if (!polyData || Object.keys(polyData).length === 0) {
-      // 第二波背景載入尚未完成，主動等待
+    // 取得多音字資料（polyphones.json 為陣列格式 [{字, pronunciations}]）
+    // 優先從 JSONLoader 快取取得；若未載入則先觸發載入
+    let rawPolyArr = JSONLoader.get('polyphones') || [];
+    if (!Array.isArray(rawPolyArr) || rawPolyArr.length === 0) {
       await JSONLoader.load('polyphones');
-      polyData = JSONLoader.get('polyphones') || {};
+      rawPolyArr = JSONLoader.get('polyphones') || [];
     }
-    const allPolyKeys = Object.keys(polyData);
 
-    if (allPolyKeys.length === 0) {
+    if (rawPolyArr.length === 0) {
       throw new Error('polyphone: 無多音字資料');
     }
 
-    // 候選字：先從生字簿中過濾出多音字
-    const chars = (this.questionChars || []).filter(c => polyData[c] && polyData[c].readings?.length >= 2);
-
-    // 若生字簿中無多音字，改用所有多音字資料中隨機取樣
-    const sourceChars = chars.length > 0
-      ? chars
-      : allPolyKeys.filter(k => polyData[k]?.readings?.length >= 2);
-
-    if (sourceChars.length === 0) {
-      throw new Error('polyphone: 無有效多音字題目');
+    // 將陣列轉換為字典：{ 中: { readings: [...] }, ... }
+    // polyphones.json 欄位為 pronunciations，統一對應到 readings
+    const polyData = {};
+    for (const entry of rawPolyArr) {
+      const ch = entry['字'] || entry.char;
+      const readings = entry.pronunciations || entry.readings;
+      if (ch && Array.isArray(readings) && readings.length >= 2) {
+        polyData[ch] = { readings };
+      }
     }
+
+    const allPolyKeys = Object.keys(polyData);
+
+    if (allPolyKeys.length === 0) {
+      throw new Error('polyphone: 無有效多音字資料');
+    }
+
+    // 候選字：先從生字簿中過濾出多音字
+    const chars = (this.questionChars || []).filter(c => polyData[c]);
+
+    // 若生字簿中無多音字，改用所有多音字隨機取樣
+    const sourceChars = chars.length > 0 ? chars : allPolyKeys;
 
     const questions = [];
 
