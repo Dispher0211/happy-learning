@@ -773,14 +773,14 @@ export class ZhuyinGame extends GameEngine {
         }
       }
 
-      if (!recognized) {
-        // 辨識全部失敗 → fallback: keyboard
+      if (!recognized || recognized.fallback) {
+        // 辨識全部失敗 或 Gemini 回傳 fallback → 啟動鍵盤備援
         this._activateKeyboardFallback(question)
         return
       }
 
-      // 辨識成功 → GameEngine.submitAnswer → judgeAnswer
-      await this.submitAnswer(recognized)
+      // 辨識成功 → 取 .text 字串 → GameEngine.submitAnswer → judgeAnswer
+      await this.submitAnswer(recognized.text || '')
     } finally {
       // 無論成功失敗，解鎖確認按鈕
       if (submitBtn) submitBtn.disabled = false
