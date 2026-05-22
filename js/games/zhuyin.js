@@ -254,25 +254,29 @@ export class ZhuyinGame extends GameEngine {
       if (!zhuyin) continue
 
       const readings    = this._parseReadings(zhuyin)
-      const isPolyphone = readings.length > 1
+
+      // 多音字判斷：優先查 polyphones.json（家長生字簿只存單一讀音，不可靠）
+      const polyData   = JSONLoader.get('polyphones') || []
+      const polyEntry  = polyData.find(p => (p['字'] || p.char) === char)
+      const isPolyphone = !!(polyEntry && polyEntry.pronunciations?.length > 1)
 
       // 多音字選 fail_rate 最高的讀音出題；單音字直接取第一個
+      // 多音字的候選讀音從 polyphones.json 取（更完整）
+      const allReadings = isPolyphone
+        ? polyEntry.pronunciations.map(p => normalizeZhuyin(p.zhuyin)).filter(Boolean)
+        : readings
       const pronunciation = isPolyphone
-        ? await this._getHighestFailRateReading(char, readings)
+        ? await this._getHighestFailRateReading(char, allReadings)
         : (readings[0] || zhuyin)
 
       // 多音字：從 polyphones.json 找該讀音對應的代表詞語
       let polyphoneWord = ''
-      if (isPolyphone) {
-        const polyData  = JSONLoader.get('polyphones') || []
-        const polyEntry = polyData.find(p => (p['字'] || p.char) === char)
-        if (polyEntry) {
-          const matchReading = polyEntry.pronunciations?.find(
-            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
-          )
-          if (matchReading?.words?.length > 0) {
-            polyphoneWord = matchReading.words[0]  // 取第一個代表詞
-          }
+      if (isPolyphone && polyEntry) {
+        const matchReading = polyEntry.pronunciations?.find(
+          p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
+        )
+        if (matchReading?.words?.length > 0) {
+          polyphoneWord = matchReading.words[0]
         }
       }
 
@@ -294,18 +298,30 @@ export class ZhuyinGame extends GameEngine {
     // 若遺忘曲線 pool 不足，從剩餘生字補齊
     if (questions.length < count) {
       const usedChars = new Set(questions.map(q => q.char))
+      const polyDataFb = JSONLoader.get('polyphones') || []
       for (const charData of myChars) {
         if (questions.length >= count) break
         const char   = charData['字'] || charData.char || ''
         const zhuyin = charData['注音'] || charData.zhuyin || ''
         if (!char || !zhuyin || usedChars.has(char)) continue
 
-        const readings = this._parseReadings(zhuyin)
+        const readings      = this._parseReadings(zhuyin)
+        const polyEntryFb   = polyDataFb.find(p => (p['字'] || p.char) === char)
+        const isPolyphoneFb = !!(polyEntryFb && polyEntryFb.pronunciations?.length > 1)
+        let polyphoneWordFb = ''
+        if (isPolyphoneFb && polyEntryFb) {
+          const pr = readings[0] || zhuyin
+          const mr = polyEntryFb.pronunciations?.find(
+            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pr)
+          )
+          if (mr?.words?.length > 0) polyphoneWordFb = mr.words[0]
+        }
         questions.push({
           char,
           zhuyin,
           pronunciation:  readings[0] || zhuyin,
-          isPolyphone:    readings.length > 1,
+          isPolyphone:    isPolyphoneFb,
+          polyphoneWord:  polyphoneWordFb,
           readings,
           meaning:        charData.pronunciations?.[0]?.meaning || charData['解釋'] || charData.meaning       || '',
           radical:        charData.radical || charData['部首']       || '',
