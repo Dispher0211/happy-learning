@@ -162,7 +162,7 @@ function escapeHTML(str) {
 export class ZhuyinGame extends GameEngine {
 
   constructor() {
-    super()
+    super('zhuyin')
 
     /** 遊戲設定（從 GameConfig 讀取） */
     this.config = GameConfig['zhuyin'] || {
@@ -409,7 +409,7 @@ export class ZhuyinGame extends GameEngine {
    */
   async judgeAnswer(answer) {
     const question = this.currentQuestion
-    if (!question) return false
+    if (!question) return { correct: false }
 
     const isCorrect = normalizeZhuyin(answer) === normalizeZhuyin(question.pronunciation)
 
@@ -424,7 +424,7 @@ export class ZhuyinGame extends GameEngine {
       console.warn('[ZhuyinGame] ForgettingCurve.recordResult 失敗', err)
     }
 
-    return isCorrect
+    return { correct: isCorrect }
   }
 
   /**
@@ -518,7 +518,7 @@ export class ZhuyinGame extends GameEngine {
    *   hintIndex=2 → 拆解聲母 ＋ 韻母 ＋ 聲調
    * @param {number} hintIndex  1 或 2
    */
-  getHint(hintIndex) {
+  getHint(hintIndex, _question) {
     const question = this.currentQuestion
     const hintArea = document.getElementById('zy-hint-area')
     if (!question || !hintArea) return
@@ -526,28 +526,23 @@ export class ZhuyinGame extends GameEngine {
     hintArea.style.display = 'block'
 
     if (hintIndex === 1) {
+      // 提示一：只顯示聲調（不洩露聲母韻母）
+      const { tone } = decomposeZhuyin(question.pronunciation)
       hintArea.innerHTML = `
         <div class="zy-hint-label">💡 注意聲調：</div>
-        <div class="zy-hint-content bpmf-font">${buildHint1HTML(question.pronunciation)}</div>
+        <div class="zy-hint-content bpmf-font" style="color:#dc2626;font-size:1.4em;font-weight:900;">${tone}</div>
       `
     } else if (hintIndex === 2) {
-      const { initial, final, tone } = decomposeZhuyin(question.pronunciation)
+      // 提示二：顯示聲母（若無聲母則顯示韻母）
+      const { initial, final } = decomposeZhuyin(question.pronunciation)
+      const partLabel = initial ? '聲母' : '韻母'
+      const partVal   = initial || final || '（無）'
       hintArea.innerHTML = `
         <div class="zy-hint-label">💡 注音拆解：</div>
         <div class="zy-hint-decompose">
           <span class="zy-hint-part">
-            <span class="zy-hint-part-label">聲母</span>
-            <span class="zy-hint-part-val bpmf-font">${initial || '（無）'}</span>
-          </span>
-          <span class="zy-hint-sep">＋</span>
-          <span class="zy-hint-part">
-            <span class="zy-hint-part-label">韻母</span>
-            <span class="zy-hint-part-val bpmf-font">${final || '（無）'}</span>
-          </span>
-          <span class="zy-hint-sep">＋</span>
-          <span class="zy-hint-part">
-            <span class="zy-hint-part-label">聲調</span>
-            <span class="zy-hint-part-val bpmf-font">${tone}</span>
+            <span class="zy-hint-part-label">${partLabel}</span>
+            <span class="zy-hint-part-val bpmf-font">${partVal}</span>
           </span>
         </div>
       `
