@@ -196,8 +196,8 @@ export class ZhuyinGame extends GameEngine {
     /** 鍵盤備援：已選韻母（含介音） */
     this._kbFinal = ''
 
-    /** 鍵盤備援：已選聲調符號 */
-    this._kbTone = ''
+    /** 鍵盤備援：已選聲調符號（null=未選；''=一聲；'ˊ'=二聲；'ˇ'=三聲；'ˋ'=四聲；'˙'=輕聲） */
+    this._kbTone = null
 
     /**
      * 事件監聽器清理函數列表
@@ -261,11 +261,27 @@ export class ZhuyinGame extends GameEngine {
         ? await this._getHighestFailRateReading(char, readings)
         : (readings[0] || zhuyin)
 
+      // 多音字：從 polyphones.json 找該讀音對應的代表詞語
+      let polyphoneWord = ''
+      if (isPolyphone) {
+        const polyData  = JSONLoader.get('polyphones') || []
+        const polyEntry = polyData.find(p => (p['字'] || p.char) === char)
+        if (polyEntry) {
+          const matchReading = polyEntry.pronunciations?.find(
+            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
+          )
+          if (matchReading?.words?.length > 0) {
+            polyphoneWord = matchReading.words[0]  // 取第一個代表詞
+          }
+        }
+      }
+
       questions.push({
         char,
         zhuyin,
         pronunciation,
         isPolyphone,
+        polyphoneWord,  // 多音字代表詞語（單音字為空字串）
         readings,
         meaning:       charData.pronunciations?.[0]?.meaning || charData['解釋'] || charData.meaning       || '',
         radical:       charData.radical || charData['部首']       || '',
@@ -319,7 +335,7 @@ export class ZhuyinGame extends GameEngine {
     this._keyboardFallbackActive = false
     this._kbInitial  = ''
     this._kbFinal    = ''
-    this._kbTone     = ''
+    this._kbTone     = null
     this._strokeHistory = []
     HandwritingManager.clearStrokes()
 
@@ -343,12 +359,21 @@ export class ZhuyinGame extends GameEngine {
             <div class="zy-char" aria-label="請寫出此字的注音">
               ${escapeHTML(question.char)}
             </div>
-            ${question.isPolyphone
-              ? '<div class="zy-poly-badge">多音字</div>'
-              : ''}
+            ${question.isPolyphone && question.polyphoneWord
+              ? `<div class="zy-poly-word">${
+                  escapeHTML(question.polyphoneWord).replace(
+                    escapeHTML(question.char),
+                    `<span class="zy-poly-char-hl">${escapeHTML(question.char)}</span>`
+                  )
+                }</div>`
+              : question.isPolyphone ? '<div class="zy-poly-badge">多音字</div>' : ''
+            }
           </div>
           <p class="zy-instruction">
-            請輸入「${escapeHTML(question.char)}」的注音
+            ${question.isPolyphone && question.polyphoneWord
+              ? `請輸入「${escapeHTML(question.polyphoneWord)}」中「${escapeHTML(question.char)}」的注音`
+              : `請輸入「${escapeHTML(question.char)}」的注音`
+            }
           </p>
         </div>
 
@@ -921,8 +946,8 @@ export class ZhuyinGame extends GameEngine {
           break
         }
         case 'tone':
-          // 聲調：互斥，再點取消
-          this._kbTone = (this._kbTone === value) ? '' : value
+          // 聲調：互斥，再點同一個取消（回到 null=未選）
+          this._kbTone = (this._kbTone === value) ? null : value
           break
       }
 
@@ -940,7 +965,7 @@ export class ZhuyinGame extends GameEngine {
       const onClear = () => {
         this._kbInitial = ''
         this._kbFinal   = ''
-        this._kbTone    = ''
+        this._kbTone    = null
         this._updateKeyboardPreview()
         this._updateKeyboardHighlight(kbRoot)
       }
@@ -967,7 +992,7 @@ export class ZhuyinGame extends GameEngine {
    * @returns {string}
    */
   _composeZhuyinFromKeyboard() {
-    return (this._kbInitial + this._kbFinal + this._kbTone) || ''
+    return (this._kbInitial + this._kbFinal + (this._kbTone ?? '')) || ''
   }
 
   /** 更新鍵盤輸入預覽區 */
@@ -993,7 +1018,8 @@ export class ZhuyinGame extends GameEngine {
       kbRoot.querySelectorAll(`[data-type="initial"][data-value="${this._kbInitial}"]`)
         .forEach(k => k.classList.add('zy-kb-key-active'))
     }
-    if (this._kbTone !== '') {
+    if (this._kbTone !== null) {
+      // null=未選；''=一聲；其他=有符號的聲調
       kbRoot.querySelectorAll(`[data-type="tone"][data-value="${this._kbTone}"]`)
         .forEach(k => k.classList.add('zy-kb-key-active'))
     }
@@ -1210,6 +1236,18 @@ export class ZhuyinGame extends GameEngine {
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
+  }
+  .zy-poly-word {
+    margin-top: 6px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.1em;
+  }
+  .zy-poly-char-hl {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
   .zy-card-correct {
     animation: zy-card-flash-correct 0.8s ease forwards;
