@@ -120,35 +120,47 @@ export class PolyphoneGame extends GameEngine {
     // 若生字簿中無多音字，改用所有多音字隨機取樣
     const sourceChars = chars.length > 0 ? chars : allPolyKeys;
 
-    const questions = [];
+    const TOTAL = this.totalQuestions || 10;
+    const MIN_PER_READING = 2; // 每個讀音最少出幾題
 
+    // 先為每個字的每個讀音各建至少 MIN_PER_READING 題
+    const pool = [];
     for (const char of sourceChars) {
       const poly = polyData[char];
       if (!poly || !poly.readings || poly.readings.length < 2) continue;
 
-      // 從所有讀音中，選一個讀音作為本題目標（隨機選）
-      const targetIdx = Math.floor(Math.random() * poly.readings.length);
-      const targetReading = poly.readings[targetIdx];
-
-      // 找一個包含此字此讀音的詞語作為出題詞語
-      const exampleWord = targetReading.words?.[0] || char;
-
-      questions.push({
-        char,
-        targetPronunciation: targetReading.zhuyin,  // 正確讀音
-        exampleWord,                                  // 出題詞語
-        allReadings: poly.readings,                   // 所有讀音
-        level: 'medium',
-      });
+      for (const reading of poly.readings) {
+        for (let i = 0; i < MIN_PER_READING; i++) {
+          // 每次從該讀音的詞語中隨機選一個，增加多樣性
+          const words = reading.words || [];
+          const exampleWord = words[i % Math.max(words.length, 1)] || char;
+          pool.push({
+            char,
+            targetPronunciation: reading.zhuyin,
+            exampleWord,
+            allReadings: poly.readings,
+            level: 'medium',
+          });
+        }
+      }
     }
 
-    // 打亂並截取所需數量
-    for (let i = questions.length - 1; i > 0; i--) {
+    // 打亂題庫
+    for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [questions[i], questions[j]] = [questions[j], questions[i]];
+      [pool[i], pool[j]] = [pool[j], pool[i]];
     }
 
-    this.questions = questions.slice(0, this.totalQuestions || 10);
+    // 若不足 TOTAL 題，循環補足
+    const questions = [];
+    let idx = 0;
+    while (questions.length < TOTAL) {
+      questions.push({ ...pool[idx % pool.length] });
+      idx++;
+    }
+    questions.length = TOTAL;
+
+    this.questions = questions;
     return this.questions;
   }
 
@@ -451,6 +463,9 @@ export class PolyphoneGame extends GameEngine {
       }
     }
 
+    // 發射音效
+    AudioManager.playEffect('fight').catch(() => {});
+
     if (!closest) {
       // 沒有命中任何泡泡，飛彈空射
       this._showMissileEffect(this._planeX, 60);
@@ -491,6 +506,7 @@ export class PolyphoneGame extends GameEngine {
     if (hitBubble) {
       hitBubble.exploded = true;
       this._showExplosion(hitBubble.x, hitBubble.y);
+      AudioManager.playEffect('bubble').catch(() => {});
     }
 
     // 連續模式：飛機維持飛行（不降落）
@@ -797,11 +813,18 @@ export class PolyphoneGame extends GameEngine {
     }
 
     .pp-bubble-text {
-      font-size: 1rem;
+      font-size: 0.85rem;
       font-weight: bold;
       color: #0d47a1;
       text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-      font-family: 'BpmfIVS', serif;
+      font-family: 'BpmfIVS', 'Noto Sans TC', serif;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3em;
     }
 
     /* 聲調提示高亮 */
