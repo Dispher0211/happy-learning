@@ -28,10 +28,10 @@ import { JSONLoader } from '../json_loader.js';
 // hard 最慢（靶移動慢，難以瞄準），easy_plus 最快
 // ─────────────────────────────────────────────
 const TARGET_SPEEDS = {
-  hard:       3000,
-  medium:     2000,
-  easy:       1500,
-  easy_plus:  1000,
+  hard:       7000,
+  medium:     5000,
+  easy:       3800,
+  easy_plus:  2800,
 };
 
 // 靶的數量（固定4個）
@@ -254,13 +254,15 @@ export class StrokesCountGame extends GameEngine {
     const candidates = new Set();
     candidates.add(correct);
 
-    let attempts = 0;
-    while (candidates.size < TARGET_COUNT && attempts < 50) {
-      const offset = Math.floor(Math.random() * 7) + 2; // 2~8
-      const sign = Math.random() < 0.5 ? 1 : -1;
-      const val = correct + sign * offset;
-      if (val >= 1) candidates.add(val); // 確保正整數
-      attempts++;
+    // 每次 offset 遞增確保不重複：2,3,4,5,6,7,8,9,10...
+    const offsets = [2, 4, 6, 3, 8, 5, 10, 7];
+    for (const offset of offsets) {
+      if (candidates.size >= TARGET_COUNT) break;
+      const val = correct + offset;
+      candidates.add(val);
+      if (candidates.size >= TARGET_COUNT) break;
+      const valNeg = correct - offset;
+      if (valNeg >= 1) candidates.add(valNeg);
     }
 
     // 如果候選數不足（極端情況），補充
@@ -337,11 +339,8 @@ export class StrokesCountGame extends GameEngine {
     // 使用 window 全域函式避免 ES Module 內 inline onclick 問題
     window.__scSelectTarget = (index) => {
       if (this.isAnswering) return; // 防重複點擊
-      this._lastClickedIndex = index; // 記錄被點擊的靶 index
       const selectedNumber = this._currentTargetNumbers[index];
-      // 立即播放射箭音效 + 顯示箭插入靶效果
-      this._playSound('archery');
-      this._showArrowOnTarget(index);
+      // 音效與箭效果已在 mousedown/touchstart 處理，此處只送出答案
       this.submitAnswer(selectedNumber);
     };
 
@@ -359,10 +358,31 @@ export class StrokesCountGame extends GameEngine {
       targetEl.parentNode.replaceChild(newTarget, targetEl);
 
       const idx = i; // 閉包捕獲
-      document.getElementById(`sc-target-${i}`)?.addEventListener('click', () => {
+      const el = document.getElementById(`sc-target-${i}`);
+      if (!el) continue;
+
+      // mousedown / touchstart：立即停靶 + 播放音效（最快反應，無延遲）
+      el.addEventListener('mousedown', (e) => {
+        if (this.isAnswering) return;
+        e.preventDefault();
+        this._lastClickedIndex = idx;
+        this._showArrowOnTarget(idx);  // 先停靶、插箭
+        this._playSound('archery');    // 同步播音效
+      });
+      el.addEventListener('touchstart', (e) => {
+        if (this.isAnswering) return;
+        e.preventDefault();
+        this._lastClickedIndex = idx;
+        this._showArrowOnTarget(idx);
+        this._playSound('archery');
+      }, { passive: false });
+
+      // click：送出答案（在 mousedown 之後觸發，已有箭效果）
+      el.addEventListener('click', () => {
+        if (this._lastClickedIndex !== idx) return; // 防止非本次點擊
         window.__scSelectTarget(idx);
       });
-      document.getElementById(`sc-target-${i}`)?.addEventListener('keydown', (e) => {
+      el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') window.__scSelectTarget(idx);
       });
     }
@@ -577,14 +597,103 @@ export class StrokesCountGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _showArrowOnTarget — 讓靶顯示箭插入狀態（停止移動）
+  // _showArrowOnTarget — 讓靶顯示箭插入狀態（停止移動）+ 觸發飛箭動畫
   // ════════════════════════════════════════════
   _showArrowOnTarget(index) {
     const targetEl = document.getElementById(`sc-target-${index}`);
     if (!targetEl) return;
     // 暫停該靶的位置（讓靶停住）
     this._targetDirections[index] = 0;
-    targetEl.classList.add('sc-target--arrow');
+    // 飛箭動畫
+    this._fireArrow(index, () => {
+      targetEl.classList.add('sc-target--arrow');
+    });
+  }
+
+  // _fireArrow — 從弓手位置射出箭矢飛向指定靶
+  // ════════════════════════════════════════════
+  _fireArrow(targetIndex, onArrive) {
+    const archer = document.getElementById('sc-archer');
+    const targetEl = document.getElementById(`sc-target-${targetIndex}`);
+    const root = document.getElementById('sc-game-root');
+    if (!archer || !targetEl || !root) { onArrive?.(); return; }
+
+    // 取得相對於 root 的座標
+    const rootRect  = root.getBoundingClientRect();
+    const archerRect = archer.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+
+    // 起點：弓手中心
+    const startX = archerRect.left + archerRect.width  / 2 - rootRect.left;
+    const startY = archerRect.top  + archerRect.height / 2 - rootRect.top;
+
+    // 終點：靶的中心
+    const endX = targetRect.left + targetRect.width  / 2 - rootRect.left;
+    const endY = targetRect.top  + targetRect.height / 2 - rootRect.top;
+
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90; // +90 因為箭頭朝上
+
+    // 飛行時間：最短 120ms，依距離比例
+    const duration = Math.max(120, Math.min(260, dist * 0.55));
+
+    // 建立箭矢 DOM
+    const arrow = document.createElement('div');
+    arrow.className = 'sc-flying-arrow';
+    arrow.innerHTML = `
+      <svg viewBox="0 0 14 60" width="14" height="60" xmlns="http://www.w3.org/2000/svg">
+        <!-- 箭頭 -->
+        <polygon points="7,0 2,14 7,10 12,14" fill="#c0392b"/>
+        <!-- 箭桿 -->
+        <rect x="6.2" y="10" width="1.6" height="36" rx="0.8" fill="#8B4513"/>
+        <!-- 羽毛左 -->
+        <path d="M7,46 C4,50 1,54 3,58 C5,54 7,50 7,46" fill="#e8e8e8" opacity="0.9"/>
+        <!-- 羽毛右 -->
+        <path d="M7,46 C10,50 13,54 11,58 C9,54 7,50 7,46" fill="#c0392b" opacity="0.9"/>
+      </svg>`;
+    arrow.style.cssText = `
+      position: absolute;
+      left: ${startX}px;
+      top:  ${startY}px;
+      transform: translate(-50%, -50%) rotate(${angle}deg);
+      transform-origin: 50% 50%;
+      pointer-events: none;
+      z-index: 99;
+      transition: none;
+    `;
+
+    root.style.position = 'relative';
+    root.appendChild(arrow);
+
+    // rAF 飛行動畫
+    const start = performance.now();
+    const animate = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      // ease-in（加速感）
+      const ease = t * t;
+      const curX = startX + dx * ease;
+      const curY = startY + dy * ease;
+      arrow.style.left = curX + 'px';
+      arrow.style.top  = curY + 'px';
+
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // 箭到達目標，觸發插入效果後移除飛箭
+        onArrive?.();
+        setTimeout(() => arrow.remove(), 200);
+      }
+    };
+    requestAnimationFrame(animate);
+
+    // 弓手射箭動畫
+    if (archer) {
+      archer.classList.remove('sc-archer--shoot');
+      void archer.offsetWidth; // reflow
+      archer.classList.add('sc-archer--shoot');
+    }
   }
 
   // _showArrowHit — 舊版保留（不再使用，空實作避免錯誤）
@@ -723,6 +832,12 @@ export class StrokesCountGame extends GameEngine {
       transition: width 0.4s ease;
     }
 
+    /* ── 飛行箭矢 ── */
+    .sc-flying-arrow {
+      will-change: left, top;
+      filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.55));
+    }
+
     /* ── 射箭場 ── */
     .sc-archery-range {
       position: relative;
@@ -840,21 +955,75 @@ export class StrokesCountGame extends GameEngine {
       75%       { transform: rotate(3deg); }
     }
 
-    /* 靶碎裂效果 */
-    .sc-target--broken .sc-target-face {
-      animation: sc-break 0.5s ease forwards;
-      background:
-        radial-gradient(circle at center,
-          #ff8800 0%, #ff4400 30%,
-          #ffcc00 30%, #ff6600 60%,
-          #ffaa00 60%, #ff2200 100%
-        ) !important;
+    /* ── 靶碎裂效果：裂片四散，箭留在靶上 ── */
+    .sc-target--broken {
+      pointer-events: none;
+      overflow: visible !important;
     }
-    @keyframes sc-break {
-      0%   { transform: scale(1) rotate(0deg); opacity: 1; }
-      30%  { transform: scale(1.3) rotate(-8deg); opacity: 0.9; }
-      60%  { transform: scale(0.9) rotate(12deg); opacity: 0.7; }
-      100% { transform: scale(0) rotate(20deg); opacity: 0; }
+    .sc-target--broken .sc-target-face {
+      position: relative;
+      overflow: visible;
+      /* 靶體輕微衝擊後留在原位（帶裂紋 filter）*/
+      animation: sc-impact-shake 0.25s ease forwards;
+      filter: drop-shadow(0 0 8px rgba(255,100,0,0.9));
+    }
+    /* 裂紋覆蓋層 */
+    .sc-target--broken .sc-target-face::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      z-index: 6;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cg stroke='%23111' stroke-width='2' fill='none'%3E%3Cpath d='M40 40 L12 8 M40 40 L68 6 M40 40 L74 40 M40 40 L62 72 M40 40 L18 74 M40 40 L6 52 M40 40 L22 26 M40 40 L56 22'/%3E%3Ccircle cx='40' cy='40' r='15' stroke-width='1.5' opacity='0.6'/%3E%3Ccircle cx='40' cy='40' r='28' stroke-width='1' opacity='0.4'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: cover;
+      animation: sc-crack-appear 0.3s ease 0.1s forwards;
+      opacity: 0;
+    }
+    /* 碎片飛散（用 ::after 模擬多片） */
+    .sc-target--broken .sc-target-face::after {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      z-index: 7;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill-opacity='0.85'%3E%3Cpolygon fill='%23ff4444' points='50,45 40,30 30,38' style='transform-origin:50px 50px;animation:fly1 0.5s ease forwards'/%3E%3Cpolygon fill='%23ffffff' points='50,45 62,28 72,36' style='transform-origin:50px 50px'/%3E%3Cpolygon fill='%23ff4444' points='50,45 75,42 72,55' style='transform-origin:50px 50px'/%3E%3Cpolygon fill='%23ffffff' points='50,45 65,68 55,75' style='transform-origin:50px 50px'/%3E%3Cpolygon fill='%23ff4444' points='50,45 35,70 25,62' style='transform-origin:50px 50px'/%3E%3Cpolygon fill='%23ffffff' points='50,45 22,44 25,32' style='transform-origin:50px 50px'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: cover;
+      animation: sc-shards-fly 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      opacity: 1;
+    }
+    /* 靶數字消失，換成箭矢圖示 */
+    .sc-target--broken .sc-target-number {
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
+    .sc-target--broken .sc-target-number::after {
+      content: '🏹';
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%) rotate(135deg);
+      font-size: 1.4rem;
+      opacity: 1 !important;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+    }
+    @keyframes sc-impact-shake {
+      0%   { transform: scale(1) rotate(0deg); }
+      15%  { transform: scale(1.2) rotate(-6deg); }
+      35%  { transform: scale(1.1) rotate(5deg); }
+      55%  { transform: scale(1.05) rotate(-3deg); }
+      100% { transform: scale(1.03) rotate(1deg); }
+    }
+    @keyframes sc-crack-appear {
+      0%   { opacity: 0; }
+      40%  { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes sc-shards-fly {
+      0%   { transform: scale(0.3); opacity: 1; }
+      40%  { transform: scale(1.4); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
     }
 
     @keyframes sc-pulse-correct {
@@ -882,6 +1051,16 @@ export class StrokesCountGame extends GameEngine {
     }
     .sc-archer--miss {
       animation: sc-miss-wobble 0.5s ease;
+    }
+    .sc-archer--shoot {
+      animation: sc-archer-shoot 0.3s ease forwards;
+    }
+    @keyframes sc-archer-shoot {
+      0%   { transform: scale(1) rotate(0deg); }
+      20%  { transform: scale(1.15) rotate(-12deg); }
+      45%  { transform: scale(0.95) rotate(8deg); }
+      70%  { transform: scale(1.05) rotate(-4deg); }
+      100% { transform: scale(1) rotate(0deg); }
     }
 
     @keyframes sc-celebrate {
