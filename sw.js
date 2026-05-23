@@ -17,7 +17,7 @@
  *   - 修正：只快取完整的 200 回應，206 讓瀏覽器直接使用，不存快取
  */
 
-const APP_VERSION = '1.0.43'
+const APP_VERSION = '1.0.45'
 const CACHE_NAME  = `happylearn-v${APP_VERSION}`
 
 // ── 預快取清單 ──
@@ -126,11 +126,16 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // ── JS / CSS / fonts / audio → Cache First ──
+  // ── JS → Network First（確保每次取最新版，不用舊快取）──
+  if (pathname.endsWith('.js')) {
+    event.respondWith(networkFirstWithFallback(request))
+    return
+  }
+
+  // ── CSS / fonts / audio → Cache First ──
   if (
     pathname.includes('/audio/')   ||
     pathname.includes('/fonts/')   ||
-    pathname.endsWith('.js')        ||
     pathname.endsWith('.css')       ||
     pathname.endsWith('.woff2')     ||
     pathname.endsWith('.woff')      ||
