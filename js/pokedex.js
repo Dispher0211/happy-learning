@@ -302,15 +302,51 @@ export const PokedexManager = {
 
     const config = this.getSeriesConfig(sid)
 
-    // ── pokeapi：直接用 CDN URL，永不回傳 null（不快取 null）──
+    // ── pokeapi：fetch + blob URL，完全繞過 raw.githubusercontent.com sandbox CSP ──
     if (config?.source === 'api' && config?.api?.provider === 'pokeapi') {
-      const cdnUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${index}.png`
-      this._imageCache.set(cacheKey, cdnUrl)
-      // 背景非同步取名稱
+      // 快取命中（blob URL）
+      if (this._imageCache.has(cacheKey)) {
+        return this._imageCache.get(cacheKey)
+      }
+
+      // 防止同一張圖重複 fetch
+      this._imageFetchPromises = this._imageFetchPromises || new Map()
+      if (this._imageFetchPromises.has(cacheKey)) {
+        return this._imageFetchPromises.get(cacheKey)
+      }
+
+      const rawUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${index}.png`
+
+      // 同時非同步取名稱
       if (!this._nameCache.has(cacheKey)) {
         this._fetchPokeNameAsync(index, sid, cacheKey)
       }
-      return cdnUrl
+
+      // fetch 圖片轉 blob URL（繞過 sandbox）
+      const fetchPromise = fetch(rawUrl)
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`)
+          return r.blob()
+        })
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob)
+          this._imageCache.set(cacheKey, blobUrl)
+          this._imageFetchPromises.delete(cacheKey)
+          // 更新所有已顯示此 index 的 <img>
+          document.querySelectorAll(`img[data-pokedex-index="${index}"]`).forEach(img => {
+            img.src = blobUrl
+          })
+          return blobUrl
+        })
+        .catch(e => {
+          console.warn(`[PokedexManager] fetchImage blob 失敗 (${index}):`, e.message)
+          this._imageFetchPromises.delete(cacheKey)
+          this._imageCache.set(cacheKey, rawUrl)
+          return rawUrl
+        })
+
+      this._imageFetchPromises.set(cacheKey, fetchPromise)
+      return fetchPromise
     }
 
     // ── 快取命中（非 pokeapi 系列才使用快取）──

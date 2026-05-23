@@ -518,8 +518,8 @@ export class PokedexPage {
       img.className = 'pokedex-cell-img'
       img.alt = `#${index}`
       img.loading = 'lazy'
+      img.dataset.pokedexIndex = index  // 供 PokedexManager blob 更新用
       img.onerror = () => {
-        // 圖片 src 有效但載入失敗
         img.remove()
         const fb = document.createElement('span')
         fb.className = 'pokedex-cell-fallback'
@@ -580,7 +580,7 @@ export class PokedexPage {
 
     // 圖片 or 備用圖示
     const imgHTML = imageUrl
-      ? `<img class="pokedex-detail-img" src="${imageUrl}" alt="#${index}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">`
+      ? `<img class="pokedex-detail-img" src="${imageUrl}" alt="#${index}" data-pokedex-index="${index}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">`
         + `<div class="pokedex-detail-fallback" style="display:none">🎴</div>`
       : `<div class="pokedex-detail-fallback">🎴</div>`
 
