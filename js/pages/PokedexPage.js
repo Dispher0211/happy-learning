@@ -584,6 +584,15 @@ export class PokedexPage {
         + `<div class="pokedex-detail-fallback" style="display:none">🎴</div>`
       : `<div class="pokedex-detail-fallback">🎴</div>`
 
+    // 取得真實名稱
+    let pokemonName = `No.${String(index).padStart(3, '0')}`
+    if (PM) {
+      try {
+        const fetched = await PM.fetchName(index, this._seriesId)
+        if (fetched) pokemonName = fetched
+      } catch (_) { /* 取得失敗使用預設編號 */ }
+    }
+
     // 建立詳情 overlay
     const overlay = document.createElement('div')
     overlay.className = 'pokedex-detail-overlay'
@@ -592,8 +601,8 @@ export class PokedexPage {
       <div class="pokedex-detail-card" role="dialog" aria-modal="true">
         <button class="pokedex-detail-close" id="pokedex-detail-close" aria-label="關閉">✕</button>
         ${imgHTML}
-        <div class="pokedex-detail-name">No.${String(index).padStart(3, '0')}</div>
-        <div class="pokedex-detail-num">${this._seriesConfig?.name || '圖鑑'}</div>
+        <div class="pokedex-detail-name">${pokemonName}</div>
+        <div class="pokedex-detail-num">No.${String(index).padStart(3, '0')} · ${this._seriesConfig?.name || '圖鑑'}</div>
         <div class="pokedex-detail-info">
           <div class="pokedex-detail-info-row">
             <span class="pokedex-detail-info-label">收集日期</span>

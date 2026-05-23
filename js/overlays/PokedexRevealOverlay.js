@@ -410,9 +410,12 @@ export const PokedexRevealOverlay = {
       }
 
       // ── Phase 4：顯示名稱與編號 ──
-      // 嘗試從 seriesConfig 取得名稱對照
-      const names = seriesConfig.names || {}
-      const charName = names[String(index)] || `No.${index}`
+      // 嘗試從 PokedexManager.fetchName 取得真實名稱（已有快取則立即回傳）
+      let charName = `No.${String(index).padStart(3, '0')}`
+      try {
+        const fetched = await PokedexManager.fetchName(index, seriesId)
+        if (fetched) charName = fetched
+      } catch (_) { /* 名稱取得失敗，使用預設 */ }
       nameEl.textContent = charName
       nameEl.classList.add('visible')
       indexEl.classList.add('visible')

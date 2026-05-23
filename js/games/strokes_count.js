@@ -30,8 +30,8 @@ import { JSONLoader } from '../json_loader.js';
 const TARGET_SPEEDS = {
   hard:       7000,
   medium:     5000,
-  easy:       3800,
-  easy_plus:  2800,
+  easy:       2800,
+  easy_plus:  2000,
 };
 
 // 靶的數量（固定4個）

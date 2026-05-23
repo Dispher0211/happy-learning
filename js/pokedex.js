@@ -80,6 +80,9 @@ export const PokedexManager = {
   // 圖片記憶體快取：Map<'seriesId:index', url|null>
   _imageCache: new Map(),
 
+  // 名稱記憶體快取：Map<'seriesId:index', string|null>
+  _nameCache: new Map(),
+
   // ─────────────────────────────────────────────
   // init — 從 Firestore 讀取圖鑑狀態
   // ─────────────────────────────────────────────
@@ -323,6 +326,14 @@ export const PokedexManager = {
         || null
 
       this._imageCache.set(cacheKey, imageUrl)
+
+      // 同時快取名稱（英文名稱首字母大寫）
+      if (data?.name && !this._nameCache.has(cacheKey)) {
+        const rawName = data.name
+        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
+        this._nameCache.set(cacheKey, formattedName)
+      }
+
       return imageUrl
 
     } catch (e) {
@@ -331,6 +342,35 @@ export const PokedexManager = {
       this._imageCache.set(cacheKey, null)
       return null
     }
+  },
+
+  // ─────────────────────────────────────────────
+  // fetchName — 取得圖鑑項目名稱（含記憶體快取）
+  // ─────────────────────────────────────────────
+
+  /**
+   * fetchName(index, seriesId?) — 取得圖鑑項目名稱
+   * 若 fetchImage 已呼叫過，直接從 _nameCache 取得（不重複 fetch）
+   * 若尚未 fetch，先呼叫 fetchImage 讓快取建立
+   * 失敗時回傳 null，不拋出
+   *
+   * @param {number} index
+   * @param {string} [seriesId]
+   * @returns {Promise<string|null>}
+   */
+  async fetchName(index, seriesId) {
+    const sid      = seriesId || AppState.pokedex?.active_series || 'pokemon'
+    const cacheKey = 
+
+    // 名稱快取命中
+    if (this._nameCache.has(cacheKey)) {
+      return this._nameCache.get(cacheKey)
+    }
+
+    // 尚未 fetch：呼叫 fetchImage 讓資料快取建立（包含名稱）
+    await this.fetchImage(index, sid)
+
+    return this._nameCache.get(cacheKey) ?? null
   },
 
   // ─────────────────────────────────────────────

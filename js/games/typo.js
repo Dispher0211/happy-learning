@@ -383,7 +383,9 @@ export class TypoGame extends GameEngine {
     return `
       <div class="typo-mode1">
         <div class="typo-instruction">找出正確的字，打開寶箱！</div>
-        <div class="typo-sentence mode1">${sentenceHtml}</div>
+        <div class="typo-question-box">
+          <div class="typo-sentence mode1">${sentenceHtml}</div>
+        </div>
         <div class="typo-chests">${chestsHtml}</div>
       </div>
     `;
@@ -428,9 +430,11 @@ export class TypoGame extends GameEngine {
 
     return `
       <div class="typo-mode2-find">
-        <div class="typo-instruction">請點出句中的<strong>錯字</strong></div>
-        <div class="typo-sentence mode2-find">${charSpans}</div>
-        <div class="typo-mode2-hint">點選你認為寫錯的那個字</div>
+        <div class="typo-instruction">請點出句中的<strong>錯字</strong>位置</div>
+        <div class="typo-question-box">
+          <div class="typo-sentence mode2-find">${charSpans}</div>
+        </div>
+        <div class="typo-mode2-hint">👆 點選你認為寫錯的那個字</div>
       </div>
     `;
   }
@@ -661,20 +665,12 @@ export class TypoGame extends GameEngine {
       this._typoCurrentStroke = null;
     };
 
-    canvas.addEventListener('mousedown',  onStart);
-    canvas.addEventListener('mousemove',  onMove);
-    canvas.addEventListener('mouseup',    onEnd);
-    canvas.addEventListener('mouseleave', onEnd);
-    canvas.addEventListener('touchstart', onStart, { passive: false });
-    canvas.addEventListener('touchmove',  onMove,  { passive: false });
-    canvas.addEventListener('touchend',   onEnd);
-
     this._addEventListener(canvas, 'mousedown',  onStart);
     this._addEventListener(canvas, 'mousemove',  onMove);
     this._addEventListener(canvas, 'mouseup',    onEnd);
     this._addEventListener(canvas, 'mouseleave', onEnd);
-    this._addEventListener(canvas, 'touchstart', onStart);
-    this._addEventListener(canvas, 'touchmove',  onMove);
+    this._addEventListener(canvas, 'touchstart', onStart, { passive: false });
+    this._addEventListener(canvas, 'touchmove',  onMove,  { passive: false });
     this._addEventListener(canvas, 'touchend',   onEnd);
   }
 
@@ -1076,13 +1072,23 @@ export function injectTypoStyles() {
       color: #c0392b;
     }
 
+    /* ── 題目框 ── */
+    .typo-question-box {
+      background: #fff;
+      border: 3px solid #e0b000;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin: 12px auto 20px;
+      max-width: 380px;
+      box-shadow: 0 4px 12px rgba(224,176,0,0.2);
+    }
+
     /* ── 句子展示 ── */
     .typo-sentence {
-      font-size: 1.8rem;
-      line-height: 2.4;
+      font-size: 2rem;
+      line-height: 2.6;
       text-align: center;
-      margin: 12px auto 20px;
-      max-width: 360px;
+      margin: 0;
     }
     .typo-s-char {
       display: inline-block;

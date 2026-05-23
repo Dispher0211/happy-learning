@@ -13,6 +13,7 @@
  */
 
 import { AppState } from '../state.js'
+import { installTypoHintBridge, removeTypoHintBridge, injectTypoStyles, removeTypoStyles } from '../games/typo.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
 
@@ -88,6 +89,12 @@ export class GamePage {
       // 呼叫遊戲的 init()，遊戲自行 render 到 #app
       await this._gameInstance.init()
 
+      // typo 遊戲：注入樣式 + 安裝全域提示橋接
+      if (this._gameId === 'typo') {
+        injectTypoStyles()
+        installTypoHintBridge(this._gameInstance)
+      }
+
     } catch (err) {
       console.error(`[GamePage] 遊戲初始化失敗（${this._gameId}）：`, err)
       UIManager.showToast('遊戲載入失敗，請重試', 'error', 3000)
@@ -137,6 +144,11 @@ export class GamePage {
       try {
         // 呼叫遊戲的 destroy()，觸發 GameEngine._handleInterrupt()（若未完成）
         this._gameInstance.destroy()
+        // typo 遊戲：移除樣式 + 提示橋接
+        if (this._gameId === 'typo') {
+          removeTypoHintBridge()
+          removeTypoStyles()
+        }
       } catch (err) {
         console.error('[GamePage] 遊戲 destroy() 發生錯誤：', err)
       }
