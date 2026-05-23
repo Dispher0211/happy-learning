@@ -360,7 +360,7 @@ export const PokedexManager = {
    */
   async fetchName(index, seriesId) {
     const sid      = seriesId || AppState.pokedex?.active_series || 'pokemon'
-    const cacheKey = 
+    const cacheKey = `${sid}:${index}`
 
     // 名稱快取命中
     if (this._nameCache.has(cacheKey)) {
