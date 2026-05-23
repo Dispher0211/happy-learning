@@ -258,7 +258,9 @@ export const HandwritingManager = {
     if (mode === 'zhuyin') {
       text = [...text].filter(c => {
         const cp = c.charCodeAt(0)
-        return (cp >= 0x3105 && cp <= 0x3129) || (cp >= 0x02CA && cp <= 0x02D9)
+        return (cp >= 0x3105 && cp <= 0x3129) ||
+               cp === 0x02C7 ||
+               (cp >= 0x02CA && cp <= 0x02D9)
       }).join('')
     }
 
