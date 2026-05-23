@@ -332,9 +332,9 @@
 /* 輕聲頂部（˙）：使用 em 相對單位確保各字級下都置於正中上方 */
 .pv-tone-top {
   position: absolute;
-  top: -0.55em;
+  top: -0.65em;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-40%);
   font-size: 0.9rem;
   font-weight: 900;
   font-family: 'Noto Sans TC', sans-serif;
