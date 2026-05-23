@@ -680,6 +680,20 @@ export class PolyphoneGame extends GameEngine {
   async onCorrect(result) {
     // 直接呼叫父類；爆炸效果由 playCorrectAnimation() 覆寫處理
     await super.onCorrect(result);
+    // 多音判斷專屬 bonus：連續對 10 題 +1★
+    const c = this.consecutiveCorrect;
+    if (c > 0 && c % 10 === 0) {
+      try {
+        const { StarsManager } = await import('../stars.js');
+        await StarsManager.add(1, 'yellow');
+      } catch (_e) {}
+      // 顯示 bonus 提示
+      const bonusBar = document.getElementById('game-bonus-bar');
+      if (bonusBar) {
+        bonusBar.textContent = `連續答對：${c} 題 bonus★+1 🎉`;
+        bonusBar.style.display = 'block';
+      }
+    }
   }
 
   // ════════════════════════════════════════════

@@ -446,6 +446,20 @@ export class StrokesCountGame extends GameEngine {
 
     // 呼叫 GameEngine 的答對流程（計算星星、更新遺忘曲線等）
     await super.onCorrect(result);
+
+    // 算出筆劃專屬 bonus：連續對 5 題 +1★
+    const c = this.consecutiveCorrect;
+    if (c > 0 && c % 5 === 0) {
+      try {
+        const { StarsManager } = await import('../stars.js');
+        await StarsManager.add(1, 'yellow');
+      } catch (_e) {}
+      const bonusBar = document.getElementById('game-bonus-bar');
+      if (bonusBar) {
+        bonusBar.textContent = `連續答對：${c} 題 bonus★+1 🎯`;
+        bonusBar.style.display = 'block';
+      }
+    }
   }
 
   // ════════════════════════════════════════════

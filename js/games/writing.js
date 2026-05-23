@@ -852,7 +852,28 @@ export class WritingGame extends GameEngine {
         // 提示一：不同音的詞語
         const words = question.otherPronWords
         if (words && words.length > 0) {
-          hintText = `此字另一個讀音的詞語：${words.slice(0, 3).join('、')}`
+          // 將詞語中的目標生字替換成注音 pv2（不直接顯示生字）
+          const charSet = new Set((AppState.characters ?? []).map(c => c['字'] ?? c.char))
+          const targetChar = question.character
+          // 找目標字的其他讀音注音
+          const allProns = question.dictEntry?.pronunciations ?? []
+          const targetPron = allProns.find(p => p.zhuyin === question.targetPronunciation)
+          const otherPronsMap = {}
+          allProns.forEach(p => {
+            if (p !== targetPron) {
+              for (const w of (p.words ?? [])) {
+                otherPronsMap[w] = p.zhuyin
+              }
+            }
+          })
+          const maskedWords = words.slice(0, 3).map(w => {
+            const pronForWord = otherPronsMap[w] || ''
+            if (!pronForWord) return w.replace(targetChar, '□')
+            // 將詞語中目標字替換為 pv2 注音 HTML
+            const zhuyinHtml = this._renderZhuyinHint(pronForWord)
+            return w.replace(targetChar, `<span class="writing-hint-zhuyin">${zhuyinHtml}</span>`)
+          }).join('、')
+          hintText = `此字另一個讀音的詞語：<span class="writing-hint-words">${maskedWords}</span>`
         } else {
           hintText = `這個字有多種讀音，仔細想想這個詞語的讀音`
         }
@@ -885,7 +906,7 @@ export class WritingGame extends GameEngine {
 
     // 顯示提示內容
     if (hintContent) {
-      hintContent.textContent = hintText
+      hintContent.innerHTML = hintText
       hintContent.style.display = 'block'
     }
 

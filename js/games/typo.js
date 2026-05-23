@@ -252,31 +252,71 @@ export class TypoGame extends GameEngine {
     const root = document.getElementById('typo-game-root');
     if (!root) return;
 
-    // 顯示金鑰匙閃爍
-    const keyEl = document.createElement('div');
-    keyEl.className = 'typo-key-animation';
-    keyEl.textContent = '🗝️';
-    root.appendChild(keyEl);
+    // ── 步驟一：正確寶箱放大到畫布中央 ──
+    const selectedChest = root.querySelector('.typo-chest.selected, .typo-chest');
+    const chestRect = selectedChest?.getBoundingClientRect();
 
-    await _sleep(400);
+    // 建立全螢幕覆蓋動畫層
+    const overlay = document.createElement('div');
+    overlay.className = 'typo-anim-overlay';
+    overlay.innerHTML = `
+      <div class="typo-anim-stage">
+        <img id="typo-anim-chest" class="typo-anim-chest" src="images/closebox.png" alt="寶箱">
+        <img id="typo-anim-key" class="typo-anim-key" src="images/closebox.png" alt="key" style="display:none;">
+      </div>
+    `;
+    document.body.appendChild(overlay);
 
-    // 寶箱開啟
-    const chest = root.querySelector('.typo-chest.selected, .typo-answer-chest');
-    if (chest) {
-      chest.classList.add('open');
-      chest.querySelector('.chest-icon')
-        && (chest.querySelector('.chest-icon').textContent = '💰');
+    const chestEl = overlay.querySelector('#typo-anim-chest');
+
+    // 入場：小→大（從寶箱位置放大到畫布中央）
+    chestEl.style.animation = 'typoChestZoomIn 0.5s cubic-bezier(.17,.67,.35,1.3) forwards';
+    await _sleep(500);
+
+    // ── 步驟二：顯示鑰匙，旋轉 90°插入寶箱 ──
+    const keyEl = document.createElement('img');
+    keyEl.id = 'typo-anim-key';
+    keyEl.className = 'typo-anim-key';
+    keyEl.src = 'images/closebox.png'; // 臨時，下面用 CSS 顯示
+    keyEl.alt = '🗝️';
+    // 改用 div 顯示 emoji key
+    const keyDiv = document.createElement('div');
+    keyDiv.className = 'typo-anim-key-emoji';
+    keyDiv.textContent = '🗝️';
+    overlay.querySelector('.typo-anim-stage').appendChild(keyDiv);
+    keyDiv.style.animation = 'typoKeyRotate 0.6s ease-in-out forwards';
+    await _sleep(600);
+
+    // ── 步驟三：寶箱換成開啟狀態 ──
+    chestEl.style.animation = 'none';
+    chestEl.src = 'images/openbox.png';
+    chestEl.style.animation = 'typoChestOpen 0.4s ease forwards';
+    keyDiv.style.opacity = '0';
+    await _sleep(300);
+
+    // ── 步驟四：星星從寶箱飛出 ──
+    const stage = overlay.querySelector('.typo-anim-stage');
+    const starsCount = Math.min(Math.max(Math.round(stars * 2), 5), 16);
+    for (let i = 0; i < starsCount; i++) {
+      const s = document.createElement('div');
+      s.className = 'typo-fly-star';
+      s.textContent = '⭐';
+      const angle = (i / starsCount) * 360;
+      const dist = 80 + Math.random() * 60;
+      s.style.setProperty('--angle', `${angle}deg`);
+      s.style.setProperty('--dist', `${dist}px`);
+      s.style.animationDelay = `${i * 40}ms`;
+      stage.appendChild(s);
     }
 
-    // 星星數字浮現
+    // 星星數字
     const starEl = document.createElement('div');
     starEl.className = 'typo-star-popup';
     starEl.textContent = `+★${stars}`;
-    root.appendChild(starEl);
+    stage.appendChild(starEl);
 
     await _sleep(1200);
-    keyEl.remove();
-    starEl.remove();
+    overlay.remove();
   }
 
   /**
@@ -305,11 +345,18 @@ export class TypoGame extends GameEngine {
 
     const q = this.currentQuestion;
     const explanation = q.explanation[q.correct] ?? '';
-    const radical = q.radical ?? '';
+    let radical = q.radical ?? '';
+    if (!radical) {
+      try {
+        const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+        const entry = chars.find(c => (c['字'] ?? c.char) === q.correct);
+        radical = entry?.radical ?? entry?.['部首'] ?? '';
+      } catch (_e) {}
+    }
 
     content.innerHTML = `
       <div class="typo-reveal">
-        <div class="typo-reveal-locked">🔒</div>
+        <img class="typo-reveal-errorbox" src="images/errorbox.png" alt="失敗寶箱">
         <div class="typo-reveal-answer">
           正確答案：<span class="typo-reveal-char">${q.correct}</span>
         </div>
@@ -338,7 +385,16 @@ export class TypoGame extends GameEngine {
       return `提示：錯字是第 ${pos} 個字`;
     }
     if (level === 2) {
-      const radical = question.radical ?? '？';
+      // 先用預存 radical，若空則即時查 characters.json
+      let radical = question.radical ?? '';
+      if (!radical) {
+        try {
+          const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+          const entry = chars.find(c => (c['字'] ?? c.char) === question.correct);
+          radical = entry?.radical ?? entry?.['部首'] ?? '？';
+        } catch (_e) { radical = '？'; }
+      }
+      if (!radical) radical = '？';
       return `提示：正確字的部首是「${radical}」`;
     }
     return '';
@@ -374,8 +430,7 @@ export class TypoGame extends GameEngine {
 
     const chestsHtml = options.map((char, i) => `
       <div class="typo-chest" data-index="${i}" data-char="${char}">
-        <div class="chest-lid">🪙</div>
-        <div class="chest-icon">📦</div>
+        <img class="chest-img" src="images/closebox.png" alt="寶箱" draggable="false">
         <div class="chest-char">${char}</div>
       </div>
     `).join('');
@@ -606,6 +661,18 @@ export class TypoGame extends GameEngine {
    * （GameEngine.onWrongFirstTime 呼叫 playWrongAnimation）
    * 模式二手寫若 fallback=retry：不計答錯，回到手寫畫面
    */
+
+  /**
+   * 覆寫 onWrongSecondTime：顯示錯誤答案後 2 秒自動跳下一題
+   */
+  async onWrongSecondTime(result) {
+    await super.onWrongSecondTime(result);
+    // 2 秒後自動進下一題
+    await _sleep(2000);
+    if (!this._gameCompleted) {
+      await this.nextQuestion();
+    }
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // 清理
@@ -872,10 +939,13 @@ function _findWrongPos(sentence, wrongChar) {
  * @returns {string}
  */
 function _getRadical(explanation, correctChar) {
-  if (!explanation) return '';
-  const desc = explanation[correctChar] ?? '';
-  // 格式如 "已經（注音：ㄧˇ）" — 部首從別處取
-  // 此處回傳 '' 待 characters.json 補充
+  // 從 JSONLoader 快取的 characters.json 查部首
+  try {
+    const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+    const entry = chars.find(c => (c['字'] ?? c.char) === correctChar);
+    if (entry?.radical) return entry.radical;
+    if (entry?.['部首']) return entry['部首'];
+  } catch (_e) {}
   return '';
 }
 
@@ -1121,8 +1191,102 @@ export function injectTypoStyles() {
       border-color: #e08c00;
     }
 
-    /* ── 寶箱（模式一）── */
-    .typo-chests {
+    /* ── 寶箱圖片（模式一）── */
+    .typo-chest .chest-img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.15s;
+    }
+    .typo-chest:hover .chest-img {
+      transform: scale(1.08);
+    }
+    .typo-chest.selected .chest-img {
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 8px #f5c842);
+    }
+
+    /* ── 揭曉錯誤寶箱 ── */
+    .typo-reveal-errorbox {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      animation: typoErrorboxShake 0.5s ease;
+    }
+
+    /* ── 答對動畫覆蓋層 ── */
+    .typo-anim-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .typo-anim-stage {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .typo-anim-chest {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+    }
+    .typo-anim-key-emoji {
+      position: absolute;
+      font-size: 3rem;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .typo-fly-star {
+      position: absolute;
+      font-size: 1.4rem;
+      top: 50%;
+      left: 50%;
+      pointer-events: none;
+      animation: typoStarFly 1.0s ease-out forwards;
+      --angle: 0deg;
+      --dist: 100px;
+    }
+
+    @keyframes typoChestZoomIn {
+      0%   { transform: scale(0.2); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes typoChestOpen {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.15) rotate(-3deg); }
+      100% { transform: scale(1.05); }
+    }
+    @keyframes typoKeyRotate {
+      0%   { transform: translate(-50%,-50%) rotate(0deg) translateX(60px); opacity: 0; }
+      30%  { opacity: 1; }
+      70%  { transform: translate(-50%,-50%) rotate(90deg) translateX(10px); opacity: 1; }
+      100% { transform: translate(-50%,-50%) rotate(90deg) translateX(0); opacity: 0; }
+    }
+    @keyframes typoStarFly {
+      0%   { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(0); opacity: 1; }
+      100% { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(var(--dist)); opacity: 0; }
+    }
+    @keyframes typoErrorboxShake {
+      0%,100% { transform: rotate(0deg); }
+      20%     { transform: rotate(-8deg); }
+      40%     { transform: rotate(8deg); }
+      60%     { transform: rotate(-5deg); }
+      80%     { transform: rotate(5deg); }
+    }
       display: flex;
       justify-content: center;
       gap: 16px;
@@ -1238,17 +1402,7 @@ export function injectTypoStyles() {
     }
 
     /* ── 揭曉答案 ── */
-    .typo-reveal {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      padding: 20px;
-      background: #fff8e1;
-      border-radius: 16px;
-      border: 2px solid #e0b000;
-    }
-    .typo-reveal-locked { font-size: 2rem; }
+    .typo-reveal { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px; background: #fff8e1; border-radius: 16px; border: 2px solid #e0b000; }
     .typo-reveal-answer {
       font-size: 1rem;
       color: #7d4e00;
