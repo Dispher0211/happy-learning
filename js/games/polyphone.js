@@ -1107,7 +1107,7 @@ export class PolyphoneGame extends GameEngine {
       line-height: 1;
       position: relative;
     }
-    .pp-bubble .pv2--dot { padding-top: 0.15em; }
+    .pp-bubble .pv2--dot { padding-top: 0.45em; }
     .pp-bubble .pv2-col {
       display: flex;
       flex-direction: column;
