@@ -106,6 +106,73 @@ function buildZhuyinHTML(zhuyin) {
 }
 
 /**
+ * 建立 pv2 格式注音 HTML（與 CardPage._renderZhuyinVerticalInline 完全相同邏輯）
+ * 用於鍵盤預覽區大字顯示
+ * @param {string} zhuyin
+ * @returns {string}
+ */
+function buildZhuyinPv2(zhuyin) {
+  if (!zhuyin) return ''
+
+  const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ')
+  const MEDIALS  = new Set('ㄧㄨㄩ')
+  const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
+
+  let src = normalizeZhuyin(zhuyin), tone = ''
+  if (src.startsWith('˙'))                        { tone = '˙'; src = src.slice(1) }
+  else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+    tone = src[src.length - 1]; src = src.slice(0, -1)
+  }
+
+  let initial = '', medial = '', final = ''
+  for (const c of src) {
+    if      (INITIALS.has(c)) initial = c
+    else if (MEDIALS.has(c))  medial  = c
+    else                      final  += c
+  }
+
+  const count   = [initial, medial, final].filter(Boolean).length
+  const hasDot  = tone === '˙'
+  const dotCls  = hasDot ? ' pv2--dot' : ''
+  const dotHtml = hasDot ? `<span class="pv2-dot">${escapeHTML(tone)}</span>` : ''
+  const toneHtml = (tone && tone !== '˙')
+    ? `<span class="pv2-tone">${escapeHTML(tone)}</span>`
+    : `<span class="pv2-tone pv2-empty"></span>`
+  const toneCol = `<span class="pv2-tone-col">` +
+    `<span class="pv2-empty pv2-tone-spacer"></span>` +
+    toneHtml +
+    `<span class="pv2-empty pv2-tone-spacer"></span>` +
+    `</span>`
+
+  if (count <= 1) {
+    const sym = initial || medial || final || src
+    return `<span class="pv2 pv2-a${dotCls} zy-pv2-lg bpmf-font">${dotHtml}` +
+      `<span class="pv2-col">` +
+      `<span class="pv2-r1 pv2-empty"></span>` +
+      `<span class="pv2-r2">${escapeHTML(sym)}</span>` +
+      `<span class="pv2-r3 pv2-empty"></span>` +
+      `</span>${toneCol}</span>`
+  }
+
+  if (count === 2) {
+    const slots = [initial, medial, final].filter(Boolean)
+    return `<span class="pv2 pv2-b${dotCls} zy-pv2-lg bpmf-font">${dotHtml}` +
+      `<span class="pv2-col">` +
+      `<span class="pv2-r1">${escapeHTML(slots[0])}</span>` +
+      `<span class="pv2-r2 pv2-empty"></span>` +
+      `<span class="pv2-r3">${escapeHTML(slots[1])}</span>` +
+      `</span>${toneCol}</span>`
+  }
+
+  return `<span class="pv2 pv2-c${dotCls} zy-pv2-lg bpmf-font">${dotHtml}` +
+    `<span class="pv2-col">` +
+    `<span class="pv2-r1">${escapeHTML(initial)}</span>` +
+    `<span class="pv2-r2">${escapeHTML(medial)}</span>` +
+    `<span class="pv2-r3">${escapeHTML(final)}</span>` +
+    `</span>${toneCol}</span>`
+}
+
+/**
  * 拆解注音字串為聲母、韻母（含介音）、聲調
  * @param {string} zhuyin  例：'ㄉㄚˋ'
  * @returns {{ initial: string, final: string, tone: string }}
@@ -1014,8 +1081,13 @@ export class ZhuyinGame extends GameEngine {
     const preview = document.getElementById('zy-kb-preview')
     if (!preview) return
     const composed = this._composeZhuyinFromKeyboard()
-    preview.textContent = composed || '——'
-    preview.classList.toggle('zy-kb-preview-filled', !!composed)
+    if (!composed) {
+      preview.innerHTML = '<span class="zy-kb-preview-placeholder">——</span>'
+      preview.classList.remove('zy-kb-preview-filled')
+    } else {
+      preview.innerHTML = buildZhuyinPv2(composed)
+      preview.classList.add('zy-kb-preview-filled')
+    }
   }
 
   /**
@@ -1388,14 +1460,50 @@ export class ZhuyinGame extends GameEngine {
   .zy-kb-tone-key       { font-size: 12px; min-width: 52px; }
   .zy-kb-preview {
     text-align: center;
-    font-size: 30px;
-    color: #94a3b8;
-    padding: 6px 0;
-    letter-spacing: 4px;
-    min-height: 44px;
+    padding: 6px 0 10px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: color 0.2s;
   }
-  .zy-kb-preview-filled { color: #1e40af; font-weight: 700; }
+  .zy-kb-preview-placeholder { font-size: 30px; color: #94a3b8; letter-spacing: 4px; }
+  .zy-kb-preview-filled { color: #1e40af; }
+
+  /* pv2 系統（從 card.css 移植） */
+  .pv2 {
+    display: inline-flex; flex-direction: row; align-items: flex-end;
+    vertical-align: bottom; white-space: nowrap; line-height: 1; position: relative;
+  }
+  .pv2--dot { padding-top: 0.15em; }
+  .pv2-col  { display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+  .pv2-tone-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .pv2-r1, .pv2-r2, .pv2-r3,
+  .pv2-tone, .pv2-tone-spacer {
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-zhuyin, 'BpmfIVS','Noto Sans TC',serif);
+    font-weight: 700; line-height: 1; color: inherit;
+  }
+  .pv2-tone-spacer { flex: 1; visibility: hidden; }
+  .pv2-dot {
+    position: absolute; top: 0; left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-zhuyin, 'BpmfIVS','Noto Sans TC',serif);
+    font-weight: 900; line-height: 1; color: inherit; pointer-events: none;
+  }
+  .pv2-b .pv2-r2 { visibility: hidden; }
+  .pv2-empty { visibility: hidden; }
+
+  /* 鍵盤預覽大字尺寸 context */
+  .zy-pv2-lg.pv2-col,
+  .zy-pv2-lg .pv2-col  { height: 4.2rem; }
+  .zy-pv2-lg.pv2-tone-col,
+  .zy-pv2-lg .pv2-tone-col { height: 4.2rem; }
+  .zy-pv2-lg .pv2-r1,
+  .zy-pv2-lg .pv2-r2,
+  .zy-pv2-lg .pv2-r3   { font-size: 1.5rem; min-width: 1.6rem; color: #1d4ed8; }
+  .zy-pv2-lg .pv2-tone { font-size: 1.3rem; color: #1d4ed8; }
+  .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -0.2em; color: #1d4ed8; }
   .zy-kb-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 
   /* ══ 提示區 ════════════════════════════════════════════════════ */
