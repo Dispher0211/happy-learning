@@ -1504,7 +1504,7 @@ export class ZhuyinGame extends GameEngine {
   .zy-pv2-lg .pv2-r3   { font-size: 1.5rem; min-width: 1.6rem; color: #1d4ed8; }
   .zy-pv2-lg .pv2-tone { font-size: 1.3rem; color: #1d4ed8; }
   .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -1.2rem; color: #1d4ed8; }
-  .zy-pv2-lg.pv2--dot  { padding-top: 1.4rem; }
+  .zy-pv2-lg.pv2--dot  { padding-top: 1.0rem; }
   .zy-kb-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 
   /* ══ 提示區 ════════════════════════════════════════════════════ */
