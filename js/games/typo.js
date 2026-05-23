@@ -99,6 +99,10 @@ export class TypoGame extends GameEngine {
 
     /** @type {boolean} 防止模式二「請再寫一次」重複觸發 */
     this._hwRetrying = false;
+    this._hwRetryCount = 0;
+
+    /** @type {number} 手寫辨識連續 fallback 計數（達3次強制判答錯） */
+    this._hwRetryCount = 0;
 
     /** @type {HTMLCanvasElement|null} 模式二手寫 canvas 元素 */
     this._typoCanvas = null;
@@ -152,8 +156,19 @@ export class TypoGame extends GameEngine {
       }
     }
 
-    // 打亂後取 count 題
-    const pool = [..._shuffle(prioritized), ..._shuffle(rest)];
+    // 若生字簿有字：優先用生字簿相關題目；若不足才補其他題
+    // 若生字簿為空：直接用所有 confusables
+    let pool;
+    if (myChars.size > 0 && prioritized.length >= count) {
+      // 生字簿題目夠用 → 完全只用生字簿相關題
+      pool = _shuffle(prioritized);
+    } else if (myChars.size > 0 && prioritized.length > 0) {
+      // 生字簿題目不足 → 先用完生字簿，再補其他
+      pool = [..._shuffle(prioritized), ..._shuffle(rest)];
+    } else {
+      // 無生字簿 → 全部 confusables
+      pool = _shuffle([...prioritized, ...rest]);
+    }
     const selected = pool.slice(0, count);
 
     // 轉換為 GameEngine 標準 question 格式
@@ -656,11 +671,22 @@ export class TypoGame extends GameEngine {
    * @param {object} question
    */
   async _handleHwFallback(question) {
-    // 確保 isAnswering / attemptCount 不受污染（fallback 不算一次作答）
+    this._hwRetryCount = (this._hwRetryCount ?? 0) + 1;
+
+    // 連續辨識失敗達 3 次 → 強制計入一次答錯（不永久卡住）
+    if (this._hwRetryCount >= 3) {
+      console.warn('[TypoGame] 手寫辨識連續失敗3次，強制答錯');
+      this._hwRetryCount = 0;
+      this.isAnswering = false;
+      // 直接走 submitAnswer 空字串 → judgeAnswer 會回 { correct: false }
+      await this.submitAnswer({ recognized: '' });
+      return;
+    }
+
+    // 一般 fallback：顯示「請再寫一次」
     this.isAnswering = false;
     this._hwRetrying = true;
     this._typoClearCanvas();
-    // 清除舊 listener 以防重複綁定
     this._cleanupHandwritingListeners();
     this._renderMode2WriteStep(question);
   }
@@ -1237,15 +1263,11 @@ export function injectTypoStyles() {
       inset: 0;
       background: rgba(0,0,0,0.65);
       z-index: 999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       pointer-events: none;
     }
     .typo-anim-stage {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1282,10 +1304,7 @@ export function injectTypoStyles() {
     }
     /* ── 鑰匙動畫 ── */
     .typo-fs-img {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      position: relative;
       width: min(92vw, 92vh);
       height: min(92vw, 92vh);
       object-fit: contain;
