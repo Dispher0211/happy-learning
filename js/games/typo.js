@@ -104,6 +104,9 @@ export class TypoGame extends GameEngine {
     /** @type {number} 手寫辨識連續 fallback 計數（達3次強制判答錯） */
     this._hwRetryCount = 0;
 
+    /** @type {string|null} 上一次辨識結果（用於 fallback 提示） */
+    this._lastRecognizedText = null;
+
     /** @type {HTMLCanvasElement|null} 模式二手寫 canvas 元素 */
     this._typoCanvas = null;
 
@@ -373,9 +376,6 @@ export class TypoGame extends GameEngine {
    * @param {object} result
    */
   async showCorrectAnswer(result) {
-    const content = document.getElementById('typo-content');
-    if (!content) return;
-
     const q = this.currentQuestion;
     const explanation = q.explanation[q.correct] ?? '';
     let radical = q.radical ?? '';
@@ -386,6 +386,25 @@ export class TypoGame extends GameEngine {
         radical = entry?.radical ?? entry?.['部首'] ?? '';
       } catch (_e) {}
     }
+
+    // ── 步驟一：errorbox 全螢幕出現 ──
+    const overlay = document.createElement('div');
+    overlay.className = 'typo-anim-overlay';
+    overlay.innerHTML = `<div class="typo-anim-stage"><img id="typo-error-fs" class="typo-fs-img" src="images/errorbox.png" alt="失敗"></div>`;
+    document.body.appendChild(overlay);
+
+    const errImg = overlay.querySelector('#typo-error-fs');
+    errImg.style.animation = 'typoFsZoomIn 0.5s cubic-bezier(.17,.67,.35,1.3) forwards';
+    await _sleep(700);
+
+    // ── 步驟二：errorbox 縮小到寶箱位置（模擬飛入 content 區） ──
+    errImg.style.animation = 'typoErrorboxShrink 0.45s cubic-bezier(.6,0,.4,1) forwards';
+    await _sleep(480);
+    overlay.remove();
+
+    // ── 步驟三：顯示正確答案畫面 ──
+    const content = document.getElementById('typo-content');
+    if (!content) return;
 
     content.innerHTML = `
       <div class="typo-reveal">
@@ -572,15 +591,23 @@ export class TypoGame extends GameEngine {
    * 渲染模式二第二步（手寫區）
    * @param {object} question
    */
-  _renderMode2WriteStep(question) {
+  _renderMode2WriteStep(question, recognizedResult = null) {
     const content = document.getElementById('typo-content');
     if (!content) return;
+
+    // 產生辨識結果提示 HTML（辨識失敗 fallback 時顯示）
+    const recognizedHtml = (this._hwRetrying && recognizedResult)
+      ? `<div class="typo-recognized-hint">🔍 辨識為：「<span class="typo-recognized-char">${recognizedResult}</span>」，請再寫一次</div>`
+      : (this._hwRetrying
+          ? '<div class="typo-retry-msg">辨識失敗，請再寫一次 ✏️</div>'
+          : '');
 
     content.innerHTML = `
       <div class="typo-mode2-write">
         <div class="typo-instruction">
           請寫出正確的字（原句中「<span class="typo-wrong-char">${question.wrong}</span>」應改為？）
         </div>
+        ${recognizedHtml}
         <div class="typo-canvas-wrap">
           <canvas id="${CANVAS_ID}" width="280" height="280"></canvas>
         </div>
@@ -589,9 +616,6 @@ export class TypoGame extends GameEngine {
           <button id="typo-btn-clear" class="typo-btn secondary">清除</button>
           <button id="typo-btn-confirm" class="typo-btn primary">確認</button>
         </div>
-        ${this._hwRetrying
-          ? '<div class="typo-retry-msg">請再寫一次 ✏️</div>'
-          : ''}
       </div>
     `;
 
@@ -634,13 +658,9 @@ export class TypoGame extends GameEngine {
           const result = await HandwritingManager.recognize(this._typoCanvas, { mode: 'chinese' });
 
           // 辨識失敗 → fallback: retry（不計入答錯，不走 submitAnswer）
-          if (!result || (!result.text && !result.candidates?.length)) {
-            await this._handleHwFallback(question);
-            return;
-          }
-
-          const recognized = result.text ?? result.candidates?.[0] ?? '';
-          if (!recognized) {
+          const recognized = result?.text ?? result?.candidates?.[0] ?? '';
+          if (!result || !recognized) {
+            this._lastRecognizedText = recognized || null;
             await this._handleHwFallback(question);
             return;
           }
@@ -651,6 +671,7 @@ export class TypoGame extends GameEngine {
 
         } catch (err) {
           console.error('[TypoGame] 手寫辨識錯誤:', err);
+          this._lastRecognizedText = null;
           await this._handleHwFallback(question);
         } finally {
           this._hwRecognizing = false;
@@ -683,12 +704,12 @@ export class TypoGame extends GameEngine {
       return;
     }
 
-    // 一般 fallback：顯示「請再寫一次」
+    // 一般 fallback：顯示辨識結果 + 清空畫布，讓玩家重寫
     this.isAnswering = false;
     this._hwRetrying = true;
     this._typoClearCanvas();
     this._cleanupHandwritingListeners();
-    this._renderMode2WriteStep(question);
+    this._renderMode2WriteStep(question, this._lastRecognizedText);
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -1290,6 +1311,29 @@ export function injectTypoStyles() {
     @keyframes typoFsFadeOut {
       0%   { opacity: 1; transform: scale(1); }
       100% { opacity: 0; transform: scale(1.05); }
+    }
+    @keyframes typoErrorboxShrink {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.12); }
+    }
+    /* ── 辨識結果提示 ── */
+    .typo-recognized-hint {
+      text-align: center;
+      font-size: 1rem;
+      color: #c0392b;
+      font-weight: 600;
+      background: #fff3cd;
+      border: 2px solid #f5c842;
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin: 0 auto 8px;
+      max-width: 320px;
+      animation: fadeIn 0.3s ease;
+    }
+    .typo-recognized-char {
+      font-size: 1.3em;
+      font-weight: 900;
+      color: #e07b00;
     }
     @keyframes typoStarFly {
       0%   { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(0); opacity: 1; }
