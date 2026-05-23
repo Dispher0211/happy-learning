@@ -92,6 +92,20 @@ function normalizeZhuyin(str) {
 }
 
 /**
+ * 建立直式注音 HTML（與 CardPage._renderZhuyinVertical 相同格式）：
+ *   writing-mode: vertical-rl + text-orientation: upright
+ *   聲調符號（ˊˇˋ˙）直接隨注音串放入，瀏覽器自動處理位置
+ * @param {string} zhuyin
+ * @returns {string}
+ */
+function buildZhuyinHTML(zhuyin) {
+  const pron = normalizeZhuyin(zhuyin)
+  if (!pron) return ''
+  const chars = [...pron].map(c => `<span class="zy-bv-char">${escapeHTML(c)}</span>`).join('')
+  return `<div class="zy-bpmf-vertical-wrap bpmf-font">${chars}</div>`
+}
+
+/**
  * 拆解注音字串為聲母、韻母（含介音）、聲調
  * @param {string} zhuyin  例：'ㄉㄚˋ'
  * @returns {{ initial: string, final: string, tone: string }}
@@ -535,15 +549,10 @@ export class ZhuyinGame extends GameEngine {
     const bpmfEl   = document.getElementById('zy-answer-bpmf')
     if (!question || !reveal || !bpmfEl) return
 
-    // 直式注音體（writing-mode: vertical-rl）
-    bpmfEl.innerHTML = `<span class="zy-bpmf-vertical">${escapeHTML(question.pronunciation)}</span>`
+    bpmfEl.innerHTML = buildZhuyinHTML(question.pronunciation || '')
     reveal.style.display = 'flex'
 
-    // 弱化手寫區，表示此題已結束
-    const writeArea = document.getElementById('zy-write-area')
-    if (writeArea) writeArea.style.opacity = '0.3'
-
-    // 隱藏備援鍵盤
+    // 隱藏鍵盤
     const kbFallback = document.getElementById('zy-kb-fallback')
     if (kbFallback) kbFallback.style.display = 'none'
   }
@@ -1424,13 +1433,23 @@ export class ZhuyinGame extends GameEngine {
     margin: 8px 16px 0;
   }
   .zy-answer-label { font-size: 13px; color: #b45309; font-weight: 600; }
-  .zy-answer-bpmf  { font-size: 36px; color: #1e40af; letter-spacing: 6px; }
-  .zy-bpmf-vertical {
+  .zy-answer-bpmf  { font-size: 40px; color: #E11D48; text-align: center; }
+  /* 直式注音容器：與 CardPage .zhuyin-vertical 完全相同邏輯 */
+  .zy-bpmf-vertical-wrap {
+    display: inline-block;
     writing-mode: vertical-rl;
     text-orientation: upright;
-    display: inline-block;
-    letter-spacing: 4px;
-    font-family: 'BpmfIVS', 'Noto Sans TC', serif;
+    font-family: var(--font-zhuyin, 'BpmfIVS', 'Noto Sans TC', serif);
+    vertical-align: middle;
+  }
+  /* 每個注音字元：display:inline 繼承父層 vertical-rl */
+  .zy-bv-char {
+    font-family: var(--font-zhuyin, 'BpmfIVS', 'Noto Sans TC', serif);
+    font-size: 2.2rem;
+    color: #E11D48;
+    font-weight: 700;
+    line-height: 1.3;
+    display: inline;
   }
 
   /* ══ 提示按鈕列 ════════════════════════════════════════════════ */
