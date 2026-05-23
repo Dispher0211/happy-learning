@@ -133,17 +133,16 @@ export class TypoGame extends GameEngine {
   async loadQuestions(config) {
     const count = config?.count ?? 10;
 
-    // 載入 confusables.json（JSONLoader 已含快取與 fallback）
+    // 載入 confusables.json
     if (this._allConfusables.length === 0) {
       this._allConfusables = await JSONLoader.load('confusables') ?? [];
     }
-
     if (this._allConfusables.length === 0) {
       console.warn('[TypoGame] confusables.json 無資料，使用示範題');
       this._allConfusables = _getFallbackData();
     }
 
-    // 優先選含生字簿字的題目；不足再補其他題
+    // 生字簿過濾
     const myChars = new Set(
       (AppState.characters ?? []).map(c => c.char ?? c['字'] ?? '')
     );
@@ -152,41 +151,53 @@ export class TypoGame extends GameEngine {
     let rest = [];
 
     for (const item of this._allConfusables) {
-      if (myChars.has(item.correct) || myChars.has(item.wrong)) {
-        prioritized.push(item);
-      } else {
-        rest.push(item);
-      }
+      // 支援新格式（sentences[]）與舊格式（wrong）取出所有可能的錯字
+      const wrongs = _extractWrongs(item);
+      const isRelated = myChars.has(item.correct) || wrongs.some(w => myChars.has(w));
+      if (isRelated) prioritized.push(item);
+      else rest.push(item);
     }
 
-    // 若生字簿有字：優先用生字簿相關題目；若不足才補其他題
-    // 若生字簿為空：直接用所有 confusables
     let pool;
     if (myChars.size > 0 && prioritized.length >= count) {
-      // 生字簿題目夠用 → 完全只用生字簿相關題
       pool = _shuffle(prioritized);
     } else if (myChars.size > 0 && prioritized.length > 0) {
-      // 生字簿題目不足 → 先用完生字簿，再補其他
       pool = [..._shuffle(prioritized), ..._shuffle(rest)];
     } else {
-      // 無生字簿 → 全部 confusables
       pool = _shuffle([...prioritized, ...rest]);
     }
     const selected = pool.slice(0, count);
 
-    // 轉換為 GameEngine 標準 question 格式
-    this.questions = selected.map(item => ({
-      char: item.correct,        // 正確的字（作為 WrongQueue key）
-      correct: item.correct,     // 正確字
-      wrong: item.wrong,         // 句中出現的錯字
-      sentence: item.sentence,   // 含錯字的句子
-      wrongPosition: item.wrong_position ?? _findWrongPos(item.sentence, item.wrong),
-      explanation: item.explanation ?? {},
-      relatedChars: item.related_characters ?? [],
-      radical: _getRadical(item.explanation, item.correct),
-      // 模式由 renderQuestion 決定
-      mode: Math.random() < MODE1_RATIO ? 'mode1' : 'mode2',
-    }));
+    // 轉換為 GameEngine 標準格式
+    // 支援新格式（sentences[]）與舊格式（sentence/wrong_position/wrong）
+    this.questions = selected.map(item => {
+      // ① 從 sentences[] 隨機挑一個句子（新格式），或用舊格式單句
+      const sentenceData = _pickSentence(item);
+
+      // ② 從 related_characters 中隨機挑一個錯字（排除 correct）
+      //    若 related_characters 只有 1 個可用或為空，回退到 sentenceData.wrong
+      const wrong = _pickRandomWrong(item, sentenceData);
+
+      // ③ 將句子中 sentenceData.wrong 換成新的 wrong（若不同）
+      const { sentence, wrongPosition } = _substituteWrong(
+        sentenceData.sentence,
+        sentenceData.wrong_position,
+        sentenceData.wrong ?? item.wrong ?? '',
+        wrong
+      );
+
+      return {
+        char: item.correct,
+        correct: item.correct,
+        wrong,
+        sentence,
+        wrongPosition,
+        explanation: item.explanation ?? {},
+        relatedChars: item.related_characters ?? [],
+        radical: _getRadical(item.explanation, item.correct),
+        mode: Math.random() < MODE1_RATIO ? 'mode1' : 'mode2',
+      };
+    });
   }
 
   /**
@@ -1029,6 +1040,81 @@ function _shuffle(arr) {
   return a;
 }
 
+/**
+ * 取出一筆 confusable 資料中所有可能的錯字
+ * 支援新格式（sentences[].wrong）與舊格式（.wrong）
+ * @param {object} item
+ * @returns {string[]}
+ */
+function _extractWrongs(item) {
+  if (Array.isArray(item.sentences) && item.sentences.length > 0) {
+    return [...new Set(item.sentences.map(s => s.wrong).filter(Boolean))];
+  }
+  return item.wrong ? [item.wrong] : [];
+}
+
+/**
+ * 從 sentences[] 隨機挑一個句子（新格式），或回傳舊格式單句
+ * @param {object} item
+ * @returns {{ sentence: string, wrong_position: number, wrong: string }}
+ */
+function _pickSentence(item) {
+  if (Array.isArray(item.sentences) && item.sentences.length > 0) {
+    return item.sentences[Math.floor(Math.random() * item.sentences.length)];
+  }
+  // 舊格式相容
+  return {
+    sentence: item.sentence ?? '',
+    wrong_position: item.wrong_position ?? 0,
+    wrong: item.wrong ?? '',
+  };
+}
+
+/**
+ * 從 related_characters 隨機挑一個字作為本次錯字
+ * 排除 correct 本身；若可選字不足則回退到 sentenceData.wrong
+ * @param {object} item
+ * @param {{ wrong: string }} sentenceData
+ * @returns {string}
+ */
+function _pickRandomWrong(item, sentenceData) {
+  const correct = item.correct;
+  const related = (item.related_characters ?? []).filter(
+    ch => ch !== correct && ch.length === 1
+  );
+  if (related.length === 0) return sentenceData.wrong ?? item.wrong ?? correct;
+  return related[Math.floor(Math.random() * related.length)];
+}
+
+/**
+ * 將句子中指定位置的字換成新的錯字（若不同）
+ * 若 originalWrong 與 newWrong 相同則直接回傳原句
+ * @param {string} sentence
+ * @param {number} wrongPosition
+ * @param {string} originalWrong
+ * @param {string} newWrong
+ * @returns {{ sentence: string, wrongPosition: number }}
+ */
+function _substituteWrong(sentence, wrongPosition, originalWrong, newWrong) {
+  if (!newWrong || newWrong === originalWrong) {
+    return { sentence, wrongPosition };
+  }
+  const chars = [...sentence];
+  // 若 wrongPosition 在範圍內且該位置就是 originalWrong，直接替換
+  if (wrongPosition >= 0 && wrongPosition < chars.length) {
+    chars[wrongPosition] = newWrong;
+    return { sentence: chars.join(''), wrongPosition };
+  }
+  // fallback：找 originalWrong 的第一個位置替換
+  const idx = [...sentence].indexOf(originalWrong);
+  if (idx !== -1) {
+    const arr = [...sentence];
+    arr[idx] = newWrong;
+    return { sentence: arr.join(''), wrongPosition: idx };
+  }
+  return { sentence, wrongPosition };
+}
+
 /** @param {number} ms */
 const _sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1056,26 +1142,29 @@ function _getFallbackData() {
   return [
     {
       correct: '已',
-      wrong: '己',
-      sentence: '他每天都己好功課了。',
-      wrong_position: 5,
-      explanation: { '已': '已經（ㄧˇ）', '己': '自己（ㄐㄧˇ）' },
+      sentences: [
+        { sentence: '他每天都己好功課了。', wrong_position: 5, wrong: '己' },
+        { sentence: '工作己經完成了。',     wrong_position: 2, wrong: '己' },
+      ],
+      explanation: { '已': '已經（ㄧˇ）', '己': '自己（ㄐㄧˇ）', '巳': 'ㄙˋ' },
       related_characters: ['己', '已', '巳'],
     },
     {
       correct: '在',
-      wrong: '再',
-      sentence: '小明再家裡寫作業。',
-      wrong_position: 3,
+      sentences: [
+        { sentence: '小明再家裡寫作業。', wrong_position: 3, wrong: '再' },
+        { sentence: '他再學校等你。',     wrong_position: 2, wrong: '再' },
+      ],
       explanation: { '在': '在家（ㄗㄞˋ）', '再': '再次（ㄗㄞˋ）' },
       related_characters: ['在', '再'],
     },
     {
       correct: '的',
-      wrong: '得',
-      sentence: '他跑得很快得樣子。',
-      wrong_position: 7,
-      explanation: { '的': '助詞（ㄉㄜ˙）', '得': '助詞結果（ㄉㄜ˙）' },
+      sentences: [
+        { sentence: '他跑得很快得樣子。', wrong_position: 7, wrong: '得' },
+        { sentence: '漂亮得花朵。',       wrong_position: 3, wrong: '得' },
+      ],
+      explanation: { '的': '助詞（ㄉㄜ˙）', '得': '助詞結果（ㄉㄜ˙）', '地': 'ㄉㄜ˙' },
       related_characters: ['的', '得', '地'],
     },
   ];

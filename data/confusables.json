@@ -1,11 +1,16 @@
 [
   {
     "correct": "歡",
-    "wrong": "飲",
-    "sentence": "大家都飲迎新同學",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "大家都飲迎新同學",
+        "wrong_position": 3,
+        "wrong": "飲"
+      }
+       { "sentence": "小朋友都很喜嚾寶可夢", "wrong_position": 7, "wrong": "嚾" }
+    ],
     "explanation": {
-      "歡": "ㄏㄨㄢ",
+      "嚾": "ㄏㄨㄢ",
       "飲": "ㄧㄣˋ、ㄧㄣˇ",
       "軟": "ㄖㄨㄢˇ",
       "欺": "ㄑㄧ",
@@ -13,7 +18,7 @@
       "砍": "ㄎㄢˇ"
     },
     "related_characters": [
-      "歡",
+      "嚾",
       "飲",
       "軟",
       "欺",
@@ -23,9 +28,13 @@
   },
   {
     "correct": "您",
-    "wrong": "你",
-    "sentence": "老師你好",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "老師你好",
+        "wrong_position": 2,
+        "wrong": "你"
+      }
+    ],
     "explanation": {
       "您": "ㄋㄧㄣˊ",
       "你": "ㄋㄧˇ",
@@ -43,9 +52,13 @@
   },
   {
     "correct": "都",
-    "wrong": "部",
-    "sentence": "我們部喜歡運動",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我們部喜歡運動",
+        "wrong_position": 2,
+        "wrong": "部"
+      }
+    ],
     "explanation": {
       "都": "ㄉㄡ、ㄉㄨ",
       "部": "ㄅㄨˋ",
@@ -65,9 +78,13 @@
   },
   {
     "correct": "作",
-    "wrong": "昨",
-    "sentence": "我在寫昨業",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我在寫昨業",
+        "wrong_position": 3,
+        "wrong": "昨"
+      }
+    ],
     "explanation": {
       "作": "ㄗㄨㄛˊ、ㄗㄨㄛˋ",
       "昨": "ㄗㄨㄛˊ",
@@ -87,9 +104,13 @@
   },
   {
     "correct": "夢",
-    "wrong": "婪",
-    "sentence": "我昨天做了一個好婪",
-    "wrong_position": 8,
+    "sentences": [
+      {
+        "sentence": "我昨天做了一個好婪",
+        "wrong_position": 8,
+        "wrong": "婪"
+      }
+    ],
     "explanation": {
       "夢": "ㄇㄥˋ",
       "婪": "ㄌㄢˊ",
@@ -107,9 +128,13 @@
   },
   {
     "correct": "躺",
-    "wrong": "尚",
-    "sentence": "我喜歡尚在草地上",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我喜歡尚在草地上",
+        "wrong_position": 3,
+        "wrong": "尚"
+      }
+    ],
     "explanation": {
       "躺": "ㄊㄤˇ",
       "尚": "ㄕㄤˋ",
@@ -129,9 +154,13 @@
   },
   {
     "correct": "自",
-    "wrong": "白",
-    "sentence": "我會白己穿衣服",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我會白己穿衣服",
+        "wrong_position": 2,
+        "wrong": "白"
+      }
+    ],
     "explanation": {
       "自": "ㄗˋ",
       "白": "ㄅㄞˊ",
@@ -151,9 +180,13 @@
   },
   {
     "correct": "亮",
-    "wrong": "高",
-    "sentence": "月高圓圓又亮亮的",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "月高圓圓又亮亮的",
+        "wrong_position": 1,
+        "wrong": "高"
+      }
+    ],
     "explanation": {
       "亮": "ㄌㄧㄤˋ",
       "高": "ㄍㄠ",
@@ -173,9 +206,13 @@
   },
   {
     "correct": "變",
-    "wrong": "戀",
-    "sentence": "魔術師會戀魔術",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "魔術師會戀魔術",
+        "wrong_position": 4,
+        "wrong": "戀"
+      }
+    ],
     "explanation": {
       "變": "ㄅㄧㄢˋ",
       "戀": "ㄌㄧㄢˋ",
@@ -195,9 +232,13 @@
   },
   {
     "correct": "成",
-    "wrong": "戒",
-    "sentence": "我長大想戒為老師",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我長大想戒為老師",
+        "wrong_position": 4,
+        "wrong": "戒"
+      }
+    ],
     "explanation": {
       "成": "ㄔㄥˊ",
       "戒": "ㄐㄧㄝˋ",
@@ -217,9 +258,13 @@
   },
   {
     "correct": "棉",
-    "wrong": "帛",
-    "sentence": "我喜歡吃帛花糖",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我喜歡吃帛花糖",
+        "wrong_position": 4,
+        "wrong": "帛"
+      }
+    ],
     "explanation": {
       "棉": "ㄇㄧㄢˊ",
       "帛": "ㄅㄛˊ",
@@ -239,9 +284,13 @@
   },
   {
     "correct": "糖",
-    "wrong": "塘",
-    "sentence": "塘果吃太多會牙痛",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "塘果吃太多會牙痛",
+        "wrong_position": 0,
+        "wrong": "塘"
+      }
+    ],
     "explanation": {
       "糖": "ㄊㄤˊ",
       "塘": "ㄊㄤˊ",
@@ -261,9 +310,13 @@
   },
   {
     "correct": "黑",
-    "wrong": "墨",
-    "sentence": "墨板上寫著生字",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "墨板上寫著生字",
+        "wrong_position": 0,
+        "wrong": "墨"
+      }
+    ],
     "explanation": {
       "黑": "ㄏㄟ",
       "墨": "ㄇㄛˋ",
@@ -283,9 +336,13 @@
   },
   {
     "correct": "鵝",
-    "wrong": "我",
-    "sentence": "天我在湖面上游泳",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "天我在湖面上游泳",
+        "wrong_position": 1,
+        "wrong": "我"
+      }
+    ],
     "explanation": {
       "鵝": "ㄜˊ",
       "我": "ㄨㄛˇ",
@@ -305,9 +362,13 @@
   },
   {
     "correct": "得",
-    "wrong": "待",
-    "sentence": "妹妹長待很可愛",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "妹妹長待很可愛",
+        "wrong_position": 3,
+        "wrong": "待"
+      }
+    ],
     "explanation": {
       "得": "ㄉㄟˇ、˙ㄉㄜ、ㄉㄜˊ",
       "待": "ㄉㄞ、ㄉㄞˋ",
@@ -327,9 +388,13 @@
   },
   {
     "correct": "更",
-    "wrong": "便",
-    "sentence": "明天會便美好",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "明天會便美好",
+        "wrong_position": 3,
+        "wrong": "便"
+      }
+    ],
     "explanation": {
       "更": "ㄍㄥˋ、ㄍㄥ",
       "便": "ㄅㄧㄢˋ、ㄆㄧㄢˊ",
@@ -349,9 +414,13 @@
   },
   {
     "correct": "妹",
-    "wrong": "味",
-    "sentence": "我的味妹很愛哭",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我的味妹很愛哭",
+        "wrong_position": 2,
+        "wrong": "味"
+      }
+    ],
     "explanation": {
       "妹": "ㄇㄟˋ",
       "味": "ㄨㄟˋ",
@@ -371,9 +440,13 @@
   },
   {
     "correct": "雨",
-    "wrong": "雪",
-    "sentence": "外面正在下大雪",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "外面正在下大雪",
+        "wrong_position": 6,
+        "wrong": "雪"
+      }
+    ],
     "explanation": {
       "雨": "ㄩˇ、ㄩˋ",
       "雪": "ㄒㄩㄝˇ",
@@ -393,9 +466,13 @@
   },
   {
     "correct": "雙",
-    "wrong": "隻",
-    "sentence": "我有一隻小手",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我有一隻小手",
+        "wrong_position": 3,
+        "wrong": "隻"
+      }
+    ],
     "explanation": {
       "雙": "ㄕㄨㄤ",
       "隻": "ㄓ",
@@ -413,9 +490,13 @@
   },
   {
     "correct": "穿",
-    "wrong": "突",
-    "sentence": "我會自己突鞋子",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我會自己突鞋子",
+        "wrong_position": 4,
+        "wrong": "突"
+      }
+    ],
     "explanation": {
       "穿": "ㄔㄨㄢ",
       "突": "ㄊㄨˊ",
@@ -435,9 +516,13 @@
   },
   {
     "correct": "滴",
-    "wrong": "適",
-    "sentence": "雨適落在窗戶上",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "雨適落在窗戶上",
+        "wrong_position": 1,
+        "wrong": "適"
+      }
+    ],
     "explanation": {
       "滴": "ㄉㄧ",
       "適": "ㄕˋ",
@@ -457,9 +542,13 @@
   },
   {
     "correct": "遊",
-    "wrong": "游",
-    "sentence": "我們去郊外游玩",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "我們去郊外游玩",
+        "wrong_position": 5,
+        "wrong": "游"
+      }
+    ],
     "explanation": {
       "遊": "ㄧㄡˊ",
       "游": "ㄧㄡˊ",
@@ -479,9 +568,13 @@
   },
   {
     "correct": "戲",
-    "wrong": "虛",
-    "sentence": "小朋友在玩遊虛",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "小朋友在玩遊虛",
+        "wrong_position": 6,
+        "wrong": "虛"
+      }
+    ],
     "explanation": {
       "戲": "ㄒㄧˋ",
       "虛": "ㄒㄩ",
@@ -501,9 +594,13 @@
   },
   {
     "correct": "顆",
-    "wrong": "頁",
-    "sentence": "天上有一頁星星",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "天上有一頁星星",
+        "wrong_position": 4,
+        "wrong": "頁"
+      }
+    ],
     "explanation": {
       "顆": "ㄎㄜ",
       "頁": "ㄧㄝˋ",
@@ -523,9 +620,13 @@
   },
   {
     "correct": "珠",
-    "wrong": "朱",
-    "sentence": "露朱在葉子上閃爍",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "露朱在葉子上閃爍",
+        "wrong_position": 1,
+        "wrong": "朱"
+      }
+    ],
     "explanation": {
       "珠": "ㄓㄨ",
       "朱": "ㄓㄨ",
@@ -545,9 +646,13 @@
   },
   {
     "correct": "真",
-    "wrong": "直",
-    "sentence": "妳直是一個好孩子",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "妳直是一個好孩子",
+        "wrong_position": 1,
+        "wrong": "直"
+      }
+    ],
     "explanation": {
       "真": "ㄓㄣ",
       "直": "ㄓˊ",
@@ -567,9 +672,13 @@
   },
   {
     "correct": "落",
-    "wrong": "洛",
-    "sentence": "樹葉從樹上洛下來",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "樹葉從樹上洛下來",
+        "wrong_position": 5,
+        "wrong": "洛"
+      }
+    ],
     "explanation": {
       "落": "ㄌㄚˋ、ㄌㄠˋ、ㄌㄨㄛˋ",
       "洛": "ㄌㄨㄛˋ",
@@ -589,9 +698,13 @@
   },
   {
     "correct": "面",
-    "wrong": "麵",
-    "sentence": "大家都看著前麵",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "大家都看著前麵",
+        "wrong_position": 6,
+        "wrong": "麵"
+      }
+    ],
     "explanation": {
       "面": "ㄇㄧㄢˋ",
       "麵": "ㄇㄧㄢˋ",
@@ -611,9 +724,13 @@
   },
   {
     "correct": "魚",
-    "wrong": "魯",
-    "sentence": "小魯在水裡游",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "小魯在水裡游",
+        "wrong_position": 1,
+        "wrong": "魯"
+      }
+    ],
     "explanation": {
       "魚": "ㄩˊ",
       "魯": "ㄌㄨˇ",
@@ -633,9 +750,13 @@
   },
   {
     "correct": "缸",
-    "wrong": "扛",
-    "sentence": "魚扛的水很乾淨",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "魚扛的水很乾淨",
+        "wrong_position": 1,
+        "wrong": "扛"
+      }
+    ],
     "explanation": {
       "缸": "ㄍㄤ",
       "扛": "ㄍㄤ、ㄎㄤˊ",
@@ -653,9 +774,13 @@
   },
   {
     "correct": "金",
-    "wrong": "全",
-    "sentence": "全魚全身金閃閃",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "全魚全身金閃閃",
+        "wrong_position": 0,
+        "wrong": "全"
+      }
+    ],
     "explanation": {
       "金": "ㄐㄧㄣ",
       "全": "ㄑㄩㄢˊ",
@@ -675,9 +800,13 @@
   },
   {
     "correct": "游",
-    "wrong": "旅",
-    "sentence": "魚兒在水裡旅",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "魚兒在水裡旅",
+        "wrong_position": 5,
+        "wrong": "旅"
+      }
+    ],
     "explanation": {
       "游": "ㄧㄡˊ",
       "旅": "ㄌㄩˇ",
@@ -697,9 +826,13 @@
   },
   {
     "correct": "彩",
-    "wrong": "採",
-    "sentence": "雨後出現了採虹",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "雨後出現了採虹",
+        "wrong_position": 5,
+        "wrong": "採"
+      }
+    ],
     "explanation": {
       "彩": "ㄘㄞˇ",
       "採": "ㄘㄞˇ",
@@ -719,9 +852,13 @@
   },
   {
     "correct": "虹",
-    "wrong": "紅",
-    "sentence": "天上的彩紅好美",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "天上的彩紅好美",
+        "wrong_position": 4,
+        "wrong": "紅"
+      }
+    ],
     "explanation": {
       "虹": "ㄏㄨㄥˊ",
       "紅": "ㄍㄨㄥ、ㄏㄨㄥˊ",
@@ -741,9 +878,13 @@
   },
   {
     "correct": "太",
-    "wrong": "大",
-    "sentence": "大陽公公出來了",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "大陽公公出來了",
+        "wrong_position": 0,
+        "wrong": "大"
+      }
+    ],
     "explanation": {
       "太": "ㄊㄞˋ",
       "大": "ㄉㄞˋ、ㄉㄚˋ",
@@ -763,9 +904,13 @@
   },
   {
     "correct": "國",
-    "wrong": "圍",
-    "sentence": "我愛我的圍家",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我愛我的圍家",
+        "wrong_position": 4,
+        "wrong": "圍"
+      }
+    ],
     "explanation": {
       "國": "ㄍㄨㄛˊ",
       "圍": "ㄨㄟˊ",
@@ -785,9 +930,13 @@
   },
   {
     "correct": "掃",
-    "wrong": "婦",
-    "sentence": "大家一起來婦地",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "大家一起來婦地",
+        "wrong_position": 5,
+        "wrong": "婦"
+      }
+    ],
     "explanation": {
       "掃": "ㄙㄠˇ、ㄙㄠˋ",
       "婦": "ㄈㄨˋ",
@@ -807,9 +956,13 @@
   },
   {
     "correct": "除",
-    "wrong": "徐",
-    "sentence": "徐夕要吃團圓飯",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "徐夕要吃團圓飯",
+        "wrong_position": 0,
+        "wrong": "徐"
+      }
+    ],
     "explanation": {
       "除": "ㄔㄨˊ",
       "徐": "ㄒㄩˊ",
@@ -829,9 +982,13 @@
   },
   {
     "correct": "洗",
-    "wrong": "先",
-    "sentence": "吃飯前要先先手",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "吃飯前要先先手",
+        "wrong_position": 5,
+        "wrong": "先"
+      }
+    ],
     "explanation": {
       "洗": "ㄒㄧˇ",
       "先": "ㄒㄧㄢ",
@@ -849,9 +1006,13 @@
   },
   {
     "correct": "淨",
-    "wrong": "睜",
-    "sentence": "雙手要洗乾睜",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "雙手要洗乾睜",
+        "wrong_position": 5,
+        "wrong": "睜"
+      }
+    ],
     "explanation": {
       "淨": "ㄐㄧㄥˋ",
       "睜": "ㄓㄥ",
@@ -871,9 +1032,13 @@
   },
   {
     "correct": "馬",
-    "wrong": "媽",
-    "sentence": "小媽在草原奔跑",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "小媽在草原奔跑",
+        "wrong_position": 1,
+        "wrong": "媽"
+      }
+    ],
     "explanation": {
       "馬": "ㄇㄚˇ",
       "媽": "ㄇㄚ",
@@ -893,9 +1058,13 @@
   },
   {
     "correct": "低",
-    "wrong": "底",
-    "sentence": "弟弟底頭在寫字",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "弟弟底頭在寫字",
+        "wrong_position": 2,
+        "wrong": "底"
+      }
+    ],
     "explanation": {
       "低": "ㄉㄧ",
       "底": "ㄉㄧˇ",
@@ -915,9 +1084,13 @@
   },
   {
     "correct": "刷",
-    "wrong": "涮",
-    "sentence": "每天早晚要涮牙",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "每天早晚要涮牙",
+        "wrong_position": 5,
+        "wrong": "涮"
+      }
+    ],
     "explanation": {
       "刷": "ㄕㄨㄚ",
       "涮": "（待補）",
@@ -937,9 +1110,13 @@
   },
   {
     "correct": "樹",
-    "wrong": "術",
-    "sentence": "大術下好涼快",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "大術下好涼快",
+        "wrong_position": 1,
+        "wrong": "術"
+      }
+    ],
     "explanation": {
       "樹": "ㄕㄨˋ",
       "術": "ㄕㄨˋ",
@@ -959,9 +1136,13 @@
   },
   {
     "correct": "葉",
-    "wrong": "棄",
-    "sentence": "綠色的樹棄很美",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "綠色的樹棄很美",
+        "wrong_position": 4,
+        "wrong": "棄"
+      }
+    ],
     "explanation": {
       "葉": "ㄧㄝˋ",
       "棄": "ㄑㄧˋ",
@@ -981,9 +1162,13 @@
   },
   {
     "correct": "很",
-    "wrong": "狠",
-    "sentence": "今天的太陽狠大",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "今天的太陽狠大",
+        "wrong_position": 5,
+        "wrong": "狠"
+      }
+    ],
     "explanation": {
       "很": "ㄏㄣˇ",
       "狠": "ㄏㄣˇ",
@@ -1003,9 +1188,13 @@
   },
   {
     "correct": "認",
-    "wrong": "忍",
-    "sentence": "我忍識很多字",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我忍識很多字",
+        "wrong_position": 1,
+        "wrong": "忍"
+      }
+    ],
     "explanation": {
       "認": "ㄖㄣˋ",
       "忍": "ㄖㄣˇ",
@@ -1023,9 +1212,13 @@
   },
   {
     "correct": "送",
-    "wrong": "逐",
-    "sentence": "爸爸逐我上學",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "爸爸逐我上學",
+        "wrong_position": 2,
+        "wrong": "逐"
+      }
+    ],
     "explanation": {
       "送": "ㄙㄨㄥˋ",
       "逐": "ㄓㄨˊ",
@@ -1045,9 +1238,13 @@
   },
   {
     "correct": "地",
-    "wrong": "他",
-    "sentence": "他上有一片葉子",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "他上有一片葉子",
+        "wrong_position": 0,
+        "wrong": "他"
+      }
+    ],
     "explanation": {
       "地": "˙ㄉㄜ、ㄉㄧˋ",
       "他": "ㄊㄚ",
@@ -1067,9 +1264,13 @@
   },
   {
     "correct": "化",
-    "wrong": "花",
-    "sentence": "冰塊融花成水了",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "冰塊融花成水了",
+        "wrong_position": 3,
+        "wrong": "花"
+      }
+    ],
     "explanation": {
       "化": "ㄏㄨㄚ、ㄏㄨㄚˋ",
       "花": "ㄏㄨㄚ",
@@ -1089,9 +1290,13 @@
   },
   {
     "correct": "趣",
-    "wrong": "取",
-    "sentence": "這個故事很有取",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "這個故事很有取",
+        "wrong_position": 6,
+        "wrong": "取"
+      }
+    ],
     "explanation": {
       "趣": "ㄑㄩˋ",
       "取": "ㄑㄩˇ",
@@ -1111,9 +1316,13 @@
   },
   {
     "correct": "線",
-    "wrong": "錢",
-    "sentence": "媽媽在縫衣服的錢",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "媽媽在縫衣服的錢",
+        "wrong_position": 7,
+        "wrong": "錢"
+      }
+    ],
     "explanation": {
       "線": "ㄒㄧㄢˋ",
       "錢": "ㄑㄧㄢˊ",
@@ -1133,9 +1342,13 @@
   },
   {
     "correct": "風",
-    "wrong": "鳳",
-    "sentence": "微鳳吹過真涼快",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "微鳳吹過真涼快",
+        "wrong_position": 1,
+        "wrong": "鳳"
+      }
+    ],
     "explanation": {
       "風": "ㄈㄥˋ、ㄈㄥ",
       "鳳": "ㄈㄥˋ",
@@ -1155,9 +1368,13 @@
   },
   {
     "correct": "箏",
-    "wrong": "爭",
-    "sentence": "我們去放風爭",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "我們去放風爭",
+        "wrong_position": 5,
+        "wrong": "爭"
+      }
+    ],
     "explanation": {
       "箏": "ㄓㄥ",
       "爭": "ㄓㄥ",
@@ -1177,9 +1394,13 @@
   },
   {
     "correct": "升",
-    "wrong": "生",
-    "sentence": "太陽從東邊生起",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "太陽從東邊生起",
+        "wrong_position": 5,
+        "wrong": "生"
+      }
+    ],
     "explanation": {
       "升": "ㄕㄥ",
       "生": "ㄕㄥ",
@@ -1199,9 +1420,13 @@
   },
   {
     "correct": "神",
-    "wrong": "伸",
-    "sentence": "他的眼伸很專注",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "他的眼伸很專注",
+        "wrong_position": 3,
+        "wrong": "伸"
+      }
+    ],
     "explanation": {
       "神": "ㄕㄣˊ",
       "伸": "ㄕㄣ",
@@ -1221,9 +1446,13 @@
   },
   {
     "correct": "奇",
-    "wrong": "寄",
-    "sentence": "我對世界充滿好寄",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "我對世界充滿好寄",
+        "wrong_position": 7,
+        "wrong": "寄"
+      }
+    ],
     "explanation": {
       "奇": "ㄐㄧ、ㄑㄧˊ",
       "寄": "ㄐㄧˋ",
@@ -1243,9 +1472,13 @@
   },
   {
     "correct": "跑",
-    "wrong": "抱",
-    "sentence": "小狗在草地上奔抱",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "小狗在草地上奔抱",
+        "wrong_position": 7,
+        "wrong": "抱"
+      }
+    ],
     "explanation": {
       "跑": "ㄆㄠˇ",
       "抱": "ㄅㄠˋ",
@@ -1265,9 +1498,13 @@
   },
   {
     "correct": "跳",
-    "wrong": "桃",
-    "sentence": "小青蛙在水裡桃",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "小青蛙在水裡桃",
+        "wrong_position": 6,
+        "wrong": "桃"
+      }
+    ],
     "explanation": {
       "跳": "ㄊㄧㄠˋ",
       "桃": "ㄊㄠˊ",
@@ -1287,9 +1524,13 @@
   },
   {
     "correct": "笑",
-    "wrong": "哭",
-    "sentence": "他的哭聲很清脆",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "他的哭聲很清脆",
+        "wrong_position": 2,
+        "wrong": "哭"
+      }
+    ],
     "explanation": {
       "笑": "ㄒㄧㄠˋ",
       "哭": "ㄎㄨ",
@@ -1309,9 +1550,13 @@
   },
   {
     "correct": "每",
-    "wrong": "悔",
-    "sentence": "悔天都要吃早餐",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "悔天都要吃早餐",
+        "wrong_position": 0,
+        "wrong": "悔"
+      }
+    ],
     "explanation": {
       "每": "ㄇㄟˇ",
       "悔": "ㄏㄨㄟˇ",
@@ -1329,9 +1574,13 @@
   },
   {
     "correct": "件",
-    "wrong": "牛",
-    "sentence": "這是一牛漂亮衣服",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "這是一牛漂亮衣服",
+        "wrong_position": 3,
+        "wrong": "牛"
+      }
+    ],
     "explanation": {
       "件": "ㄐㄧㄢˋ",
       "牛": "ㄋㄧㄡˊ",
@@ -1351,9 +1600,13 @@
   },
   {
     "correct": "事",
-    "wrong": "是",
-    "sentence": "你有什麼心是嗎？",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "你有什麼心是嗎？",
+        "wrong_position": 5,
+        "wrong": "是"
+      }
+    ],
     "explanation": {
       "事": "ㄕˋ",
       "是": "ㄕˋ",
@@ -1373,9 +1626,13 @@
   },
   {
     "correct": "情",
-    "wrong": "請",
-    "sentence": "我最喜歡看表請",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "我最喜歡看表請",
+        "wrong_position": 6,
+        "wrong": "請"
+      }
+    ],
     "explanation": {
       "情": "ㄑㄧㄥˊ",
       "請": "ㄑㄧㄥˇ",
@@ -1395,9 +1652,13 @@
   },
   {
     "correct": "生",
-    "wrong": "升",
-    "sentence": "祝你升日快樂",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "祝你升日快樂",
+        "wrong_position": 2,
+        "wrong": "升"
+      }
+    ],
     "explanation": {
       "生": "ㄕㄥ",
       "升": "ㄕㄥ",
@@ -1417,9 +1678,13 @@
   },
   {
     "correct": "日",
-    "wrong": "目",
-    "sentence": "明天是我的生目",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "明天是我的生目",
+        "wrong_position": 6,
+        "wrong": "目"
+      }
+    ],
     "explanation": {
       "日": "ㄖˋ",
       "目": "ㄇㄨˋ",
@@ -1439,9 +1704,13 @@
   },
   {
     "correct": "今",
-    "wrong": "令",
-    "sentence": "令天是星期一",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "令天是星期一",
+        "wrong_position": 0,
+        "wrong": "令"
+      }
+    ],
     "explanation": {
       "今": "ㄐㄧㄣ",
       "令": "ㄌㄧㄥˋ",
@@ -1461,9 +1730,13 @@
   },
   {
     "correct": "記",
-    "wrong": "己",
-    "sentence": "老師說的話要牢己",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "老師說的話要牢己",
+        "wrong_position": 7,
+        "wrong": "己"
+      }
+    ],
     "explanation": {
       "記": "ㄐㄧˋ",
       "己": "ㄐㄧˇ",
@@ -1483,9 +1756,13 @@
   },
   {
     "correct": "嗎",
-    "wrong": "媽",
-    "sentence": "你喜歡吃蘋果媽？",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "你喜歡吃蘋果媽？",
+        "wrong_position": 6,
+        "wrong": "媽"
+      }
+    ],
     "explanation": {
       "嗎": "˙ㄇㄚ、ㄇㄚˇ",
       "媽": "ㄇㄚ",
@@ -1505,9 +1782,13 @@
   },
   {
     "correct": "學",
-    "wrong": "字",
-    "sentence": "我喜歡去上字",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "我喜歡去上字",
+        "wrong_position": 5,
+        "wrong": "字"
+      }
+    ],
     "explanation": {
       "學": "ㄒㄩㄝˊ",
       "字": "ㄗˋ",
@@ -1527,9 +1808,13 @@
   },
   {
     "correct": "收",
-    "wrong": "叫",
-    "sentence": "我叫到一封信",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我叫到一封信",
+        "wrong_position": 1,
+        "wrong": "叫"
+      }
+    ],
     "explanation": {
       "收": "ㄕㄡ",
       "叫": "ㄐㄧㄠˋ",
@@ -1549,9 +1834,13 @@
   },
   {
     "correct": "張",
-    "wrong": "長",
-    "sentence": "這是一長白紙",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "這是一長白紙",
+        "wrong_position": 3,
+        "wrong": "長"
+      }
+    ],
     "explanation": {
       "張": "ㄓㄤ",
       "長": "ㄓㄤˇ、ㄔㄤˊ",
@@ -1571,9 +1860,13 @@
   },
   {
     "correct": "祝",
-    "wrong": "況",
-    "sentence": "況你考試順利",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "況你考試順利",
+        "wrong_position": 0,
+        "wrong": "況"
+      }
+    ],
     "explanation": {
       "祝": "ㄓㄨˋ",
       "況": "ㄎㄨㄤˋ",
@@ -1593,9 +1886,13 @@
   },
   {
     "correct": "福",
-    "wrong": "幅",
-    "sentence": "祝大家幸幅快樂",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "祝大家幸幅快樂",
+        "wrong_position": 4,
+        "wrong": "幅"
+      }
+    ],
     "explanation": {
       "福": "ㄈㄨˊ",
       "幅": "ㄈㄨˊ",
@@ -1615,9 +1912,13 @@
   },
   {
     "correct": "第",
-    "wrong": "弟",
-    "sentence": "他是全班弟一名",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "他是全班弟一名",
+        "wrong_position": 4,
+        "wrong": "弟"
+      }
+    ],
     "explanation": {
       "第": "ㄉㄧˋ",
       "弟": "ㄉㄧˋ",
@@ -1637,9 +1938,13 @@
   },
   {
     "correct": "次",
-    "wrong": "欠",
-    "sentence": "下一欠要更努力",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "下一欠要更努力",
+        "wrong_position": 2,
+        "wrong": "欠"
+      }
+    ],
     "explanation": {
       "次": "ㄘˋ",
       "欠": "ㄑㄧㄢˋ",
@@ -1659,9 +1964,13 @@
   },
   {
     "correct": "謝",
-    "wrong": "射",
-    "sentence": "射謝老師的教導",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "射謝老師的教導",
+        "wrong_position": 0,
+        "wrong": "射"
+      }
+    ],
     "explanation": {
       "謝": "ㄒㄧㄝˋ",
       "射": "ㄧˋ、ㄕㄜˋ、ㄧㄝˋ",
@@ -1679,9 +1988,13 @@
   },
   {
     "correct": "想",
-    "wrong": "相",
-    "sentence": "我好相吃紅蘋果",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我好相吃紅蘋果",
+        "wrong_position": 2,
+        "wrong": "相"
+      }
+    ],
     "explanation": {
       "想": "ㄒㄧㄤˇ",
       "相": "ㄒㄧㄤ、ㄒㄧㄤˋ",
@@ -1701,9 +2014,13 @@
   },
   {
     "correct": "燈",
-    "wrong": "登",
-    "sentence": "晚上要開登",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "晚上要開登",
+        "wrong_position": 4,
+        "wrong": "登"
+      }
+    ],
     "explanation": {
       "燈": "ㄉㄥ",
       "登": "ㄉㄥ",
@@ -1723,9 +2040,13 @@
   },
   {
     "correct": "前",
-    "wrong": "剪",
-    "sentence": "大家排隊往剪走",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "大家排隊往剪走",
+        "wrong_position": 5,
+        "wrong": "剪"
+      }
+    ],
     "explanation": {
       "前": "ㄑㄧㄢˊ",
       "剪": "ㄐㄧㄢˇ",
@@ -1745,9 +2066,13 @@
   },
   {
     "correct": "點",
-    "wrong": "占",
-    "sentence": "老師在占名",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "老師在占名",
+        "wrong_position": 3,
+        "wrong": "占"
+      }
+    ],
     "explanation": {
       "點": "ㄉㄧㄢˇ",
       "占": "ㄓㄢ、ㄓㄢˋ",
@@ -1767,9 +2092,13 @@
   },
   {
     "correct": "半",
-    "wrong": "伴",
-    "sentence": "時間過了一伴",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "時間過了一伴",
+        "wrong_position": 5,
+        "wrong": "伴"
+      }
+    ],
     "explanation": {
       "半": "ㄅㄢˋ",
       "伴": "ㄅㄢˋ",
@@ -1789,9 +2118,13 @@
   },
   {
     "correct": "清",
-    "wrong": "請",
-    "sentence": "溪水很請澈",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "溪水很請澈",
+        "wrong_position": 3,
+        "wrong": "請"
+      }
+    ],
     "explanation": {
       "清": "ㄑㄧㄥ",
       "請": "ㄑㄧㄥˇ",
@@ -1811,9 +2144,13 @@
   },
   {
     "correct": "楚",
-    "wrong": "林",
-    "sentence": "你看林清楚了嗎？",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "你看林清楚了嗎？",
+        "wrong_position": 2,
+        "wrong": "林"
+      }
+    ],
     "explanation": {
       "楚": "ㄔㄨˇ",
       "林": "ㄌㄧㄣˊ",
@@ -1831,9 +2168,13 @@
   },
   {
     "correct": "停",
-    "wrong": "亭",
-    "sentence": "車子亭在路邊",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "車子亭在路邊",
+        "wrong_position": 2,
+        "wrong": "亭"
+      }
+    ],
     "explanation": {
       "停": "ㄊㄧㄥˊ",
       "亭": "ㄊㄧㄥˊ",
@@ -1853,9 +2194,13 @@
   },
   {
     "correct": "休",
-    "wrong": "体",
-    "sentence": "爸爸週末在家体息",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "爸爸週末在家体息",
+        "wrong_position": 6,
+        "wrong": "体"
+      }
+    ],
     "explanation": {
       "休": "ㄒㄧㄡ",
       "体": "（待補）",
@@ -1875,9 +2220,13 @@
   },
   {
     "correct": "息",
-    "wrong": "悉",
-    "sentence": "我們去休悉一息",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我們去休悉一息",
+        "wrong_position": 4,
+        "wrong": "悉"
+      }
+    ],
     "explanation": {
       "息": "ㄒㄧˊ",
       "悉": "ㄒㄧ",
@@ -1897,9 +2246,13 @@
   },
   {
     "correct": "兒",
-    "wrong": "几",
-    "sentence": "几童節快要到了",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "几童節快要到了",
+        "wrong_position": 0,
+        "wrong": "几"
+      }
+    ],
     "explanation": {
       "兒": "ㄦ、ㄦˊ",
       "几": "ㄐㄧ",
@@ -1919,9 +2272,13 @@
   },
   {
     "correct": "吧",
-    "wrong": "把",
-    "sentence": "我們一起去跑步把",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "我們一起去跑步把",
+        "wrong_position": 7,
+        "wrong": "把"
+      }
+    ],
     "explanation": {
       "吧": "˙ㄅㄚ、ㄅㄚ",
       "把": "ㄅㄚˋ、ㄅㄚˇ",
@@ -1941,9 +2298,13 @@
   },
   {
     "correct": "幫",
-    "wrong": "綁",
-    "sentence": "我會綁媽媽做家事",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我會綁媽媽做家事",
+        "wrong_position": 2,
+        "wrong": "綁"
+      }
+    ],
     "explanation": {
       "幫": "ㄅㄤ",
       "綁": "ㄅㄤˇ",
@@ -1963,9 +2324,13 @@
   },
   {
     "correct": "加",
-    "wrong": "枷",
-    "sentence": "在果汁裡枷一點糖",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "在果汁裡枷一點糖",
+        "wrong_position": 4,
+        "wrong": "枷"
+      }
+    ],
     "explanation": {
       "加": "ㄐㄧㄚ",
       "枷": "ㄐㄧㄚ",
@@ -1985,9 +2350,13 @@
   },
   {
     "correct": "油",
-    "wrong": "抽",
-    "sentence": "媽媽在炒菜鍋裡倒抽",
-    "wrong_position": 8,
+    "sentences": [
+      {
+        "sentence": "媽媽在炒菜鍋裡倒抽",
+        "wrong_position": 8,
+        "wrong": "抽"
+      }
+    ],
     "explanation": {
       "油": "ㄧㄡˊ",
       "抽": "ㄔㄡ",
@@ -2007,9 +2376,13 @@
   },
   {
     "correct": "慢",
-    "wrong": "漫",
-    "sentence": "小蝸牛爬得很漫",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "小蝸牛爬得很漫",
+        "wrong_position": 6,
+        "wrong": "漫"
+      }
+    ],
     "explanation": {
       "慢": "ㄇㄢˋ",
       "漫": "ㄇㄢˋ",
@@ -2029,9 +2402,13 @@
   },
   {
     "correct": "喜",
-    "wrong": "嘉",
-    "sentence": "我很嘉歡上學",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我很嘉歡上學",
+        "wrong_position": 2,
+        "wrong": "嘉"
+      }
+    ],
     "explanation": {
       "喜": "ㄒㄧˇ",
       "嘉": "ㄐㄧㄚ",
@@ -2051,9 +2428,13 @@
   },
   {
     "correct": "要",
-    "wrong": "腰",
-    "sentence": "我想腰吃紅蘋果",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我想腰吃紅蘋果",
+        "wrong_position": 2,
+        "wrong": "腰"
+      }
+    ],
     "explanation": {
       "要": "ㄧㄠ、ㄧㄠˋ",
       "腰": "ㄧㄠ",
@@ -2073,9 +2454,13 @@
   },
   {
     "correct": "青",
-    "wrong": "晴",
-    "sentence": "草地上有小晴蛙",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "草地上有小晴蛙",
+        "wrong_position": 5,
+        "wrong": "晴"
+      }
+    ],
     "explanation": {
       "青": "ㄑㄧㄥ",
       "晴": "ㄑㄧㄥˊ",
@@ -2095,9 +2480,13 @@
   },
   {
     "correct": "靜",
-    "wrong": "睜",
-    "sentence": "圖書館裡要安睜",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "圖書館裡要安睜",
+        "wrong_position": 6,
+        "wrong": "睜"
+      }
+    ],
     "explanation": {
       "靜": "ㄐㄧㄥˋ",
       "睜": "ㄓㄥ",
@@ -2117,9 +2506,13 @@
   },
   {
     "correct": "天",
-    "wrong": "夫",
-    "sentence": "今夫的太陽很大",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "今夫的太陽很大",
+        "wrong_position": 1,
+        "wrong": "夫"
+      }
+    ],
     "explanation": {
       "天": "ㄊㄧㄢ",
       "夫": "ㄈㄨ、ㄈㄨˊ",
@@ -2139,9 +2532,13 @@
   },
   {
     "correct": "空",
-    "wrong": "穿",
-    "sentence": "小鳥在穿中飛",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "小鳥在穿中飛",
+        "wrong_position": 3,
+        "wrong": "穿"
+      }
+    ],
     "explanation": {
       "空": "ㄎㄨㄥ、ㄎㄨㄥˋ",
       "穿": "ㄔㄨㄢ",
@@ -2161,9 +2558,13 @@
   },
   {
     "correct": "雲",
-    "wrong": "運",
-    "sentence": "白運像棉花糖",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "白運像棉花糖",
+        "wrong_position": 1,
+        "wrong": "運"
+      }
+    ],
     "explanation": {
       "雲": "ㄩㄣˊ",
       "運": "ㄩㄣˋ",
@@ -2183,9 +2584,13 @@
   },
   {
     "correct": "水",
-    "wrong": "永",
-    "sentence": "渴了要記得喝永",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "渴了要記得喝永",
+        "wrong_position": 6,
+        "wrong": "永"
+      }
+    ],
     "explanation": {
       "水": "ㄕㄨㄟˇ",
       "永": "ㄩㄥˇ",
@@ -2205,9 +2610,13 @@
   },
   {
     "correct": "蟲",
-    "wrong": "雖",
-    "sentence": "小雖在地上爬",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "小雖在地上爬",
+        "wrong_position": 1,
+        "wrong": "雖"
+      }
+    ],
     "explanation": {
       "蟲": "ㄔㄨㄥˊ",
       "雖": "ㄙㄨㄟ",
@@ -2227,9 +2636,13 @@
   },
   {
     "correct": "鳥",
-    "wrong": "烏",
-    "sentence": "小烏在樹上唱歌",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "小烏在樹上唱歌",
+        "wrong_position": 1,
+        "wrong": "烏"
+      }
+    ],
     "explanation": {
       "鳥": "ㄋㄧㄠˇ",
       "烏": "ㄨ",
@@ -2249,9 +2662,13 @@
   },
   {
     "correct": "草",
-    "wrong": "早",
-    "sentence": "羊兒在吃青早",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "羊兒在吃青早",
+        "wrong_position": 5,
+        "wrong": "早"
+      }
+    ],
     "explanation": {
       "草": "ㄘㄠˇ",
       "早": "ㄗㄠˇ",
@@ -2271,9 +2688,13 @@
   },
   {
     "correct": "現",
-    "wrong": "規",
-    "sentence": "我規在就要出門",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我規在就要出門",
+        "wrong_position": 1,
+        "wrong": "規"
+      }
+    ],
     "explanation": {
       "現": "ㄒㄧㄢˋ",
       "規": "ㄍㄨㄟ",
@@ -2293,9 +2714,13 @@
   },
   {
     "correct": "月",
-    "wrong": "用",
-    "sentence": "每個用都有好計畫",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "每個用都有好計畫",
+        "wrong_position": 2,
+        "wrong": "用"
+      }
+    ],
     "explanation": {
       "月": "ㄩㄝˋ",
       "用": "ㄩㄥˋ",
@@ -2315,9 +2740,13 @@
   },
   {
     "correct": "看",
-    "wrong": "眉",
-    "sentence": "我喜歡眉故事書",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我喜歡眉故事書",
+        "wrong_position": 3,
+        "wrong": "眉"
+      }
+    ],
     "explanation": {
       "看": "ㄎㄢ、ㄎㄢˋ",
       "眉": "ㄇㄟˊ",
@@ -2337,9 +2766,13 @@
   },
   {
     "correct": "見",
-    "wrong": "貝",
-    "sentence": "下次貝面再聊",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "下次貝面再聊",
+        "wrong_position": 2,
+        "wrong": "貝"
+      }
+    ],
     "explanation": {
       "見": "ㄒㄧㄢˋ、ㄐㄧㄢˋ",
       "貝": "ㄅㄟˋ",
@@ -2359,9 +2792,13 @@
   },
   {
     "correct": "像",
-    "wrong": "象",
-    "sentence": "他長得很象爸爸",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "他長得很象爸爸",
+        "wrong_position": 4,
+        "wrong": "象"
+      }
+    ],
     "explanation": {
       "像": "ㄒㄧㄤˋ",
       "象": "ㄒㄧㄤˋ",
@@ -2381,9 +2818,13 @@
   },
   {
     "correct": "船",
-    "wrong": "般",
-    "sentence": "小般在海中游",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "小般在海中游",
+        "wrong_position": 1,
+        "wrong": "般"
+      }
+    ],
     "explanation": {
       "船": "ㄔㄨㄢˊ",
       "般": "ㄅㄛ、ㄆㄢˊ、ㄅㄢ",
@@ -2403,9 +2844,13 @@
   },
   {
     "correct": "港",
-    "wrong": "巷",
-    "sentence": "漁船回巷了",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "漁船回巷了",
+        "wrong_position": 3,
+        "wrong": "巷"
+      }
+    ],
     "explanation": {
       "港": "ㄍㄤˇ",
       "巷": "ㄒㄧㄤˋ",
@@ -2423,9 +2868,13 @@
   },
   {
     "correct": "口",
-    "wrong": "回",
-    "sentence": "張開回吃水果",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "張開回吃水果",
+        "wrong_position": 2,
+        "wrong": "回"
+      }
+    ],
     "explanation": {
       "口": "ㄎㄡˇ",
       "回": "ㄏㄨㄟˊ",
@@ -2445,9 +2894,13 @@
   },
   {
     "correct": "享",
-    "wrong": "亨",
-    "sentence": "大家分亨玩具",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "大家分亨玩具",
+        "wrong_position": 3,
+        "wrong": "亨"
+      }
+    ],
     "explanation": {
       "享": "ㄒㄧㄤˇ",
       "亨": "ㄏㄥ",
@@ -2467,9 +2920,13 @@
   },
   {
     "correct": "受",
-    "wrong": "愛",
-    "sentence": "我感愛到愛",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我感愛到愛",
+        "wrong_position": 2,
+        "wrong": "愛"
+      }
+    ],
     "explanation": {
       "受": "ㄕㄡˋ",
       "愛": "ㄞˋ",
@@ -2489,9 +2946,13 @@
   },
   {
     "correct": "溫",
-    "wrong": "溼",
-    "sentence": "水溼剛剛好",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "水溼剛剛好",
+        "wrong_position": 1,
+        "wrong": "溼"
+      }
+    ],
     "explanation": {
       "溫": "ㄨㄣ",
       "溼": "ㄕ",
@@ -2511,9 +2972,13 @@
   },
   {
     "correct": "道",
-    "wrong": "首",
-    "sentence": "我知首答案了",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我知首答案了",
+        "wrong_position": 2,
+        "wrong": "首"
+      }
+    ],
     "explanation": {
       "道": "ㄉㄠˋ",
       "首": "ㄕㄡˇ",
@@ -2533,9 +2998,13 @@
   },
   {
     "correct": "暖",
-    "wrong": "緩",
-    "sentence": "太陽出來真溫緩",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "太陽出來真溫緩",
+        "wrong_position": 6,
+        "wrong": "緩"
+      }
+    ],
     "explanation": {
       "暖": "ㄋㄨㄢˇ",
       "緩": "ㄏㄨㄢˇ",
@@ -2555,9 +3024,13 @@
   },
   {
     "correct": "種",
-    "wrong": "重",
-    "sentence": "農夫在田裡重菜",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "農夫在田裡重菜",
+        "wrong_position": 5,
+        "wrong": "重"
+      }
+    ],
     "explanation": {
       "種": "ㄓㄨㄥˇ、ㄓㄨㄥˋ",
       "重": "ㄔㄨㄥˊ、ㄓㄨㄥˋ",
@@ -2577,9 +3050,13 @@
   },
   {
     "correct": "問",
-    "wrong": "間",
-    "sentence": "有間題可以提問",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "有間題可以提問",
+        "wrong_position": 1,
+        "wrong": "間"
+      }
+    ],
     "explanation": {
       "問": "ㄨㄣˋ",
       "間": "ㄐㄧㄢ、ㄐㄧㄢˋ",
@@ -2599,9 +3076,13 @@
   },
   {
     "correct": "怎",
-    "wrong": "乍",
-    "sentence": "這題乍麼寫呢？",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "這題乍麼寫呢？",
+        "wrong_position": 2,
+        "wrong": "乍"
+      }
+    ],
     "explanation": {
       "怎": "ㄗㄣˇ",
       "乍": "ㄓㄚˋ",
@@ -2619,9 +3100,13 @@
   },
   {
     "correct": "做",
-    "wrong": "作",
-    "sentence": "大家一起作運動",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "大家一起作運動",
+        "wrong_position": 4,
+        "wrong": "作"
+      }
+    ],
     "explanation": {
       "做": "ㄗㄨㄛˋ",
       "作": "ㄗㄨㄛˊ、ㄗㄨㄛˋ",
@@ -2641,9 +3126,13 @@
   },
   {
     "correct": "它",
-    "wrong": "他",
-    "sentence": "他是一隻小狗",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "他是一隻小狗",
+        "wrong_position": 0,
+        "wrong": "他"
+      }
+    ],
     "explanation": {
       "它": "ㄊㄚ",
       "他": "ㄊㄚ",
@@ -2663,9 +3152,13 @@
   },
   {
     "correct": "才",
-    "wrong": "材",
-    "sentence": "我現在材要出門",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我現在材要出門",
+        "wrong_position": 3,
+        "wrong": "材"
+      }
+    ],
     "explanation": {
       "才": "ㄘㄞˊ",
       "材": "ㄘㄞˊ",
@@ -2683,9 +3176,13 @@
   },
   {
     "correct": "需",
-    "wrong": "儒",
-    "sentence": "生活中儒要用水",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "生活中儒要用水",
+        "wrong_position": 3,
+        "wrong": "儒"
+      }
+    ],
     "explanation": {
       "需": "ㄒㄩ",
       "儒": "ㄖㄨˊ",
@@ -2705,9 +3202,13 @@
   },
   {
     "correct": "於",
-    "wrong": "余",
-    "sentence": "太陽落余山後",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "太陽落余山後",
+        "wrong_position": 3,
+        "wrong": "余"
+      }
+    ],
     "explanation": {
       "於": "ㄩˊ",
       "余": "ㄩˊ",
@@ -2727,9 +3228,13 @@
   },
   {
     "correct": "澆",
-    "wrong": "燒",
-    "sentence": "妹妹在幫小草燒水",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "妹妹在幫小草燒水",
+        "wrong_position": 6,
+        "wrong": "燒"
+      }
+    ],
     "explanation": {
       "澆": "ㄐㄧㄠ",
       "燒": "ㄕㄠ",
@@ -2747,9 +3252,13 @@
   },
   {
     "correct": "陽",
-    "wrong": "揚",
-    "sentence": "溫暖的太揚出來了",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "溫暖的太揚出來了",
+        "wrong_position": 4,
+        "wrong": "揚"
+      }
+    ],
     "explanation": {
       "陽": "ㄧㄤˊ",
       "揚": "ㄧㄤˊ",
@@ -2769,9 +3278,13 @@
   },
   {
     "correct": "光",
-    "wrong": "先",
-    "sentence": "教室的先線充足",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "教室的先線充足",
+        "wrong_position": 3,
+        "wrong": "先"
+      }
+    ],
     "explanation": {
       "光": "ㄍㄨㄤ",
       "先": "ㄒㄧㄢ",
@@ -2791,9 +3304,13 @@
   },
   {
     "correct": "放",
-    "wrong": "方",
-    "sentence": "請把書本方回原位",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "請把書本方回原位",
+        "wrong_position": 4,
+        "wrong": "方"
+      }
+    ],
     "explanation": {
       "放": "ㄈㄤˋ",
       "方": "ㄈㄤ",
@@ -2813,9 +3330,13 @@
   },
   {
     "correct": "院",
-    "wrong": "完",
-    "sentence": "醫完有很多醫生",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "醫完有很多醫生",
+        "wrong_position": 1,
+        "wrong": "完"
+      }
+    ],
     "explanation": {
       "院": "ㄩㄢˋ",
       "完": "ㄨㄢˊ",
@@ -2835,9 +3356,13 @@
   },
   {
     "correct": "公",
-    "wrong": "勾",
-    "sentence": "勾園裡有溜滑梯",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "勾園裡有溜滑梯",
+        "wrong_position": 0,
+        "wrong": "勾"
+      }
+    ],
     "explanation": {
       "公": "ㄍㄨㄥ",
       "勾": "ㄍㄡˋ、ㄍㄡ",
@@ -2857,9 +3382,13 @@
   },
   {
     "correct": "話",
-    "wrong": "活",
-    "sentence": "你在說什麼活？",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "你在說什麼活？",
+        "wrong_position": 5,
+        "wrong": "活"
+      }
+    ],
     "explanation": {
       "話": "ㄏㄨㄚˋ",
       "活": "ㄏㄨㄛˊ",
@@ -2879,9 +3408,13 @@
   },
   {
     "correct": "伴",
-    "wrong": "半",
-    "sentence": "朋友是我們好夥半",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "朋友是我們好夥半",
+        "wrong_position": 7,
+        "wrong": "半"
+      }
+    ],
     "explanation": {
       "伴": "ㄅㄢˋ",
       "半": "ㄅㄢˋ",
@@ -2901,9 +3434,13 @@
   },
   {
     "correct": "奶",
-    "wrong": "扔",
-    "sentence": "扔奶做的飯真好吃",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "扔奶做的飯真好吃",
+        "wrong_position": 0,
+        "wrong": "扔"
+      }
+    ],
     "explanation": {
       "奶": "ㄋㄞˇ",
       "扔": "ㄖㄥ",
@@ -2921,9 +3458,13 @@
   },
   {
     "correct": "跟",
-    "wrong": "根",
-    "sentence": "我根在媽媽後面",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我根在媽媽後面",
+        "wrong_position": 1,
+        "wrong": "根"
+      }
+    ],
     "explanation": {
       "跟": "ㄍㄣ",
       "根": "ㄍㄣ",
@@ -2943,9 +3484,13 @@
   },
   {
     "correct": "班",
-    "wrong": "斑",
-    "sentence": "我們是一年一斑",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "我們是一年一斑",
+        "wrong_position": 6,
+        "wrong": "斑"
+      }
+    ],
     "explanation": {
       "班": "ㄅㄢ",
       "斑": "ㄅㄢ",
@@ -2965,9 +3510,13 @@
   },
   {
     "correct": "床",
-    "wrong": "慶",
-    "sentence": "累了回慶上睡覺",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "累了回慶上睡覺",
+        "wrong_position": 3,
+        "wrong": "慶"
+      }
+    ],
     "explanation": {
       "床": "ㄔㄨㄤˊ",
       "慶": "ㄑㄧㄥˋ",
@@ -2987,9 +3536,13 @@
   },
   {
     "correct": "弟",
-    "wrong": "第",
-    "sentence": "我的第弟很愛笑",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我的第弟很愛笑",
+        "wrong_position": 2,
+        "wrong": "第"
+      }
+    ],
     "explanation": {
       "弟": "ㄉㄧˋ",
       "第": "ㄉㄧˋ",
@@ -3009,9 +3562,13 @@
   },
   {
     "correct": "她",
-    "wrong": "他",
-    "sentence": "他是我的好朋友",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "他是我的好朋友",
+        "wrong_position": 0,
+        "wrong": "他"
+      }
+    ],
     "explanation": {
       "她": "ㄊㄚ",
       "他": "ㄊㄚ",
@@ -3031,9 +3588,13 @@
   },
   {
     "correct": "酒",
-    "wrong": "灑",
-    "sentence": "爸爸不喜歡喝灑",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "爸爸不喜歡喝灑",
+        "wrong_position": 6,
+        "wrong": "灑"
+      }
+    ],
     "explanation": {
       "酒": "ㄐㄧㄡˇ",
       "灑": "ㄙㄚˇ",
@@ -3053,9 +3614,13 @@
   },
   {
     "correct": "拿",
-    "wrong": "拿",
-    "sentence": "請幫我拿杯水",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "請幫我拿杯水",
+        "wrong_position": 3,
+        "wrong": "拿"
+      }
+    ],
     "explanation": {
       "拿": "ㄋㄚˊ",
       "掌": "ㄓㄤˇ",
@@ -3073,9 +3638,13 @@
   },
   {
     "correct": "卡",
-    "wrong": "上",
-    "sentence": "生日收到了賀上",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "生日收到了賀上",
+        "wrong_position": 6,
+        "wrong": "上"
+      }
+    ],
     "explanation": {
       "卡": "ㄑㄧㄚˇ、ㄎㄚˇ",
       "上": "ㄕㄤˇ、ㄕㄤˋ",
@@ -3095,9 +3664,13 @@
   },
   {
     "correct": "片",
-    "wrong": "爿",
-    "sentence": "草地有一爿花海",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "草地有一爿花海",
+        "wrong_position": 4,
+        "wrong": "爿"
+      }
+    ],
     "explanation": {
       "片": "ㄆㄧㄢˋ",
       "爿": "（待補）",
@@ -3117,9 +3690,13 @@
   },
   {
     "correct": "給",
-    "wrong": "合",
-    "sentence": "我發糖果合大家",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我發糖果合大家",
+        "wrong_position": 4,
+        "wrong": "合"
+      }
+    ],
     "explanation": {
       "給": "ㄍㄟˇ、ㄐㄧˇ",
       "合": "ㄍㄜˇ、ㄏㄜˊ",
@@ -3139,9 +3716,13 @@
   },
   {
     "correct": "寫",
-    "wrong": "瀉",
-    "sentence": "我練習瀉生字",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我練習瀉生字",
+        "wrong_position": 3,
+        "wrong": "瀉"
+      }
+    ],
     "explanation": {
       "寫": "ㄒㄧㄝˇ",
       "瀉": "ㄒㄧㄝˋ",
@@ -3161,9 +3742,13 @@
   },
   {
     "correct": "先",
-    "wrong": "光",
-    "sentence": "吃飯前光洗手。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "吃飯前光洗手。",
+        "wrong_position": 3,
+        "wrong": "光"
+      }
+    ],
     "explanation": {
       "先": "ㄒㄧㄢ",
       "光": "ㄍㄨㄤ",
@@ -3183,9 +3768,13 @@
   },
   {
     "correct": "完",
-    "wrong": "玩",
-    "sentence": "我把飯吃玩了。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我把飯吃玩了。",
+        "wrong_position": 4,
+        "wrong": "玩"
+      }
+    ],
     "explanation": {
       "完": "ㄨㄢˊ",
       "玩": "ㄨㄢˊ",
@@ -3205,9 +3794,13 @@
   },
   {
     "correct": "再",
-    "wrong": "在",
-    "sentence": "老師跟我們說在見。",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "老師跟我們說在見。",
+        "wrong_position": 6,
+        "wrong": "在"
+      }
+    ],
     "explanation": {
       "再": "ㄗㄞˋ",
       "在": "ㄗㄞˋ",
@@ -3227,9 +3820,13 @@
   },
   {
     "correct": "去",
-    "wrong": "丟",
-    "sentence": "我想丟公園玩。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我想丟公園玩。",
+        "wrong_position": 2,
+        "wrong": "丟"
+      }
+    ],
     "explanation": {
       "去": "ㄑㄩˋ",
       "丟": "ㄉㄧㄡ",
@@ -3249,9 +3846,13 @@
   },
   {
     "correct": "園",
-    "wrong": "圓",
-    "sentence": "動物圓裡有大象。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "動物圓裡有大象。",
+        "wrong_position": 2,
+        "wrong": "圓"
+      }
+    ],
     "explanation": {
       "園": "ㄩㄢˊ",
       "圓": "ㄩㄢˊ",
@@ -3271,9 +3872,13 @@
   },
   {
     "correct": "聽",
-    "wrong": "廳",
-    "sentence": "廳老師的話準沒錯。",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "廳老師的話準沒錯。",
+        "wrong_position": 0,
+        "wrong": "廳"
+      }
+    ],
     "explanation": {
       "聽": "ㄊㄧㄥ、ㄊㄧㄥˋ",
       "廳": "ㄊㄧㄥ",
@@ -3293,9 +3898,13 @@
   },
   {
     "correct": "耳",
-    "wrong": "目",
-    "sentence": "兔子的目朵很長。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "兔子的目朵很長。",
+        "wrong_position": 3,
+        "wrong": "目"
+      }
+    ],
     "explanation": {
       "耳": "ㄦˇ",
       "目": "ㄇㄨˋ",
@@ -3315,9 +3924,13 @@
   },
   {
     "correct": "沒",
-    "wrong": "設",
-    "sentence": "我設看見你的筆。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我設看見你的筆。",
+        "wrong_position": 1,
+        "wrong": "設"
+      }
+    ],
     "explanation": {
       "沒": "ㄇㄛˋ、ㄇㄟˊ",
       "設": "ㄕㄜˋ",
@@ -3337,9 +3950,13 @@
   },
   {
     "correct": "止",
-    "wrong": "正",
-    "sentence": "紅燈亮了要停正。",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "紅燈亮了要停正。",
+        "wrong_position": 6,
+        "wrong": "正"
+      }
+    ],
     "explanation": {
       "止": "ㄓˇ",
       "正": "ㄓㄥ、ㄓㄥˋ",
@@ -3359,9 +3976,13 @@
   },
   {
     "correct": "正",
-    "wrong": "歪",
-    "sentence": "坐姿要端歪。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "坐姿要端歪。",
+        "wrong_position": 4,
+        "wrong": "歪"
+      }
+    ],
     "explanation": {
       "正": "ㄓㄥ、ㄓㄥˋ",
       "歪": "ㄨㄞ",
@@ -3381,9 +4002,13 @@
   },
   {
     "correct": "唱",
-    "wrong": "昌",
-    "sentence": "大家一起昌首歌。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "大家一起昌首歌。",
+        "wrong_position": 4,
+        "wrong": "昌"
+      }
+    ],
     "explanation": {
       "唱": "ㄔㄤˋ",
       "昌": "ㄔㄤ",
@@ -3403,9 +4028,13 @@
   },
   {
     "correct": "著",
-    "wrong": "看",
-    "sentence": "牆上掛看一幅畫。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "牆上掛看一幅畫。",
+        "wrong_position": 3,
+        "wrong": "看"
+      }
+    ],
     "explanation": {
       "著": "ㄓㄠ、˙ㄓㄜ、ㄓㄠˊ、ㄓㄨˋ、ㄓㄨㄛˊ",
       "看": "ㄎㄢ、ㄎㄢˋ",
@@ -3425,9 +4054,13 @@
   },
   {
     "correct": "輕",
-    "wrong": "經",
-    "sentence": "走路請經聲細步。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "走路請經聲細步。",
+        "wrong_position": 3,
+        "wrong": "經"
+      }
+    ],
     "explanation": {
       "輕": "ㄑㄧㄥ",
       "經": "ㄐㄧㄥ",
@@ -3447,9 +4080,13 @@
   },
   {
     "correct": "快",
-    "wrong": "筷",
-    "sentence": "祝你生日筷樂。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "祝你生日筷樂。",
+        "wrong_position": 4,
+        "wrong": "筷"
+      }
+    ],
     "explanation": {
       "快": "ㄎㄨㄞˋ",
       "筷": "ㄎㄨㄞˋ",
@@ -3469,9 +4106,13 @@
   },
   {
     "correct": "歌",
-    "wrong": "哥",
-    "sentence": "這首哥真好聽。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "這首哥真好聽。",
+        "wrong_position": 2,
+        "wrong": "哥"
+      }
+    ],
     "explanation": {
       "歌": "ㄍㄜ",
       "哥": "ㄍㄜ",
@@ -3491,9 +4132,13 @@
   },
   {
     "correct": "出",
-    "wrong": "山",
-    "sentence": "太陽山來了。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "太陽山來了。",
+        "wrong_position": 2,
+        "wrong": "山"
+      }
+    ],
     "explanation": {
       "出": "ㄔㄨ",
       "山": "ㄕㄢ",
@@ -3513,9 +4158,13 @@
   },
   {
     "correct": "新",
-    "wrong": "親",
-    "sentence": "過年要穿親衣。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "過年要穿親衣。",
+        "wrong_position": 4,
+        "wrong": "親"
+      }
+    ],
     "explanation": {
       "新": "ㄒㄧㄣ",
       "親": "ㄑㄧㄥˋ、ㄑㄧㄣ",
@@ -3535,9 +4184,13 @@
   },
   {
     "correct": "芽",
-    "wrong": "牙",
-    "sentence": "種子發牙了。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "種子發牙了。",
+        "wrong_position": 3,
+        "wrong": "牙"
+      }
+    ],
     "explanation": {
       "芽": "ㄧㄚˊ",
       "牙": "ㄧㄚˊ",
@@ -3557,9 +4210,13 @@
   },
   {
     "correct": "聞",
-    "wrong": "問",
-    "sentence": "花朵問起來很香。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "花朵問起來很香。",
+        "wrong_position": 2,
+        "wrong": "問"
+      }
+    ],
     "explanation": {
       "聞": "ㄨㄣˊ",
       "問": "ㄨㄣˋ",
@@ -3579,9 +4236,13 @@
   },
   {
     "correct": "音",
-    "wrong": "意",
-    "sentence": "收意機在說話。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "收意機在說話。",
+        "wrong_position": 1,
+        "wrong": "意"
+      }
+    ],
     "explanation": {
       "音": "ㄧㄣ",
       "意": "ㄧˋ",
@@ -3601,9 +4262,13 @@
   },
   {
     "correct": "樂",
-    "wrong": "藥",
-    "sentence": "我很快藥。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "我很快藥。",
+        "wrong_position": 3,
+        "wrong": "藥"
+      }
+    ],
     "explanation": {
       "樂": "ㄧㄠˋ、ㄩㄝˋ、ㄌㄜˋ",
       "藥": "ㄧㄠˋ",
@@ -3623,9 +4288,13 @@
   },
   {
     "correct": "會",
-    "wrong": "繪",
-    "sentence": "我繪自己穿衣服。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我繪自己穿衣服。",
+        "wrong_position": 1,
+        "wrong": "繪"
+      }
+    ],
     "explanation": {
       "會": "ㄎㄨㄞˋ、ㄏㄨㄟˇ、ㄏㄨㄟˋ",
       "繪": "ㄏㄨㄟˋ",
@@ -3645,9 +4314,13 @@
   },
   {
     "correct": "始",
-    "wrong": "治",
-    "sentence": "比賽要開治了。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "比賽要開治了。",
+        "wrong_position": 4,
+        "wrong": "治"
+      }
+    ],
     "explanation": {
       "始": "ㄕˇ",
       "治": "ㄓˋ",
@@ -3667,9 +4340,13 @@
   },
   {
     "correct": "來",
-    "wrong": "未",
-    "sentence": "蝴蝶飛過未了。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "蝴蝶飛過未了。",
+        "wrong_position": 4,
+        "wrong": "未"
+      }
+    ],
     "explanation": {
       "來": "ㄌㄞˊ",
       "未": "ㄨㄟˋ",
@@ -3689,9 +4366,13 @@
   },
   {
     "correct": "重",
-    "wrong": "童",
-    "sentence": "這箱水果很童。",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "這箱水果很童。",
+        "wrong_position": 5,
+        "wrong": "童"
+      }
+    ],
     "explanation": {
       "重": "ㄔㄨㄥˊ、ㄓㄨㄥˋ",
       "童": "ㄊㄨㄥˊ",
@@ -3711,9 +4392,13 @@
   },
   {
     "correct": "短",
-    "wrong": "豆",
-    "sentence": "兔子尾巴很豆。",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "兔子尾巴很豆。",
+        "wrong_position": 5,
+        "wrong": "豆"
+      }
+    ],
     "explanation": {
       "短": "ㄉㄨㄢˇ",
       "豆": "ㄉㄡˋ",
@@ -3733,9 +4418,13 @@
   },
   {
     "correct": "陣",
-    "wrong": "陳",
-    "sentence": "吹來一陳涼風。",
-    "wrong_position": 3,
+    "sentences": [
+      {
+        "sentence": "吹來一陳涼風。",
+        "wrong_position": 3,
+        "wrong": "陳"
+      }
+    ],
     "explanation": {
       "陣": "ㄓㄣˋ",
       "陳": "ㄔㄣˊ",
@@ -3753,9 +4442,13 @@
   },
   {
     "correct": "過",
-    "wrong": "適",
-    "sentence": "太陽公公適山了。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "太陽公公適山了。",
+        "wrong_position": 4,
+        "wrong": "適"
+      }
+    ],
     "explanation": {
       "過": "ㄍㄨㄛˋ",
       "適": "ㄕˋ",
@@ -3775,9 +4468,13 @@
   },
   {
     "correct": "後",
-    "wrong": "候",
-    "sentence": "我走在最候面。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我走在最候面。",
+        "wrong_position": 4,
+        "wrong": "候"
+      }
+    ],
     "explanation": {
       "後": "ㄏㄡˋ",
       "候": "ㄏㄡˋ",
@@ -3797,9 +4494,13 @@
   },
   {
     "correct": "吃",
-    "wrong": "乞",
-    "sentence": "我愛乞紅蘋果。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我愛乞紅蘋果。",
+        "wrong_position": 2,
+        "wrong": "乞"
+      }
+    ],
     "explanation": {
       "吃": "ㄐㄧˊ、ㄔ",
       "乞": "ㄑㄧˇ",
@@ -3819,9 +4520,13 @@
   },
   {
     "correct": "菜",
-    "wrong": "采",
-    "sentence": "今天的青采很甜。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "今天的青采很甜。",
+        "wrong_position": 4,
+        "wrong": "采"
+      }
+    ],
     "explanation": {
       "菜": "ㄘㄞˋ",
       "采": "ㄘㄞˇ",
@@ -3841,9 +4546,13 @@
   },
   {
     "correct": "就",
-    "wrong": "鷲",
-    "sentence": "我鷲是愛運動。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我鷲是愛運動。",
+        "wrong_position": 1,
+        "wrong": "鷲"
+      }
+    ],
     "explanation": {
       "就": "ㄐㄧㄡˋ",
       "鷲": "ㄐㄧㄡˋ",
@@ -3863,9 +4572,13 @@
   },
   {
     "correct": "桌",
-    "wrong": "掉",
-    "sentence": "書掉上乾乾淨淨。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "書掉上乾乾淨淨。",
+        "wrong_position": 1,
+        "wrong": "掉"
+      }
+    ],
     "explanation": {
       "桌": "ㄓㄨㄛ",
       "掉": "ㄉㄧㄠˋ",
@@ -3885,9 +4598,13 @@
   },
   {
     "correct": "鞋",
-    "wrong": "哇",
-    "sentence": "我會自己穿哇子。",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "我會自己穿哇子。",
+        "wrong_position": 5,
+        "wrong": "哇"
+      }
+    ],
     "explanation": {
       "鞋": "ㄒㄧㄝˊ",
       "哇": "˙ㄨㄚ、ㄨㄚ",
@@ -3907,9 +4624,13 @@
   },
   {
     "correct": "回",
-    "wrong": "迴",
-    "sentence": "我想早點迴家。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "我想早點迴家。",
+        "wrong_position": 4,
+        "wrong": "迴"
+      }
+    ],
     "explanation": {
       "回": "ㄏㄨㄟˊ",
       "迴": "ㄏㄨㄟˊ",
@@ -3929,9 +4650,13 @@
   },
   {
     "correct": "家",
-    "wrong": "嫁",
-    "sentence": "我嫁有很多書。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "我嫁有很多書。",
+        "wrong_position": 1,
+        "wrong": "嫁"
+      }
+    ],
     "explanation": {
       "家": "ㄐㄧㄚ",
       "嫁": "ㄐㄧㄚˋ",
@@ -3951,9 +4676,13 @@
   },
   {
     "correct": "把",
-    "wrong": "吧",
-    "sentence": "請吧門打開。",
-    "wrong_position": 1,
+    "sentences": [
+      {
+        "sentence": "請吧門打開。",
+        "wrong_position": 1,
+        "wrong": "吧"
+      }
+    ],
     "explanation": {
       "把": "ㄅㄚˋ、ㄅㄚˇ",
       "吧": "˙ㄅㄚ、ㄅㄚ",
@@ -3973,9 +4702,13 @@
   },
   {
     "correct": "脫",
-    "wrong": "說",
-    "sentence": "睡覺前要說鞋。",
-    "wrong_position": 4,
+    "sentences": [
+      {
+        "sentence": "睡覺前要說鞋。",
+        "wrong_position": 4,
+        "wrong": "說"
+      }
+    ],
     "explanation": {
       "脫": "ㄊㄨㄛ",
       "說": "ㄕㄨㄟˋ、ㄩㄝˋ、ㄕㄨㄛ",
@@ -3995,9 +4728,13 @@
   },
   {
     "correct": "爸",
-    "wrong": "把",
-    "sentence": "把爸愛看報紙。",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "把爸愛看報紙。",
+        "wrong_position": 0,
+        "wrong": "把"
+      }
+    ],
     "explanation": {
       "爸": "ㄅㄚˋ",
       "把": "ㄅㄚˋ、ㄅㄚˇ",
@@ -4017,9 +4754,13 @@
   },
   {
     "correct": "靠",
-    "wrong": "告",
-    "sentence": "告在牆邊休息。",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "告在牆邊休息。",
+        "wrong_position": 0,
+        "wrong": "告"
+      }
+    ],
     "explanation": {
       "靠": "ㄎㄠˋ",
       "告": "ㄍㄠˋ",
@@ -4039,9 +4780,13 @@
   },
   {
     "correct": "時",
-    "wrong": "詩",
-    "sentence": "現在是什麼詩候？",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "現在是什麼詩候？",
+        "wrong_position": 5,
+        "wrong": "詩"
+      }
+    ],
     "explanation": {
       "時": "ㄕˊ",
       "詩": "ㄕ",
@@ -4061,9 +4806,13 @@
   },
   {
     "correct": "知",
-    "wrong": "短",
-    "sentence": "我不短道這題答案。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "我不短道這題答案。",
+        "wrong_position": 2,
+        "wrong": "短"
+      }
+    ],
     "explanation": {
       "知": "ㄓ",
       "短": "ㄉㄨㄢˇ",
@@ -4083,9 +4832,13 @@
   },
   {
     "correct": "身",
-    "wrong": "射",
-    "sentence": "射體健康最重要。",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "射體健康最重要。",
+        "wrong_position": 0,
+        "wrong": "射"
+      }
+    ],
     "explanation": {
       "身": "ㄕㄣ",
       "射": "ㄧˋ、ㄕㄜˋ、ㄧㄝˋ",
@@ -4105,9 +4858,13 @@
   },
   {
     "correct": "香",
-    "wrong": "查",
-    "sentence": "花朵聞起來很查。",
-    "wrong_position": 6,
+    "sentences": [
+      {
+        "sentence": "花朵聞起來很查。",
+        "wrong_position": 6,
+        "wrong": "查"
+      }
+    ],
     "explanation": {
       "香": "ㄒㄧㄤ",
       "查": "ㄓㄚ、ㄔㄚˊ",
@@ -4127,9 +4884,13 @@
   },
   {
     "correct": "呢",
-    "wrong": "泥",
-    "sentence": "你在那裡做什麼泥？",
-    "wrong_position": 7,
+    "sentences": [
+      {
+        "sentence": "你在那裡做什麼泥？",
+        "wrong_position": 7,
+        "wrong": "泥"
+      }
+    ],
     "explanation": {
       "呢": "ㄋㄧˊ、˙ㄋㄜ",
       "泥": "ㄋㄧˊ、ㄋㄧˋ",
@@ -4147,9 +4908,13 @@
   },
   {
     "correct": "媽",
-    "wrong": "馬",
-    "sentence": "馬媽愛看書。",
-    "wrong_position": 0,
+    "sentences": [
+      {
+        "sentence": "馬媽愛看書。",
+        "wrong_position": 0,
+        "wrong": "馬"
+      }
+    ],
     "explanation": {
       "媽": "ㄇㄚ",
       "馬": "ㄇㄚˇ",
@@ -4169,9 +4934,13 @@
   },
   {
     "correct": "己",
-    "wrong": "已",
-    "sentence": "萬事要靠自已。",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "萬事要靠自已。",
+        "wrong_position": 5,
+        "wrong": "已"
+      }
+    ],
     "explanation": {
       "己": "ㄐㄧˇ",
       "已": "ㄧˇ",
@@ -4191,9 +4960,13 @@
   },
   {
     "correct": "珍",
-    "wrong": "診",
-    "sentence": "這是診貴的禮物。",
-    "wrong_position": 2,
+    "sentences": [
+      {
+        "sentence": "這是診貴的禮物。",
+        "wrong_position": 2,
+        "wrong": "診"
+      }
+    ],
     "explanation": {
       "珍": "ㄓㄣ",
       "診": "ㄓㄣˇ",
@@ -4213,9 +4986,13 @@
   },
   {
     "correct": "漂",
-    "wrong": "票",
-    "sentence": "你的衣服真票亮。",
-    "wrong_position": 5,
+    "sentences": [
+      {
+        "sentence": "你的衣服真票亮。",
+        "wrong_position": 5,
+        "wrong": "票"
+      }
+    ],
     "explanation": {
       "漂": "ㄆㄧㄠ、ㄆㄧㄠˇ、ㄆㄧㄠˋ",
       "票": "ㄆㄧㄠˋ",
