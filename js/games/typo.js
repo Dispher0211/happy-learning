@@ -245,56 +245,50 @@ export class TypoGame extends GameEngine {
   }
 
   /**
-   * 答對動畫：🗝️ → 寶箱蓋彈開 → 💰
+   * 答對動畫：closebox 放大→鑰匙旋轉一圈→openbox 全螢幕，配 open.mp3
    * @param {number} stars
    */
   async playCorrectAnimation(stars) {
     const root = document.getElementById('typo-game-root');
     if (!root) return;
 
-    // ── 步驟一：正確寶箱放大到畫布中央 ──
-    const selectedChest = root.querySelector('.typo-chest.selected, .typo-chest');
-    const chestRect = selectedChest?.getBoundingClientRect();
+    // 播放音效
+    try {
+      const audio = new Audio('audio/effects/open.mp3');
+      audio.play().catch(() => {});
+    } catch (_e) {}
 
     // 建立全螢幕覆蓋動畫層
     const overlay = document.createElement('div');
     overlay.className = 'typo-anim-overlay';
     overlay.innerHTML = `
       <div class="typo-anim-stage">
-        <img id="typo-anim-chest" class="typo-anim-chest" src="images/closebox.png" alt="寶箱">
-        <img id="typo-anim-key" class="typo-anim-key" src="images/closebox.png" alt="key" style="display:none;">
+        <img id="typo-anim-chest" class="typo-anim-chest typo-anim-fullscreen" src="images/closebox.png" alt="寶箱">
+        <img id="typo-anim-key-img" class="typo-anim-key-img" src="images/key.png" alt="鑰匙" style="opacity:0;">
       </div>
     `;
     document.body.appendChild(overlay);
 
     const chestEl = overlay.querySelector('#typo-anim-chest');
+    const keyImg  = overlay.querySelector('#typo-anim-key-img');
 
-    // 入場：小→大（從寶箱位置放大到畫布中央）
-    chestEl.style.animation = 'typoChestZoomIn 0.5s cubic-bezier(.17,.67,.35,1.3) forwards';
-    await _sleep(500);
+    // 步驟一：closebox 從小放大到接近全螢幕
+    chestEl.style.animation = 'typoChestZoomIn 0.55s cubic-bezier(.17,.67,.35,1.3) forwards';
+    await _sleep(550);
 
-    // ── 步驟二：顯示鑰匙，旋轉 90°插入寶箱 ──
-    const keyEl = document.createElement('img');
-    keyEl.id = 'typo-anim-key';
-    keyEl.className = 'typo-anim-key';
-    keyEl.src = 'images/closebox.png'; // 臨時，下面用 CSS 顯示
-    keyEl.alt = '🗝️';
-    // 改用 div 顯示 emoji key
-    const keyDiv = document.createElement('div');
-    keyDiv.className = 'typo-anim-key-emoji';
-    keyDiv.textContent = '🗝️';
-    overlay.querySelector('.typo-anim-stage').appendChild(keyDiv);
-    keyDiv.style.animation = 'typoKeyRotate 0.6s ease-in-out forwards';
-    await _sleep(600);
+    // 步驟二：鑰匙出現，慢速旋轉一圈（1.2s）
+    keyImg.style.opacity = '1';
+    keyImg.style.animation = 'typoKeySpinFull 1.2s linear forwards';
+    await _sleep(1200);
 
-    // ── 步驟三：寶箱換成開啟狀態 ──
+    // 步驟三：closebox 換成 openbox，並展示全螢幕
+    keyImg.style.opacity = '0';
     chestEl.style.animation = 'none';
     chestEl.src = 'images/openbox.png';
     chestEl.style.animation = 'typoChestOpen 0.4s ease forwards';
-    keyDiv.style.opacity = '0';
-    await _sleep(300);
+    await _sleep(350);
 
-    // ── 步驟四：星星從寶箱飛出 ──
+    // 步驟四：星星從寶箱飛出
     const stage = overlay.querySelector('.typo-anim-stage');
     const starsCount = Math.min(Math.max(Math.round(stars * 3), 10), 24);
     for (let i = 0; i < starsCount; i++) {
@@ -309,7 +303,6 @@ export class TypoGame extends GameEngine {
       stage.appendChild(s);
     }
 
-    // 星星數字
     const starEl = document.createElement('div');
     starEl.className = 'typo-star-popup';
     starEl.textContent = `+★${stars}`;
@@ -1242,15 +1235,6 @@ export function injectTypoStyles() {
       z-index: 2;
       filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5));
     }
-    .typo-anim-key-emoji {
-      position: absolute;
-      font-size: min(12vw, 5rem);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 3;
-      pointer-events: none;
-    }
     .typo-fly-star {
       position: absolute;
       font-size: min(6vw, 2rem);
@@ -1288,11 +1272,32 @@ export function injectTypoStyles() {
       60%     { transform: rotate(-5deg); }
       80%     { transform: rotate(5deg); }
     }
+    /* ── 鑰匙動畫 ── */
+    .typo-anim-key-img {
+      position: absolute;
+      width: 55%;
+      height: 55%;
+      object-fit: contain;
+      z-index: 4;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .typo-anim-fullscreen {
+      width: 90%;
+      height: 90%;
+    }
+    @keyframes typoKeySpinFull {
+      0%   { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+      100% { transform: translate(-50%,-50%) rotate(360deg); opacity: 1; }
+    }
+    .typo-chests {
       display: flex;
       justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
+      gap: 12px;
+      flex-wrap: nowrap;
       margin-top: 8px;
+      overflow-x: auto;
+      padding: 4px 0;
     }
     .typo-chest {
       display: flex;

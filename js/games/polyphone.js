@@ -761,14 +761,15 @@ export class PolyphoneGame extends GameEngine {
       el?.classList.add('pp-bubble--reveal');
     }
 
-    // 顯示正確答案說明
+    // 顯示正確答案說明（使用 pv2 注音格式）
     const hintArea = document.getElementById('pp-hint-area');
     if (hintArea) {
       const reading = q.allReadings.find(r => r.zhuyin === this._correctPronunciation);
+      const zhuyinPv2 = this._renderBubbleZhuyin(this._correctPronunciation);
       hintArea.innerHTML = `
         <div class="pp-answer-reveal">
           ✅ 「${q.char}」在「${q.exampleWord}」中念
-          <strong>${this._correctPronunciation}</strong>
+          <span class="pp-answer-pv2">${zhuyinPv2}</span>
           ${reading?.label ? `（${reading.label}）` : ''}
         </div>
       `;
@@ -1074,6 +1075,7 @@ export class PolyphoneGame extends GameEngine {
     .pp-hint--1 { background: #fef9c3; color: #713f12; border: 1px solid #fde047; }
     .pp-hint--2 { background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd; }
     .pp-answer-reveal { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+    .pp-answer-pv2 { display: inline-flex; align-items: flex-start; font-size: 1.4em; vertical-align: middle; margin: 0 4px; }
 
     /* ── 操控說明 ── */
     .pp-controls {
