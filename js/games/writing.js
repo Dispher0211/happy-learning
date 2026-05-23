@@ -1255,6 +1255,12 @@ function injectWritingStyles() {
       line-height: 1.5;
     }
 
+    /* 提示詞語中 pv2 注音輕聲˙ 往上移 */
+    .writing-hint-zhuyin .pv2-dot,
+    .writing-hint-words .pv2-dot {
+      top: -0.7em;
+    }
+
     /* ── 動畫：魔法書光芒（答對） ── */
     @keyframes bookGlow {
       0%   { box-shadow: 0 0 0 0 rgba(108,99,255,0); }

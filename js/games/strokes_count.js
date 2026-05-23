@@ -462,6 +462,20 @@ export class StrokesCountGame extends GameEngine {
     }
   }
 
+  // 覆寫 updateProgress：算出筆劃不使用預設連續3/5/10題bonus顯示，只在5倍數顯示
+  updateProgress() {
+    super.updateProgress();
+    const bonusBar = document.getElementById('game-bonus-bar');
+    if (bonusBar) {
+      const c = this.consecutiveCorrect;
+      if (c > 0 && c % 5 === 0) {
+        // 剛好 5 倍數：保留 onCorrect 設的文字
+      } else {
+        bonusBar.style.display = 'none';
+      }
+    }
+  }
+
   // ════════════════════════════════════════════
   // onWrongFirstTime — 覆寫：第一次答錯，顯示錯誤動畫，可再試
   // ════════════════════════════════════════════

@@ -296,16 +296,16 @@ export class TypoGame extends GameEngine {
 
     // ── 步驟四：星星從寶箱飛出 ──
     const stage = overlay.querySelector('.typo-anim-stage');
-    const starsCount = Math.min(Math.max(Math.round(stars * 2), 5), 16);
+    const starsCount = Math.min(Math.max(Math.round(stars * 3), 10), 24);
     for (let i = 0; i < starsCount; i++) {
       const s = document.createElement('div');
       s.className = 'typo-fly-star';
-      s.textContent = '⭐';
-      const angle = (i / starsCount) * 360;
-      const dist = 80 + Math.random() * 60;
+      s.textContent = i % 3 === 0 ? '🌟' : '⭐';
+      const angle = (i / starsCount) * 360 + Math.random() * 15;
+      const dist = 120 + Math.random() * 100;
       s.style.setProperty('--angle', `${angle}deg`);
       s.style.setProperty('--dist', `${dist}px`);
-      s.style.animationDelay = `${i * 40}ms`;
+      s.style.animationDelay = `${i * 35}ms`;
       stage.appendChild(s);
     }
 
@@ -348,7 +348,7 @@ export class TypoGame extends GameEngine {
     let radical = q.radical ?? '';
     if (!radical) {
       try {
-        const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+        const chars = JSONLoader.get('characters') ?? [];
         const entry = chars.find(c => (c['字'] ?? c.char) === q.correct);
         radical = entry?.radical ?? entry?.['部首'] ?? '';
       } catch (_e) {}
@@ -389,7 +389,7 @@ export class TypoGame extends GameEngine {
       let radical = question.radical ?? '';
       if (!radical) {
         try {
-          const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+          const chars = JSONLoader.get('characters') ?? [];
           const entry = chars.find(c => (c['字'] ?? c.char) === question.correct);
           radical = entry?.radical ?? entry?.['部首'] ?? '？';
         } catch (_e) { radical = '？'; }
@@ -941,7 +941,7 @@ function _findWrongPos(sentence, wrongChar) {
 function _getRadical(explanation, correctChar) {
   // 從 JSONLoader 快取的 characters.json 查部首
   try {
-    const chars = globalThis.JSONLoader?.get?.('characters') ?? [];
+    const chars = JSONLoader.get('characters') ?? [];
     const entry = chars.find(c => (c['字'] ?? c.char) === correctChar);
     if (entry?.radical) return entry.radical;
     if (entry?.['部首']) return entry['部首'];
@@ -1219,7 +1219,7 @@ export function injectTypoStyles() {
     .typo-anim-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.55);
+      background: rgba(0,0,0,0.65);
       z-index: 999;
       display: flex;
       align-items: center;
@@ -1228,22 +1228,23 @@ export function injectTypoStyles() {
     }
     .typo-anim-stage {
       position: relative;
-      width: 200px;
-      height: 200px;
+      width: min(80vw, 400px);
+      height: min(80vw, 400px);
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .typo-anim-chest {
-      width: 140px;
-      height: 140px;
+      width: 85%;
+      height: 85%;
       object-fit: contain;
       position: relative;
       z-index: 2;
+      filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5));
     }
     .typo-anim-key-emoji {
       position: absolute;
-      font-size: 3rem;
+      font-size: min(12vw, 5rem);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -1252,13 +1253,13 @@ export function injectTypoStyles() {
     }
     .typo-fly-star {
       position: absolute;
-      font-size: 1.4rem;
+      font-size: min(6vw, 2rem);
       top: 50%;
       left: 50%;
       pointer-events: none;
-      animation: typoStarFly 1.0s ease-out forwards;
+      animation: typoStarFly 1.2s ease-out forwards;
       --angle: 0deg;
-      --dist: 100px;
+      --dist: min(40vw, 180px);
     }
 
     @keyframes typoChestZoomIn {
@@ -1485,17 +1486,18 @@ export function injectTypoStyles() {
       100% { transform: translate(-50%,-50%) scale(1);   opacity:1; }
     }
     .typo-star-popup {
-      position: fixed;
-      top: 40%;
+      position: absolute;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.8rem;
+      transform: translate(-50%, -50%);
+      font-size: min(12vw, 3.5rem);
       font-weight: 900;
       color: #f5c842;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      animation: starFloat 1.2s ease forwards;
-      z-index: 101;
+      text-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 24px #fff;
+      animation: starFloat 1.4s ease forwards;
+      z-index: 10;
       pointer-events: none;
+      white-space: nowrap;
     }
     @keyframes starFloat {
       0%   { opacity:0; transform: translateX(-50%) translateY(0); }

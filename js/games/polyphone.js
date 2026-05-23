@@ -696,6 +696,21 @@ export class PolyphoneGame extends GameEngine {
     }
   }
 
+  // 覆寫 updateProgress：多音判斷不使用預設連續3/5/10題bonus顯示，只在10倍數顯示
+  updateProgress() {
+    super.updateProgress();
+    // 蓋掉 GameEngine 預設 bonus bar（只有 10 的倍數才在 onCorrect 裡顯示）
+    const bonusBar = document.getElementById('game-bonus-bar');
+    if (bonusBar) {
+      const c = this.consecutiveCorrect;
+      if (c > 0 && c % 10 === 0) {
+        // 剛好 10 倍數：保留 onCorrect 設的文字
+      } else {
+        bonusBar.style.display = 'none';
+      }
+    }
+  }
+
   // ════════════════════════════════════════════
   // playCorrectAnimation — 爆炸特效（由 GameEngine.onCorrect 呼叫）
   // ════════════════════════════════════════════
