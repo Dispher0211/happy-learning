@@ -300,43 +300,39 @@ export const PokedexManager = {
     const sid      = seriesId || AppState.pokedex?.active_series || 'pokemon'
     const cacheKey = `${sid}:${index}`
 
-    // ── 快取命中（含 null 快取，避免重複 fetch 失敗資源）──
+    const config = this.getSeriesConfig(sid)
+
+    // ── pokeapi：直接用 CDN URL，永不回傳 null（不快取 null）──
+    if (config?.source === 'api' && config?.api?.provider === 'pokeapi') {
+      const cdnUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${index}.png`
+      this._imageCache.set(cacheKey, cdnUrl)
+      // 背景非同步取名稱
+      if (!this._nameCache.has(cacheKey)) {
+        this._fetchPokeNameAsync(index, sid, cacheKey)
+      }
+      return cdnUrl
+    }
+
+    // ── 快取命中（非 pokeapi 系列才使用快取）──
     if (this._imageCache.has(cacheKey)) {
       return this._imageCache.get(cacheKey)
     }
 
-    const config = this.getSeriesConfig(sid)
-
-    // ── 目前只支援 pokeapi ──
-    if (!config || config.source !== 'api' || config.api?.provider !== 'pokeapi') {
+    // ── 非 pokeapi：無已知快捷路徑 ──
+    if (!config || config.source !== 'api') {
       this._imageCache.set(cacheKey, null)
       return null
     }
 
+    // ── 非 pokeapi：用 API fetch 方式 ──
     try {
-      // ── 優先使用直接 CDN URL（不需要 API call，速度快且穩定）──
-      if (config.api?.provider === 'pokeapi') {
-        // 官方圖鑑圖（高品質）
-        const cdnUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${index}.png`
-        this._imageCache.set(cacheKey, cdnUrl)
-
-        // 同時非同步取得名稱（不阻塞圖片回傳）
-        if (!this._nameCache.has(cacheKey)) {
-          this._fetchPokeNameAsync(index, sid, cacheKey)
-        }
-
-        return cdnUrl
-      }
-
-      // ── 非 pokeapi：用原本 API fetch 方式 ──
-      const baseUrl = config.api.base_url || ''
+      const baseUrl = config.api?.base_url || ''
       const res     = await fetch(`${baseUrl}${index}`)
       if (!res.ok) throw new Error(`API HTTP ${res.status}`)
       const data    = await res.json()
       const imageUrl = this._getNestedField(data, config.api.image_field) || null
       this._imageCache.set(cacheKey, imageUrl)
       return imageUrl
-
     } catch (e) {
       console.warn(`PokedexManager.fetchImage 失敗 (${sid}:${index}):`, e.message)
       this._imageCache.set(cacheKey, null)
