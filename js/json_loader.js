@@ -38,7 +38,7 @@ import { APP_VERSION } from '../version.js'
 // ─────────────────────────────────────────────────────────────
 // 結構為物件（dict）的 JSON 名稱（非陣列）
 // ─────────────────────────────────────────────────────────────
-const DICT_TYPE_JSONS = new Set(['audio_cache'])
+const DICT_TYPE_JSONS = new Set(['audio_cache', 'pokedex_series'])
 
 // sentences 索引的固定名稱
 const SENTENCES_INDEX = 'sentences'
