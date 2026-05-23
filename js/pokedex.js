@@ -314,34 +314,54 @@ export const PokedexManager = {
     }
 
     try {
-      const baseUrl = config.api.base_url || 'https://pokeapi.co/api/v2/pokemon/'
-      const res     = await fetch(`${baseUrl}${index}`)
-      if (!res.ok) throw new Error(`PokéAPI HTTP ${res.status}`)
+      // ── 優先使用直接 CDN URL（不需要 API call，速度快且穩定）──
+      if (config.api?.provider === 'pokeapi') {
+        // 官方圖鑑圖（高品質）
+        const cdnUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${index}.png`
+        this._imageCache.set(cacheKey, cdnUrl)
 
-      const data  = await res.json()
+        // 同時非同步取得名稱（不阻塞圖片回傳）
+        if (!this._nameCache.has(cacheKey)) {
+          this._fetchPokeNameAsync(index, sid, cacheKey)
+        }
 
-      // 依 image_field 路徑取圖片 URL（如 'sprites.other.official-artwork.front_default'）
-      const imageUrl = this._getNestedField(data, config.api.image_field)
-        || data?.sprites?.front_default
-        || null
-
-      this._imageCache.set(cacheKey, imageUrl)
-
-      // 同時快取名稱（英文名稱首字母大寫）
-      if (data?.name && !this._nameCache.has(cacheKey)) {
-        const rawName = data.name
-        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
-        this._nameCache.set(cacheKey, formattedName)
+        return cdnUrl
       }
 
+      // ── 非 pokeapi：用原本 API fetch 方式 ──
+      const baseUrl = config.api.base_url || ''
+      const res     = await fetch(`${baseUrl}${index}`)
+      if (!res.ok) throw new Error(`API HTTP ${res.status}`)
+      const data    = await res.json()
+      const imageUrl = this._getNestedField(data, config.api.image_field) || null
+      this._imageCache.set(cacheKey, imageUrl)
       return imageUrl
 
     } catch (e) {
       console.warn(`PokedexManager.fetchImage 失敗 (${sid}:${index}):`, e.message)
-      // 失敗也快取 null，避免重複嘗試同一個失敗資源
       this._imageCache.set(cacheKey, null)
       return null
     }
+  },
+
+  // ─────────────────────────────────────────────
+  // _fetchPokeNameAsync — 背景非同步取得寶可夢名稱
+  // ─────────────────────────────────────────────
+
+  /**
+   * 非阻塞方式取得名稱並存入 _nameCache
+   * 由 fetchImage 在背景呼叫，不影響圖片顯示速度
+   */
+  async _fetchPokeNameAsync(index, sid, cacheKey) {
+    try {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data?.name) {
+        const formatted = data.name.charAt(0).toUpperCase() + data.name.slice(1).toLowerCase()
+        this._nameCache.set(cacheKey, formatted)
+      }
+    } catch (_) { /* 名稱取得失敗，靜默忽略 */ }
   },
 
   // ─────────────────────────────────────────────
@@ -367,9 +387,8 @@ export const PokedexManager = {
       return this._nameCache.get(cacheKey)
     }
 
-    // 尚未 fetch：呼叫 fetchImage 讓資料快取建立（包含名稱）
-    await this.fetchImage(index, sid)
-
+    // 尚未快取：直接向 PokéAPI 取得名稱
+    await this._fetchPokeNameAsync(index, sid, cacheKey)
     return this._nameCache.get(cacheKey) ?? null
   },
 
