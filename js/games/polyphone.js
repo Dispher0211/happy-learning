@@ -82,60 +82,61 @@ export class PolyphoneGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _normZhuyin — 正規化注音字串，確保輕聲˙在最後
+  // _renderBubbleZhuyin — 泡泡注音 HTML（pv2 系統）
+  // 與 CardPage._renderZhuyinVerticalInline 完全一致
   // ════════════════════════════════════════════
-  _normZhuyin(z) {
-    if (!z) return z;
-    // 若 ˙ 在最前面，移到最後（˙ㄉㄜ → ㄉㄜ˙）
-    if (z.startsWith('˙')) return z.slice(1) + '˙';
-    return z;
-  }
+  _renderBubbleZhuyin(pron) {
+    if (!pron) return '';
 
-  // ════════════════════════════════════════════
-  // _renderBubbleZhuyin — 泡泡注音 HTML
-  // 台灣直式注音規範：
-  //   ˙（輕聲）→ 最上方獨立行
-  //   ˊˇˋ（2/3/4聲）→ 主符號右側中央
-  //   主注音符號 → 由上到下 block 排列
-  // ════════════════════════════════════════════
-  _renderBubbleZhuyin(z) {
-    if (!z) return '';
-    const norm = this._normZhuyin(z);  // 確保˙在尾
+    const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ');
+    const MEDIALS  = new Set('ㄧㄨㄩ');
+    const TONES    = new Set(['ˊ','ˇ','ˋ','˙']);
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
-    const TONES = new Set(['ˊ', 'ˇ', 'ˋ', '˙']);
-
-    // 分離聲調與主體
-    let tone = '';
-    let body = norm;
-    if (body.endsWith('˙')) { tone = '˙'; body = body.slice(0, -1); }
-    else if (body.length > 0 && TONES.has(body[body.length - 1])) {
-      tone = body[body.length - 1];
-      body = body.slice(0, -1);
+    let src = pron, tone = '';
+    if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1); }
+    else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+      tone = src[src.length - 1]; src = src.slice(0, -1);
     }
 
+    let initial = '', medial = '', final = '';
+    for (const c of src) {
+      if (INITIALS.has(c))     initial = c;
+      else if (MEDIALS.has(c)) medial  = c;
+      else                     final  += c;
+    }
+
+    const count  = [initial, medial, final].filter(Boolean).length;
     const hasDot = tone === '˙';
-    const hasRegTone = tone && !hasDot;
-    const chars = [...body];
+    const dotHtml  = hasDot
+      ? `<span class="pv2-dot">${esc(tone)}</span>` : '';
+    const toneHtml = (tone && !hasDot)
+      ? `<span class="pv2-tone">${esc(tone)}</span>`
+      : `<span class="pv2-tone pv2-empty"></span>`;
+    const toneCol  = `<span class="pv2-tone-col">` +
+      `<span class="pv2-empty pv2-tone-spacer"></span>` +
+      toneHtml +
+      `<span class="pv2-empty pv2-tone-spacer"></span></span>`;
+    const dotCls = hasDot ? ' pv2--dot' : '';
 
-    // 輕聲˙：最上方獨立行
-    const dotHtml = hasDot
-      ? `<span style="font-size:0.65em;line-height:1;display:block;text-align:center;margin-bottom:1px;">˙</span>`
-      : '';
-
-    // 主體符號：由上到下
-    const bodyHtml = chars.map(c =>
-      `<span style="display:block;text-align:center;line-height:1.2;">${c}</span>`
-    ).join('');
-
-    // ˊˇˋ：右側中央，用 flex row 包住
-    if (hasRegTone) {
-      return dotHtml + `<span style="display:inline-flex;flex-direction:row;align-items:center;gap:0;">` +
-        `<span style="display:flex;flex-direction:column;align-items:center;">${bodyHtml}</span>` +
-        `<span style="font-size:0.65em;line-height:1;align-self:center;">${tone}</span>` +
-        `</span>`;
+    if (count <= 1) {
+      const sym = initial || medial || final || src;
+      return `<span class="pv2 pv2-a${dotCls}">${dotHtml}` +
+        `<span class="pv2-col"><span class="pv2-r1 pv2-empty"></span>` +
+        `<span class="pv2-r2">${esc(sym)}</span>` +
+        `<span class="pv2-r3 pv2-empty"></span></span>${toneCol}</span>`;
     }
-
-    return dotHtml + `<span style="display:flex;flex-direction:column;align-items:center;">${bodyHtml}</span>`;
+    if (count === 2) {
+      const slots = [initial, medial, final].filter(Boolean);
+      return `<span class="pv2 pv2-b${dotCls}">${dotHtml}` +
+        `<span class="pv2-col"><span class="pv2-r1">${esc(slots[0])}</span>` +
+        `<span class="pv2-r2 pv2-empty"></span>` +
+        `<span class="pv2-r3">${esc(slots[1])}</span></span>${toneCol}</span>`;
+    }
+    return `<span class="pv2 pv2-c${dotCls}">${dotHtml}` +
+      `<span class="pv2-col"><span class="pv2-r1">${esc(initial)}</span>` +
+      `<span class="pv2-r2">${esc(medial)}</span>` +
+      `<span class="pv2-r3">${esc(final)}</span></span>${toneCol}</span>`;
   }
 
   // ════════════════════════════════════════════
@@ -973,15 +974,11 @@ export class PolyphoneGame extends GameEngine {
       box-shadow: 0 0 20px rgba(0,200,255,0.7), inset 0 2px 4px rgba(255,255,255,0.6);
     }
     .pp-bubble-text {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: #1e3a8a;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 2.8em;
-      line-height: 1.2;
+      min-height: 2.4rem;
+      color: #1e3a8a;
     }
 
     /* 提示：高亮正確聲調 */
@@ -1100,6 +1097,65 @@ export class PolyphoneGame extends GameEngine {
       .pp-sky           { max-width: 520px; margin: 0 auto; }
       .pp-cannon-canvas { max-width: 520px; }
     }
+
+    /* ── pv2 注音系統（泡泡用）── */
+    .pp-bubble .pv2 {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: flex-end;
+      white-space: nowrap;
+      line-height: 1;
+      position: relative;
+    }
+    .pp-bubble .pv2--dot { padding-top: 0.15em; }
+    .pp-bubble .pv2-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 2.4rem;
+    }
+    .pp-bubble .pv2-tone-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 2.4rem;
+    }
+    .pp-bubble .pv2-r1,
+    .pp-bubble .pv2-r2,
+    .pp-bubble .pv2-r3 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #1e3a8a;
+      min-width: 0.8em;
+      flex: 1;
+    }
+    .pp-bubble .pv2-tone {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+    .pp-bubble .pv2-tone-spacer { flex: 1; visibility: hidden; }
+    .pp-bubble .pv2-dot {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      text-align: center;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #1e3a8a;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .pp-bubble .pv2-b .pv2-r2 { visibility: hidden; }
+    .pp-bubble .pv2-empty      { visibility: hidden; }
   `;
   document.head.appendChild(style);
 })();

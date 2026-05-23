@@ -1048,10 +1048,25 @@
 .word-title-pron .pv-tone-side { font-size: 0.28em; color: #1e293b; }
 .word-title-pron .pv-tone-top { font-size: 0.3em; color: #1e293b; }
 
-/* poly 主字：粉紅色 */
-.word-card__word .multi-tone-bpmf .pv-char { color: #1e293b; font-size: 0.28em; }
-.word-card__word .multi-tone-bpmf .pv-tone-side { color: #1e293b; font-size: 0.28em; }
-.word-card__word .multi-tone-bpmf .pv-tone-top { color: #1e293b; font-size: 0.3em; }
+/* poly 主字：詞語卡標題內，多音字注音與一般字注音等高（pv2 覆蓋） */
+.word-card__word .multi-tone-char {
+  align-items: flex-end;
+}
+.word-card__word .multi-tone-bpmf {
+  /* 繼承 word-title-pron 相同尺寸，使多音字注音不偏小 */
+  font-size: 1em;   /* reset em-based shrink，由 pv2 絕對值接管 */
+}
+.word-card__word .multi-tone-bpmf .pv2-col,
+.word-card__word .multi-tone-bpmf .pv2-tone-col { height: 2.8rem; }
+.word-card__word .multi-tone-bpmf .pv2-r1,
+.word-card__word .multi-tone-bpmf .pv2-r2,
+.word-card__word .multi-tone-bpmf .pv2-r3 { font-size: 0.85rem; min-width: 0.95em; color: #E11D48; }
+.word-card__word .multi-tone-bpmf .pv2-tone { font-size: 0.85rem; color: #E11D48; }
+.word-card__word .multi-tone-bpmf .pv2-dot  { font-size: 0.85rem; color: #E11D48; top: -0.5em; }
+/* 舊 pv（v1）相容 */
+.word-card__word .multi-tone-bpmf .pv-char { color: #E11D48; font-size: 0.85rem; }
+.word-card__word .multi-tone-bpmf .pv-tone-side { color: #E11D48; font-size: 0.85rem; }
+.word-card__word .multi-tone-bpmf .pv-tone-top { color: #E11D48; font-size: 0.85rem; }
 
 .mz-unit--poly .pv2-tone-side { color: #1e293b; }
 
