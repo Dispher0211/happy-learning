@@ -1309,10 +1309,15 @@ function _showTypoLoadingOverlay() {
   el.id = 'typo-loading-overlay';
   el.innerHTML = `
     <div class="typo-loading-runner">🏃</div>
-    <div>AI 老師正在出題<span class="typo-loading-dots"></span></div>
-    <div style="font-size:0.85rem;color:#a07800;font-weight:400;">請稍候片刻</div>
+    <div class="typo-loading-text">AI 老師正在出題<span class="typo-loading-dots"></span></div>
+    <div class="typo-loading-sub">請稍候片刻 ⏳</div>
   `;
-  document.body.appendChild(el);
+  // 優先放入遊戲畫布容器，使小人出現在畫布中央
+  const container = document.getElementById('app') || document.body;
+  // 確保容器有 position: relative（CSS 裡已設定）
+  el.style.borderRadius = getComputedStyle(container).borderRadius || '16px';
+  container.style.position = 'relative';
+  container.appendChild(el);
 }
 
 /**
@@ -1641,26 +1646,43 @@ export function injectTypoStyles() {
     /* ── 辨識結果提示 ── */
     /* ── AI 等待動畫覆蓋層 ── */
     #typo-loading-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      background: rgba(255,250,235,0.9);
-      z-index: 9999;
+      background: rgba(255,250,220,0.92);
+      z-index: 50;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      font-size: 1.1rem;
+      gap: 12px;
+      border-radius: 16px;
+      font-size: 1rem;
       color: #7b5e00;
       font-weight: 600;
+      pointer-events: none;
     }
     .typo-loading-runner {
-      font-size: 3rem;
-      animation: typoRunnerBounce 0.5s ease-in-out infinite alternate;
+      font-size: 5rem;
+      line-height: 1;
+      animation: typoRunnerRun 0.35s steps(1) infinite;
     }
-    @keyframes typoRunnerBounce {
-      from { transform: translateY(0) scaleX(1); }
-      to   { transform: translateY(-12px) scaleX(0.95); }
+    @keyframes typoRunnerRun {
+      0%   { transform: translateX(-6px) scaleX(1); }
+      25%  { transform: translateX(0px) scaleX(1); }
+      50%  { transform: translateX(6px) scaleX(1); }
+      75%  { transform: translateX(0px) scaleX(1); }
+      100% { transform: translateX(-6px) scaleX(1); }
+    }
+    .typo-loading-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #7b5e00;
+      letter-spacing: 1px;
+    }
+    .typo-loading-sub {
+      font-size: 0.82rem;
+      color: #a07800;
+      font-weight: 400;
     }
     .typo-loading-dots::after {
       content: '';
