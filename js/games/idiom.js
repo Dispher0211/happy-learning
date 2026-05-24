@@ -254,95 +254,62 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    const _runAnimation = (im) => {
-      // ── 建立 fixed overlay（不用 overflow:hidden，讓 GPU 正常渲染）──
-      const ov = document.createElement('div')
-      ov.id = 'train-enter-ov'
-      // 用 position:fixed + top/bottom:0 + clip-path 取代 overflow:hidden
-      // 這樣 GPU layer 不會優化掉畫面外的元素
-      ov.style.cssText = (
-        'position:fixed;top:0;bottom:0;left:0;right:0;' +
-        'pointer-events:none;z-index:9998;' +
-        'overflow:hidden;'
-      )
+    // ── 純 CSS animation 入場，不依賴 JS transform ──
+    // 直接操作頁面內的 #train-img，加上 CSS animation class
+    const trainImg = document.getElementById('train-img')
+    if (!trainImg) { _showInteractive(); return }
 
-      // 用一個相對定位的包裝，讓火車能絕對定位在垂直置中
-      const wrapper = document.createElement('div')
-      wrapper.style.cssText = (
-        'position:absolute;top:50%;left:0;width:100%;' +
-        'transform:translateY(-50%);' +
-        'display:flex;justify-content:center;'
-      )
-
-      // 設定圖片樣式：初始位置在右方外 100%（相對於 100vw = 一個螢幕寬）
-      im.style.cssText = (
-        'width:80vw;max-width:480px;height:auto;display:block;' +
-        'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));' +
-        'will-change:transform;' +
-        'transform:translateX(100vw);' +  // 剛好在螢幕右外，GPU 一定渲染
-        'transition:none;'
-      )
-
-      wrapper.appendChild(im)
-      ov.appendChild(wrapper)
-      document.body.appendChild(ov)
-      this._trainOverlay = ov
-
-      // 用 decode() 確保圖片已完全解碼可繪製，再啟動動畫
-      const _start = () => {
-        // 第1幀：確認初始 transform 已被瀏覽器認識
-        requestAnimationFrame(() => {
-          // 第2幀：啟動滑入動畫
-          requestAnimationFrame(() => {
-            this._playTrainSound()
-            im.style.transition = (
-              `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
-            )
-            im.style.transform = 'translateX(0)'
-
-            // 動畫啟動後才開始計時（在此 rAF 內啟動 setTimeout）
-            setTimeout(() => {
-              // overlay 結束，顯示頁面內靜態火車圖
-              const si = document.getElementById('train-img')
-              if (si) si.style.visibility = 'visible'
-              if (ov.parentNode) ov.parentNode.removeChild(ov)
-              this._trainOverlay = null
-              _showInteractive()
-            }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-          })
-        })
+    const _startCSSAnim = () => {
+      // 注入 @keyframes（若尚未存在）
+      if (!document.getElementById('train-keyframes-style')) {
+        const style = document.createElement('style')
+        style.id = 'train-keyframes-style'
+        style.textContent = `
+          @keyframes trainEnter {
+            from { transform: translateX(110%); }
+            to   { transform: translateX(0); }
+          }
+          @keyframes trainExit {
+            from { transform: translateX(0) scale(1); opacity: 1; }
+            to   { transform: translateX(-120%) scale(0.92); opacity: 0; }
+          }
+        `
+        document.head.appendChild(style)
       }
 
-      // decode() 確保圖片可繪製（不支援時直接執行）
-      if (typeof im.decode === 'function') {
-        im.decode().then(_start).catch(_start)
-      } else {
-        _start()
-      }
+      // 播音效
+      this._playTrainSound()
+
+      // 顯示圖片並套用入場動畫
+      trainImg.style.visibility = 'visible'
+      trainImg.style.animation  = `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94) forwards`
+
+      // 動畫結束後顯示互動區
+      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
-    // ── 圖片載入策略 ──────────────────────────────────────
-    const imgSrc = `${_pathPrefix}/images/train.png`
-
-    const _tryLoad = () => {
-      const im = new Image()
-      im.onload = () => _runAnimation(im)
-      im.onerror = () => {
-        const si = document.getElementById('train-img')
-        if (si) si.style.display = 'none'
-        _showInteractive()
-      }
-      im.src = imgSrc
-      // 快取命中：complete 在 src 設定後立即為 true
-      if (im.complete && im.naturalWidth > 0) {
-        _runAnimation(im)
-      }
+    // 圖片已顯示（complete）或等待載入
+    if (trainImg.complete && trainImg.naturalWidth > 0) {
+      requestAnimationFrame(() => requestAnimationFrame(_startCSSAnim))
+    } else {
+      trainImg.onload  = () => requestAnimationFrame(() => requestAnimationFrame(_startCSSAnim))
+      trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
     }
-
-    _tryLoad()
   }
 
   async _animateTrainOut () {
+    const train = document.getElementById('train-img')
+    if (!train || train.style.display === 'none') return
+
+    this._playTrainSound()
+
+    await new Promise(resolve => {
+      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45) forwards`
+      setTimeout(resolve, TRAIN_EXIT_MS)
+    })
+  }
+
+    async _animateTrainOut () {
     const train = document.getElementById('train-img')
     if (!train || train.style.display === 'none') return
 
@@ -403,7 +370,7 @@ export class IdiomGame extends GameEngine {
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{width:80vw;max-width:480px;height:auto;display:block;visibility:hidden;will-change:transform;transform:translateX(0);filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      `#train-img{width:80vw;max-width:480px;height:auto;display:block;visibility:hidden;will-change:transform;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
       `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
