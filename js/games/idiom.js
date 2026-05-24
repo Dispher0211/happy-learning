@@ -590,88 +590,177 @@ export class IdiomGame extends GameEngine {
       ...q.distractors.map(d => ({ idiom: d, correct: false }))
     ])
 
-    const optionsHtml = options.map((opt, i) => {
-      const label = ['左線', '右線', '直行', '迴轉'][i] ?? `路線${i + 1}`
-      return `
-        <button class="fork-option" data-idiom="${opt.idiom}"
-          style="
-            width:100%; padding:14px 16px; border-radius:16px;
-            background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
-            border:2px solid #cbd5e1; font-size:1.1rem; font-weight:800;
-            cursor:pointer; display:flex; align-items:center; gap:10px;
-            transition:all 0.15s; color:#1e293b;
-          ">
-          <span style="font-size:0.75rem;color:#64748b;font-weight:600;">${label}</span>
-          <span>${opt.idiom}</span>
-        </button>
-      `
-    }).join('')
+    // 火車容器 HTML（頭+1節車廂）
+    const trainHTML = (
+      `<div id="m2-train" style="` +
+        `display:flex;flex-direction:row;align-items:flex-end;` +
+        `position:absolute;right:0;` +
+        `transition:none;` +
+      `">` +
+        `<img src="${_pathPrefix}/images/trainhead.png" ` +
+          `style="width:80px;height:auto;display:block;" alt="火車頭">` +
+        `<img src="${_pathPrefix}/images/trainbox.png" ` +
+          `style="width:80px;height:auto;display:block;" alt="車廂">` +
+      `</div>`
+    )
 
-    return `
-      <div id="idiom-game-wrap" style="
-        display:flex; flex-direction:column; align-items:center;
-        padding:12px 16px; gap:14px;
-      ">
-        <style>
-          .flash-correct { animation: flashGreen2 0.6s ease; }
-          .shake-wrong   { animation: shakeRed2 0.6s ease; }
-          @keyframes flashGreen2 {
-            0%,100%{background:transparent;}50%{background:rgba(134,239,172,0.3);}
-          }
-          @keyframes shakeRed2 {
-            0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}
-          }
-          .fork-option:active { transform:scale(0.97); }
-        </style>
+    // 4個火車站 HTML（左側固定，每站顯示成語選項）
+    const STATION_H = 110  // px，每個車站高度
+    const stationsHTML = options.map((opt, i) => (
+      `<div class="m2-station" data-idiom="${opt.idiom}" data-idx="${i}" style="` +
+        `position:absolute;left:0;top:${i * STATION_H}px;` +
+        `width:160px;height:${STATION_H - 8}px;` +
+        `display:flex;flex-direction:column;align-items:center;justify-content:flex-end;` +
+        `cursor:pointer;` +
+      `">` +
+        `<div style="` +
+          `font-size:1.2rem;font-weight:900;color:#3730a3;` +
+          `background:rgba(255,255,255,.85);border-radius:8px;` +
+          `padding:3px 10px;margin-bottom:2px;letter-spacing:2px;` +
+          `text-align:center;` +
+        `">${opt.idiom}</div>` +
+        `<img src="${_pathPrefix}/images/TRAINSTATION.png" ` +
+          `style="width:150px;height:auto;display:block;" alt="車站" onerror="this.style.opacity='.3'">` +
+      `</div>`
+    )).join('')
 
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
-          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
-            🚂 選對叉路，讓火車通過！
-          </div>
-          <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
-            <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
-            <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '選出正確的成語路線'}</div>
-          </div>
-        </div>
+    const CANVAS_H = 4 * STATION_H + 20
 
-        <!-- 裝飾用小火車（emoji） -->
-        <div style="font-size:2.5rem; animation:trainMove 2s linear infinite;">🚂</div>
-        <style>
-          @keyframes trainMove {
-            0%   { transform: translateX(-20px); }
-            50%  { transform: translateX(20px); }
-            100% { transform: translateX(-20px); }
-          }
-        </style>
+    return (
+      `<div id="idiom-game-wrap" style="` +
+        `display:flex;flex-direction:column;align-items:center;` +
+        `padding:8px 8px;gap:12px;width:100%;max-width:100%;` +
+      `">` +
 
-        <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;">
-          ${optionsHtml}
-        </div>
+      `<style>` +
+      `.m2-station{transition:filter .2s;}` +
+      `.m2-station.active{filter:drop-shadow(0 0 10px #6366f1);}` +
+      `.m2-station:hover{filter:brightness(1.1);}` +
+      `#m2-canvas{position:relative;width:100%;height:${CANVAS_H}px;overflow:visible;}` +
+      `#m2-track{position:absolute;right:100px;top:0;width:6px;height:100%;` +
+        `background:repeating-linear-gradient(180deg,#8B7355 0,#8B7355 20px,#C8A87A 20px,#C8A87A 30px);` +
+        `border-radius:3px;` +
+      `}` +
+      `#m2-controls{display:flex;gap:12px;justify-content:center;margin-top:8px;}` +
+      `.m2-btn{width:56px;height:56px;border-radius:50%;font-size:1.6rem;` +
+        `background:#6366f1;color:#fff;border:none;cursor:pointer;` +
+        `box-shadow:0 4px 12px rgba(99,102,241,.4);` +
+        `transition:transform .1s;` +
+      `}` +
+      `.m2-btn:active{transform:scale(.92);}` +
+      `#m2-confirm{padding:10px 28px;border-radius:24px;` +
+        `background:#22c55e;color:#fff;border:none;cursor:pointer;` +
+        `font-size:1rem;font-weight:700;` +
+        `box-shadow:0 4px 12px rgba(34,197,94,.4);` +
+      `}` +
+      `</style>` +
 
-        <div id="idiom-hint" style="
-          min-height:24px; font-size:0.85rem; color:#7c3aed;
-          font-weight:700; text-align:center;
-        "></div>
+      // 成語意思提示
+      `<div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;` +
+      `padding:8px 14px;text-align:center;width:100%;max-width:420px;">` +
+      `<div style="font-size:.7rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
+      `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
+      `${q.meaning || q.example || '選出正確的成語'}</div></div>` +
 
-        <button id="btn-hint-idiom" style="
-          padding:8px 20px; border-radius:20px;
-          background:linear-gradient(135deg,#fef3c7,#fde68a);
-          border:2px solid #f59e0b; font-size:0.85rem;
-          font-weight:700; cursor:pointer; color:#92400e;
-        ">💡 提示</button>
-      </div>
-    `
+      // 畫布：左側車站 + 右側軌道+火車
+      `<div id="m2-canvas">` +
+        `<div id="m2-stations">${stationsHTML}</div>` +
+        `<div id="m2-track"></div>` +
+        `<div id="m2-train-wrap" style="` +
+          `position:absolute;right:0;top:0;` +
+          `transition:top 0.3s cubic-bezier(0.25,0.46,0.45,0.94);` +
+        `">` +
+          trainHTML +
+        `</div>` +
+      `</div>` +
+
+      // 操作按鈕
+      `<div id="m2-controls">` +
+        `<button class="m2-btn" id="m2-up">⬆</button>` +
+        `<button id="m2-confirm">✔ 確認</button>` +
+        `<button class="m2-btn" id="m2-down">⬇</button>` +
+      `</div>` +
+
+      // 提示
+      `<div id="idiom-hint" style="min-height:22px;font-size:.85rem;color:#7c3aed;font-weight:700;text-align:center;"></div>` +
+      `<button id="btn-hint-idiom" style="padding:7px 20px;border-radius:20px;background:#fef3c7;` +
+      `border:2px solid #f59e0b;font-size:.85rem;font-weight:700;cursor:pointer;color:#92400e;">💡 提示</button>` +
+
+      `</div>`
+    )
   }
 
   _bindMode2Events (q) {
-    document.querySelectorAll('.fork-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (this.isAnswering) return
-        this.submitAnswer({ idiom: btn.dataset.idiom })
+    const options = this._shuffle([
+      { idiom: q.idiom, correct: true },
+      ...q.distractors.map(d => ({ idiom: d, correct: false }))
+    ])
+
+    const STATION_H = 110
+    const STATION_COUNT = 4
+    let currentIdx = 0  // 目前選中的車站 index
+
+    const trainWrap = document.getElementById('m2-train-wrap')
+    const stations  = document.querySelectorAll('.m2-station')
+
+    // 讓火車對齊指定 index 的車站（垂直中央）
+    const _alignTrain = (idx) => {
+      currentIdx = Math.max(0, Math.min(STATION_COUNT - 1, idx))
+      const targetTop = currentIdx * STATION_H + (STATION_H / 2) - 40
+      if (trainWrap) trainWrap.style.top = targetTop + 'px'
+      stations.forEach((s, i) => {
+        s.classList.toggle('active', i === currentIdx)
       })
+    }
+
+    // 初始對齊第0個
+    _alignTrain(0)
+
+    // 上下按鈕
+    document.getElementById('m2-up')?.addEventListener('click', () => {
+      _alignTrain(currentIdx - 1)
     })
+    document.getElementById('m2-down')?.addEventListener('click', () => {
+      _alignTrain(currentIdx + 1)
+    })
+
+    // 點擊車站直接選擇
+    stations.forEach((station, i) => {
+      station.addEventListener('click', () => _alignTrain(i))
+    })
+
+    // 鍵盤支援
+    document.addEventListener('keydown', this._m2KeyHandler = (e) => {
+      if (e.key === 'ArrowUp')   { e.preventDefault(); _alignTrain(currentIdx - 1) }
+      if (e.key === 'ArrowDown') { e.preventDefault(); _alignTrain(currentIdx + 1) }
+      if (e.key === 'Enter')     { _confirm() }
+    })
+
+    // 觸控滑動支援
+    let touchStartY = 0
+    document.getElementById('m2-canvas')?.addEventListener('touchstart', e => {
+      touchStartY = e.touches[0].clientY
+    }, { passive: true })
+    document.getElementById('m2-canvas')?.addEventListener('touchend', e => {
+      const dy = touchStartY - e.changedTouches[0].clientY
+      if (Math.abs(dy) > 30) {
+        _alignTrain(currentIdx + (dy > 0 ? 1 : -1))
+      }
+    }, { passive: true })
+
+    // 確認送出
+    const _confirm = () => {
+      if (this.isAnswering) return
+      // 重新取得 options（同順序）
+      const all = [...document.querySelectorAll('.m2-station')]
+      const chosen = all[currentIdx]?.dataset.idiom
+      if (chosen) this.submitAnswer({ idiom: chosen })
+    }
+
+    document.getElementById('m2-confirm')?.addEventListener('click', _confirm)
     this._bindHintButton()
   }
+
 
   // ───────────────────────────────────────────────────
   //  提示系統
@@ -767,6 +856,10 @@ export class IdiomGame extends GameEngine {
     if (this._trainOverlay && this._trainOverlay.parentNode) {
       this._trainOverlay.parentNode.removeChild(this._trainOverlay)
       this._trainOverlay = null
+    }
+    if (this._m2KeyHandler) {
+      document.removeEventListener('keydown', this._m2KeyHandler)
+      this._m2KeyHandler = null
     }
     if (window._idiomGame === this) delete window._idiomGame
     super.destroy()
