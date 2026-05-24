@@ -254,82 +254,50 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // ── 注入 @keyframes（只做一次）──
+    // 注入 keyframes（用 left 屬性動畫，不用 transform）
     if (!document.getElementById('train-kf')) {
       const kf = document.createElement('style')
       kf.id = 'train-kf'
-      kf.textContent = (
+      kf.textContent =
         '@keyframes trainEnter{' +
-        '  0%{transform:translateX(110%);opacity:1;}' +
-        '  100%{transform:translateX(0);opacity:1;}' +
+          '0%{left:120%;opacity:0;}' +
+          '100%{left:50%;opacity:1;}' +
         '}' +
         '@keyframes trainExit{' +
-        '  0%{transform:translateX(0) scale(1);opacity:1;}' +
-        '  100%{transform:translateX(-120%) scale(0.9);opacity:0;}' +
+          '0%{left:50%;opacity:1;}' +
+          '100%{left:-150%;opacity:0;}' +
         '}'
-      )
       document.head.appendChild(kf)
     }
 
     const trainImg = document.getElementById('train-img')
     if (!trainImg) { _showInteractive(); return }
 
-    // ── 直接執行動畫，不等 onload ──
-    // 原因：Service Worker 快取圖片時 onload 不一定觸發
-    //       complete 在新建 DOM 後立即為 false 即使圖片已快取
-    //       最可靠做法：直接設 animation，讓瀏覽器處理圖片載入
-    const _go = () => {
-      this._playTrainSound()
-      trainImg.style.visibility = 'visible'
-      trainImg.style.animation = (
-        `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94) both`
-      )
-      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-    }
+    trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
 
-    trainImg.onerror = () => {
-      trainImg.style.display = 'none'
-      _showInteractive()
-    }
-
-    // 雙 rAF 確保 DOM 已繪製（animation 的 from 起點才有意義）
-    requestAnimationFrame(() => requestAnimationFrame(_go))
-  }
-
-  async _animateTrainOut () {
-    const train = document.getElementById('train-img')
-    if (!train || train.style.display === 'none') return
-
-    this._playTrainSound()
-
-    await new Promise(resolve => {
-      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45) forwards`
-      setTimeout(resolve, TRAIN_EXIT_MS)
+    // 雙 rAF 確保 DOM 穩定後再啟動動畫
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this._playTrainSound()
+        trainImg.style.visibility = 'visible'
+        trainImg.style.animation  =
+          `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,1,0.5,1) forwards`
+        setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+      })
     })
   }
 
     async _animateTrainOut () {
     const train = document.getElementById('train-img')
     if (!train || train.style.display === 'none') return
-
-    void train.offsetWidth
-
+    this._playTrainSound()
     await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this._playTrainSound()
-          train.style.transition =
-            `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45), ` +
-            `opacity ${TRAIN_EXIT_MS}ms ease`
-          train.style.transform = 'translateX(-140vw) scale(0.92)'
-          train.style.opacity   = '0'
-          setTimeout(resolve, TRAIN_EXIT_MS)
-        })
-      })
+      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45) forwards`
+      setTimeout(resolve, TRAIN_EXIT_MS)
     })
   }
 
-  // 保留舊名稱別名，避免其他地方呼叫報錯
+    // 保留舊名稱別名，避免其他地方呼叫報錯
   async _trainExitAnimation () {
     return this._animateTrainOut()
   }
@@ -369,7 +337,7 @@ export class IdiomGame extends GameEngine {
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{width:80vw;max-width:480px;height:auto;display:block;visibility:hidden;will-change:transform;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      `#train-img{position:absolute;left:50%;transform:translateX(-50%);width:80vw;max-width:480px;height:auto;visibility:hidden;will-change:left,opacity;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
       `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
@@ -381,8 +349,10 @@ export class IdiomGame extends GameEngine {
       `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
       `${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
+      `<div id="train-stage" style="position:relative;width:100%;height:160px;overflow:hidden;">` +
       `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" ` +
       `onerror="this.style.display='none'">` +
+      `</div>` +
 
       `<div id="slot-row">${slotHtml}</div>` +
 
