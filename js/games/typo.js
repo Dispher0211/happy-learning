@@ -170,9 +170,30 @@ export class TypoGame extends GameEngine {
     // ── 動態補題：生字簿中不在 confusables 的字，動態從 characters.json 生成 ──
     const coveredChars = new Set(this._allConfusables.map(i => i.correct));
     const missingChars = [...myChars].filter(ch => !coveredChars.has(ch));
-    const dynamicItems = (await Promise.all(
-      missingChars.map(ch => _buildDynamicQuestion(ch, this._allConfusables))
-    )).filter(Boolean);
+
+    let dynamicItems = [];
+    if (missingChars.length > 0) {
+      // 限制最多 3 個並行 AI 請求，並設 8 秒整體 timeout
+      // 超時或全部失敗 → 靜態 fallback（不阻擋遊戲啟動）
+      const MAX_DYNAMIC = Math.min(missingChars.length, 3);
+      const dynamicPromises = missingChars.slice(0, MAX_DYNAMIC).map(
+        ch => _buildDynamicQuestion(ch, this._allConfusables)
+      );
+      try {
+        const timeoutPromise = _sleep(8000).then(() => null);
+        const results = await Promise.race([
+          Promise.all(dynamicPromises),
+          timeoutPromise.then(() => {
+            console.warn('[TypoGame] 動態出題超時（8s），使用靜態題目');
+            return [];
+          }),
+        ]);
+        dynamicItems = (Array.isArray(results) ? results : []).filter(Boolean);
+      } catch (e) {
+        console.warn('[TypoGame] 動態出題失敗:', e.message);
+        dynamicItems = [];
+      }
+    }
 
     // 動態題放最前（優先出現），再補 pool
     const combined = [..._shuffle(dynamicItems), ...pool];
@@ -611,11 +632,19 @@ export class TypoGame extends GameEngine {
     if (!content) return;
 
     // 產生辨識結果提示 HTML（辨識失敗 fallback 時顯示）
-    const recognizedHtml = (this._hwRetrying && recognizedResult)
-      ? `<div class="typo-recognized-hint">🔍 辨識為：「<span class="typo-recognized-char">${recognizedResult}</span>」，請再寫一次</div>`
-      : (this._hwRetrying
-          ? '<div class="typo-retry-msg">辨識失敗，請再寫一次 ✏️</div>'
-          : '');
+    // 組裝提示訊息：顯示辨識結果給小朋友，引導重寫
+    let recognizedHtml = '';
+    if (this._hwRetrying) {
+      if (recognizedResult) {
+        recognizedHtml = `
+          <div class="typo-recognized-hint">
+            🔍 你寫的是「<span class="typo-recognized-char">${recognizedResult}</span>」
+            <span class="typo-recognized-sub">再試一次，寫出正確的字 ✏️</span>
+          </div>`;
+      } else {
+        recognizedHtml = '<div class="typo-retry-msg">看不清楚，再寫一次 ✏️</div>';
+      }
+    }
 
     content.innerHTML = `
       <div class="typo-mode2-write">
@@ -680,7 +709,8 @@ export class TypoGame extends GameEngine {
             return;
           }
 
-          // 辨識成功 → 確保 isAnswering=false 再走 submitAnswer
+          // 辨識成功 → 儲存辨識結果（供 onWrongFirstTime 顯示），再走 submitAnswer
+          this._lastRecognizedText = recognized;
           this.isAnswering = false;
           await this.submitAnswer({ recognized });
 
@@ -737,10 +767,21 @@ export class TypoGame extends GameEngine {
    */
 
   /**
-   * GameEngine 答錯第一次：顯示錯誤反饋
-   * （GameEngine.onWrongFirstTime 呼叫 playWrongAnimation）
-   * 模式二手寫若 fallback=retry：不計答錯，回到手寫畫面
+   * 覆寫 onWrongFirstTime：
+   * - 模式一：走預設（搖動 + 等重試）
+   * - 模式二手寫：播完錯誤動畫後，清空畫布並顯示辨識結果，讓小朋友重寫
    */
+  async onWrongFirstTime(result) {
+    await super.onWrongFirstTime(result);   // 播放搖動動畫、記錄 wrongPool
+
+    if (this._currentMode === 'mode2' && this._substep === SUBSTEP.WRITE) {
+      // 顯示辨識為何字，並清空畫布讓小朋友重寫（不重新出題，保持同一題）
+      this._hwRetrying = true;
+      this._typoClearCanvas();
+      this._cleanupHandwritingListeners();
+      this._renderMode2WriteStep(this.currentQuestion, this._lastRecognizedText);
+    }
+  }
 
   /**
    * 覆寫 onWrongSecondTime：顯示錯誤答案後 2 秒自動跳下一題
@@ -1511,22 +1552,34 @@ export function injectTypoStyles() {
     }
     /* ── 辨識結果提示 ── */
     .typo-recognized-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
       text-align: center;
       font-size: 1rem;
-      color: #c0392b;
+      color: #7b3f00;
       font-weight: 600;
       background: #fff3cd;
       border: 2px solid #f5c842;
-      border-radius: 10px;
-      padding: 8px 14px;
+      border-radius: 12px;
+      padding: 10px 16px;
       margin: 0 auto 8px;
       max-width: 320px;
       animation: fadeIn 0.3s ease;
     }
     .typo-recognized-char {
-      font-size: 1.3em;
+      font-size: 1.6em;
       font-weight: 900;
-      color: #e07b00;
+      color: #c0392b;
+      background: #ffe0e0;
+      padding: 2px 10px;
+      border-radius: 6px;
+    }
+    .typo-recognized-sub {
+      font-size: 0.88em;
+      color: #555;
+      font-weight: 400;
     }
     @keyframes typoStarFly {
       0%   { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(0); opacity: 1; }
