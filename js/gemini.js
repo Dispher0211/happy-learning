@@ -206,15 +206,14 @@ export const GeminiManager = {
 2. confusables 為3個與「${char}」字形相近或音近的字，不含「${char}」本身
 3. wrong 為 confusables[0]`
 
-    // 只嘗試前 2 個模型（避免全部 429 時等待時間過長）
-    const TYPO_MODEL_CHAIN = TEXT_MODEL_CHAIN.slice(0, 2);
-    for (const model of TYPO_MODEL_CHAIN) {
+    // 使用完整 fallback 鏈（所有 4 個模型），整體超時由 typo.js 控制
+    for (const model of TEXT_MODEL_CHAIN) {
       for (const key of keys) {
         try {
           const res = await fetch(API_URL(model, key), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(5000),
+            signal: AbortSignal.timeout(8000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { temperature: 0.7, maxOutputTokens: 200, topP: 0.9 },

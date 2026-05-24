@@ -173,18 +173,20 @@ export class TypoGame extends GameEngine {
 
     let dynamicItems = [];
     if (missingChars.length > 0) {
-      // 限制最多 3 個並行 AI 請求，並設 8 秒整體 timeout
+      // 限制最多 2 個並行 AI 請求（降低 429 風險），整體 timeout 20 秒
       // 超時或全部失敗 → 靜態 fallback（不阻擋遊戲啟動）
-      const MAX_DYNAMIC = Math.min(missingChars.length, 3);
+      const MAX_DYNAMIC = Math.min(missingChars.length, 2);
       const dynamicPromises = missingChars.slice(0, MAX_DYNAMIC).map(
         ch => _buildDynamicQuestion(ch, this._allConfusables)
       );
+      // 顯示 AI 等待動畫
+      _showTypoLoadingOverlay();
       try {
-        const timeoutPromise = _sleep(8000).then(() => null);
+        const timeoutPromise = _sleep(20000).then(() => null);
         const results = await Promise.race([
           Promise.all(dynamicPromises),
           timeoutPromise.then(() => {
-            console.warn('[TypoGame] 動態出題超時（8s），使用靜態題目');
+            console.warn('[TypoGame] 動態出題超時（20s），改用靜態題目');
             return [];
           }),
         ]);
@@ -192,6 +194,8 @@ export class TypoGame extends GameEngine {
       } catch (e) {
         console.warn('[TypoGame] 動態出題失敗:', e.message);
         dynamicItems = [];
+      } finally {
+        _hideTypoLoadingOverlay();
       }
     }
 
@@ -398,11 +402,24 @@ export class TypoGame extends GameEngine {
     const root = document.getElementById('typo-game-root');
     if (!root) return;
 
-    const chests = root.querySelectorAll('.typo-chest, .typo-sentence-char.selected');
-    chests.forEach(el => {
-      el.classList.add('shake');
-      setTimeout(() => el.classList.remove('shake'), 600);
-    });
+    if (this._currentMode === 'mode1') {
+      // 模式一：標記點錯的寶箱為紅色，保留其他寶箱可點
+      const selected = root.querySelector('.typo-chest.selected');
+      if (selected) {
+        selected.classList.add('shake', 'typo-chest-wrong');
+        setTimeout(() => {
+          selected.classList.remove('shake');
+          // 保留 wrong 標記讓小朋友知道這個選錯了
+        }, 600);
+      }
+    } else {
+      // 模式二：搖動
+      const chests = root.querySelectorAll('.typo-sentence-char.selected');
+      chests.forEach(el => {
+        el.classList.add('shake');
+        setTimeout(() => el.classList.remove('shake'), 600);
+      });
+    }
 
     await _sleep(700);
   }
@@ -449,7 +466,7 @@ export class TypoGame extends GameEngine {
           正確答案：<span class="typo-reveal-char">${q.correct}</span>
         </div>
         ${explanation
-          ? `<div class="typo-reveal-explanation">字義：${explanation}</div>`
+          ? `<div class="typo-reveal-explanation">字義：${_renderTypoExplanation(explanation)}</div>`
           : ''}
         ${radical
           ? `<div class="typo-reveal-radical">部首：${radical}</div>`
@@ -1283,6 +1300,77 @@ function _formatStars(game) {
 /**
  * 當 confusables.json 無法載入時的最小示範資料
  */
+/**
+ * 顯示 AI 出題等待動畫（小人跑步）
+ */
+function _showTypoLoadingOverlay() {
+  if (document.getElementById('typo-loading-overlay')) return;
+  const el = document.createElement('div');
+  el.id = 'typo-loading-overlay';
+  el.innerHTML = `
+    <div class="typo-loading-runner">🏃</div>
+    <div>AI 老師正在出題<span class="typo-loading-dots"></span></div>
+    <div style="font-size:0.85rem;color:#a07800;font-weight:400;">請稍候片刻</div>
+  `;
+  document.body.appendChild(el);
+}
+
+/**
+ * 移除 AI 等待動畫
+ */
+function _hideTypoLoadingOverlay() {
+  document.getElementById('typo-loading-overlay')?.remove();
+}
+
+/**
+ * 將 explanation 字串中的注音轉為 pv2 格式 HTML
+ * explanation 格式例如：「ㄓㄨ˙、ㄓㄨㄛˊ」
+ */
+function _renderTypoExplanation(text) {
+  if (!text) return '';
+  const BPMF_RE = /[ㄅ-ㄩ][ㄅ-ㄩ]*[ˊˇˋ˙]?/g;
+  return text.replace(BPMF_RE, zhuyin => _renderZhuyinPv2(zhuyin));
+}
+
+/**
+ * 單個注音字串轉 pv2 HTML（從 polyphone._renderBubbleZhuyin 提取為獨立函式）
+ */
+function _renderZhuyinPv2(pron) {
+  if (!pron) return '';
+  const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ');
+  const MEDIALS  = new Set('ㄧㄨㄩ');
+  const TONES    = new Set(['ˊ','ˇ','ˋ','˙']);
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  let src = pron, tone = '';
+  if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1); }
+  else if (src.length > 0 && TONES.has(src[src.length-1])) {
+    tone = src[src.length-1]; src = src.slice(0,-1);
+  }
+  let initial = '', medial = '', final = '';
+  for (const ch of src) {
+    if (INITIALS.has(ch)) initial = ch;
+    else if (MEDIALS.has(ch)) medial = ch;
+    else final += ch;
+  }
+  const count   = [initial, medial, final].filter(Boolean).length;
+  const hasDot  = tone === '˙';
+  const dotHtml = hasDot ? `<span class="pv2-dot">${esc(tone)}</span>` : '';
+  const toneHtml = (tone && !hasDot)
+    ? `<span class="pv2-tone">${esc(tone)}</span>`
+    : `<span class="pv2-tone pv2-empty"></span>`;
+  const toneCol = `<span class="pv2-tone-col"><span class="pv2-empty pv2-tone-spacer"></span>${toneHtml}<span class="pv2-empty pv2-tone-spacer"></span></span>`;
+  const dotCls  = hasDot ? ' pv2--dot' : '';
+  if (count <= 1) {
+    const sym = initial || medial || final || src;
+    return `<span class="pv2 pv2-a${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1 pv2-empty"></span><span class="pv2-r2">${esc(sym)}</span><span class="pv2-r3 pv2-empty"></span></span>${toneCol}</span>`;
+  }
+  if (count === 2) {
+    const slots = [initial, medial, final].filter(Boolean);
+    return `<span class="pv2 pv2-b${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(slots[0])}</span><span class="pv2-r2 pv2-empty"></span><span class="pv2-r3">${esc(slots[1])}</span></span>${toneCol}</span>`;
+  }
+  return `<span class="pv2 pv2-c${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(initial)}</span><span class="pv2-r2">${esc(medial)}</span><span class="pv2-r3">${esc(final)}</span></span>${toneCol}</span>`;
+}
+
 function _getFallbackData() {
   return [
     {
@@ -1551,6 +1639,58 @@ export function injectTypoStyles() {
       100% { opacity: 0; transform: scale(0.12); }
     }
     /* ── 辨識結果提示 ── */
+    /* ── AI 等待動畫覆蓋層 ── */
+    #typo-loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,250,235,0.9);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 1.1rem;
+      color: #7b5e00;
+      font-weight: 600;
+    }
+    .typo-loading-runner {
+      font-size: 3rem;
+      animation: typoRunnerBounce 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes typoRunnerBounce {
+      from { transform: translateY(0) scaleX(1); }
+      to   { transform: translateY(-12px) scaleX(0.95); }
+    }
+    .typo-loading-dots::after {
+      content: '';
+      animation: typoDots 1.2s steps(3, end) infinite;
+    }
+    @keyframes typoDots {
+      0%   { content: ''; }
+      33%  { content: '.'; }
+      66%  { content: '..'; }
+      100% { content: '...'; }
+    }
+    /* ── 選錯的寶箱變紅 ── */
+    .typo-chest-wrong {
+      border-color: #e74c3c !important;
+      background: #fdecea !important;
+      opacity: 0.7;
+      pointer-events: none;  /* 不可再點 */
+    }
+    .typo-chest-wrong .typo-chest-label,
+    .typo-chest-wrong .chest-label {
+      color: #c0392b !important;
+    }
+    /* ── 字義注音 inline pv2 ── */
+    .typo-reveal-explanation .pv2 {
+      display: inline-flex;
+      align-items: flex-start;
+      font-size: 0.95em;
+      vertical-align: middle;
+      margin: 0 1px;
+    }
     .typo-recognized-hint {
       display: flex;
       flex-direction: column;
