@@ -254,47 +254,46 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // ── 純 CSS animation 入場，不依賴 JS transform ──
-    // 直接操作頁面內的 #train-img，加上 CSS animation class
+    // ── 注入 @keyframes（只做一次）──
+    if (!document.getElementById('train-kf')) {
+      const kf = document.createElement('style')
+      kf.id = 'train-kf'
+      kf.textContent = (
+        '@keyframes trainEnter{' +
+        '  0%{transform:translateX(110%);opacity:1;}' +
+        '  100%{transform:translateX(0);opacity:1;}' +
+        '}' +
+        '@keyframes trainExit{' +
+        '  0%{transform:translateX(0) scale(1);opacity:1;}' +
+        '  100%{transform:translateX(-120%) scale(0.9);opacity:0;}' +
+        '}'
+      )
+      document.head.appendChild(kf)
+    }
+
     const trainImg = document.getElementById('train-img')
     if (!trainImg) { _showInteractive(); return }
 
-    const _startCSSAnim = () => {
-      // 注入 @keyframes（若尚未存在）
-      if (!document.getElementById('train-keyframes-style')) {
-        const style = document.createElement('style')
-        style.id = 'train-keyframes-style'
-        style.textContent = `
-          @keyframes trainEnter {
-            from { transform: translateX(110%); }
-            to   { transform: translateX(0); }
-          }
-          @keyframes trainExit {
-            from { transform: translateX(0) scale(1); opacity: 1; }
-            to   { transform: translateX(-120%) scale(0.92); opacity: 0; }
-          }
-        `
-        document.head.appendChild(style)
-      }
-
-      // 播音效
+    // ── 直接執行動畫，不等 onload ──
+    // 原因：Service Worker 快取圖片時 onload 不一定觸發
+    //       complete 在新建 DOM 後立即為 false 即使圖片已快取
+    //       最可靠做法：直接設 animation，讓瀏覽器處理圖片載入
+    const _go = () => {
       this._playTrainSound()
-
-      // 顯示圖片並套用入場動畫
       trainImg.style.visibility = 'visible'
-      trainImg.style.animation  = `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94) forwards`
-
-      // 動畫結束後顯示互動區
+      trainImg.style.animation = (
+        `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94) both`
+      )
       setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
-    // 圖片已顯示（complete）或等待載入
-    if (trainImg.complete && trainImg.naturalWidth > 0) {
-      requestAnimationFrame(() => requestAnimationFrame(_startCSSAnim))
-    } else {
-      trainImg.onload  = () => requestAnimationFrame(() => requestAnimationFrame(_startCSSAnim))
-      trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
+    trainImg.onerror = () => {
+      trainImg.style.display = 'none'
+      _showInteractive()
     }
+
+    // 雙 rAF 確保 DOM 已繪製（animation 的 from 起點才有意義）
+    requestAnimationFrame(() => requestAnimationFrame(_go))
   }
 
   async _animateTrainOut () {
