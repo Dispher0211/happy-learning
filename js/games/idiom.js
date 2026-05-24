@@ -189,15 +189,12 @@ export class IdiomGame extends GameEngine {
       const slots = document.querySelectorAll('.wagon-slot')
       const chars = question.idiom.split('')
       slots.forEach((slot, i) => {
-        slot.dataset.char = chars[i]
+        slot.dataset.char       = chars[i]
+        slot.textContent        = chars[i]
         slot.classList.add('filled')
-        const inner = slot.querySelector('.wagon-slot-inner')
-        if (inner) {
-          inner.textContent       = chars[i]
-          inner.style.background  = 'rgba(134,239,172,.65)'
-          inner.style.borderColor = '#16a34a'
-          inner.style.borderStyle = 'solid'
-        }
+        slot.style.background   = 'rgba(134,239,172,.65)'
+        slot.style.borderColor  = '#16a34a'
+        slot.style.borderStyle  = 'solid'
       })
     } else {
       document.querySelectorAll('.fork-option').forEach(btn => {
@@ -243,8 +240,6 @@ export class IdiomGame extends GameEngine {
     this._bindHintButton()
 
     const _showInteractive = () => {
-      const slotRow = document.getElementById('slot-row')
-      if (slotRow) slotRow.style.opacity = '1'
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
         wagonArea.style.transition = 'opacity 0.5s ease, transform 0.5s ease'
@@ -254,55 +249,79 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // 注入 keyframes（用 left 屬性動畫，不用 transform）
-    if (!document.getElementById('train-kf')) {
-      const kf = document.createElement('style')
-      kf.id = 'train-kf'
-      kf.textContent =
-        '@keyframes trainEnter{' +
-          '0%{left:120%;opacity:0;}' +
-          '100%{left:50%;opacity:1;}' +
-        '}' +
-        '@keyframes trainExit{' +
-          '0%{left:50%;opacity:1;}' +
-          '100%{left:-150%;opacity:0;}' +
-        '}'
-      document.head.appendChild(kf)
+    const unit  = document.getElementById('train-unit')
+    const stage = document.getElementById('train-stage')
+    if (!unit || !stage) { _showInteractive(); return }
+
+    // 計算目標 left：讓 train-unit 水平置中於 stage
+    // train-unit 寬度 = 5 個單元 × 90px = 450px
+    // stage 寬度動態取得
+    const unitW  = 5 * 90   // px（5個單元：頭+4車廂）
+    const stageW = stage.offsetWidth || 360
+    const targetLeft = Math.max(0, (stageW - unitW) / 2)  // px
+
+    // 初始位置：在 stage 右側外
+    let currentLeft = stageW + 20  // px，從右側外開始
+    unit.style.left = currentLeft + 'px'
+
+    const DURATION = TRAIN_ENTER_MS  // 2500ms
+    const startTime = performance.now()
+
+    // easeOutCubic（煞車效果）
+    const ease = t => 1 - Math.pow(1 - t, 3)
+
+    const _animate = (now) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / DURATION, 1)
+      const eased = ease(progress)
+
+      currentLeft = (stageW + 20) + (targetLeft - (stageW + 20)) * eased
+      unit.style.left = currentLeft + 'px'
+
+      if (progress < 1) {
+        this._rafId = requestAnimationFrame(_animate)
+      } else {
+        unit.style.left = targetLeft + 'px'
+        // 入場完成：播音效 + 等待後顯示互動區
+        this._playTrainSound()
+        setTimeout(_showInteractive, TRAIN_STAY_MS)
+      }
     }
 
-    const trainImg = document.getElementById('train-img')
-    if (!trainImg) { _showInteractive(); return }
-
-    trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
-
-    // 雙 rAF 確保 DOM 穩定後再啟動動畫
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this._playTrainSound()
-        trainImg.style.visibility = 'visible'
-        trainImg.style.animation  =
-          `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,1,0.5,1) forwards`
-        setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-      })
-    })
-  }
-
-    async _animateTrainOut () {
-    const train = document.getElementById('train-img')
-    if (!train || train.style.display === 'none') return
     this._playTrainSound()
+    this._rafId = requestAnimationFrame(_animate)
+  }
+
+  async _animateTrainOut () {
+    const unit  = document.getElementById('train-unit')
+    const stage = document.getElementById('train-stage')
+    if (!unit) return
+
+    const stageW = stage ? (stage.offsetWidth || 360) : 360
+    const startLeft = parseFloat(unit.style.left) || 0
+    const targetLeft = -(stageW + 50)
+    const DURATION = TRAIN_EXIT_MS
+
+    this._playTrainSound()
+    const startTime = performance.now()
+    const easeIn = t => t * t  // 加速離開
+
     await new Promise(resolve => {
-      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45) forwards`
-      setTimeout(resolve, TRAIN_EXIT_MS)
+      const _animate = (now) => {
+        const progress = Math.min((now - startTime) / DURATION, 1)
+        unit.style.left = (startLeft + (targetLeft - startLeft) * easeIn(progress)) + 'px'
+        if (progress < 1) {
+          requestAnimationFrame(_animate)
+        } else {
+          resolve()
+        }
+      }
+      requestAnimationFrame(_animate)
     })
   }
 
-    // 保留舊名稱別名，避免其他地方呼叫報錯
-  async _trainExitAnimation () {
-    return this._animateTrainOut()
-  }
-
-  /** 建立模式一的完整 HTML 骨架（重新設計：火車圖放大+車廂格子疊加） */
+  
+  /** 建立模式一的完整 HTML 骨架 */
   _buildMode1Shell (q) {
     const chars    = q.idiom.split('')
     const shuffled = this._shuffle([...chars])
@@ -311,51 +330,93 @@ export class IdiomGame extends GameEngine {
       `<div class="idiom-card" draggable="true" data-char="${ch}" data-idx="${i}">${ch}</div>`
     ).join('')
 
-    const slotHtml = chars.map((_, i) =>
-      `<div class="wagon-slot" data-pos="${i}" aria-label="車廂${i + 1}">` +
-      `<div class="wagon-slot-inner"></div></div>`
-    ).join('')
+    // 4個車廂單元（每個包含 trainbox 圖 + 上方 drop zone）
+    const wagonUnits = chars.map((_, i) => (
+      `<div class="train-unit" style="position:relative;display:inline-flex;flex-direction:column;align-items:center;width:90px;">` +
+        `<div class="wagon-slot" data-pos="${i}" style="` +
+          `width:72px;height:72px;border-radius:10px;` +
+          `border:3px dashed rgba(255,255,255,.9);` +
+          `background:rgba(255,255,255,.15);` +
+          `display:flex;align-items:center;justify-content:center;` +
+          `font-size:2rem;font-weight:900;color:#fff;` +
+          `text-shadow:0 2px 6px rgba(0,0,0,.7);` +
+          `margin-bottom:4px;cursor:pointer;` +
+          `transition:background .2s,border-color .2s;` +
+        `">` +
+        `</div>` +
+        `<img src="${_pathPrefix}/images/trainbox.png" ` +
+          `style="width:90px;height:auto;display:block;" alt="車廂" onerror="this.style.opacity='.3'">` +
+      `</div>`
+    )).join('')
 
     return (
       `<div id="idiom-game-wrap" style="` +
-      `display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:10px;width:100%;">` +
+        `display:flex;flex-direction:column;align-items:center;` +
+        `padding:8px 4px;gap:12px;width:100%;` +
+      `">` +
 
       `<style>` +
-      `.idiom-card{width:64px;height:64px;border-radius:14px;background:#6366f1;color:white;` +
-      `font-size:1.8rem;font-weight:900;display:flex;align-items:center;justify-content:center;` +
-      `cursor:grab;user-select:none;touch-action:none;border:3px solid #4338ca;transition:transform .12s;}` +
-      `.idiom-card:active{transform:scale(1.15);}` +
+      `.idiom-card{` +
+        `width:64px;height:64px;border-radius:14px;` +
+        `background:#6366f1;color:white;` +
+        `font-size:1.8rem;font-weight:900;` +
+        `display:flex;align-items:center;justify-content:center;` +
+        `cursor:grab;user-select:none;touch-action:none;` +
+        `border:3px solid #4338ca;` +
+      `}` +
       `.idiom-card.dragging{opacity:.35;}` +
-      `.wagon-slot{width:72px;height:76px;display:flex;align-items:center;justify-content:center;cursor:pointer;}` +
-      `.wagon-slot-inner{width:62px;height:66px;border-radius:8px;border:3px dashed rgba(255,255,255,.9);` +
-      `background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;` +
-      `font-size:1.9rem;font-weight:900;color:#fff;transition:background .2s;` +
-      `text-shadow:0 2px 6px rgba(0,0,0,.7);}` +
-      `.wagon-slot.drag-over .wagon-slot-inner{background:rgba(255,255,255,.45);border-color:#fff;border-style:solid;}` +
-      `.wagon-slot.filled .wagon-slot-inner{background:rgba(99,102,241,.7);border-color:#a5b4fc;border-style:solid;}` +
+      `.wagon-slot.drag-over{` +
+        `background:rgba(255,255,255,.5)!important;` +
+        `border-color:#fff!important;border-style:solid!important;` +
+      `}` +
+      `.wagon-slot.filled{` +
+        `background:rgba(99,102,241,.75)!important;` +
+        `border-color:#a5b4fc!important;border-style:solid!important;` +
+      `}` +
       `.flash-correct{animation:fG .6s ease;}` +
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{position:absolute;left:50%;transform:translateX(-50%);width:80vw;max-width:480px;height:auto;visibility:hidden;will-change:left,opacity;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
-      `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
-      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
+      `#train-stage{` +
+        `position:relative;` +
+        `width:100%;` +
+        `height:180px;` +
+        `overflow:hidden;` +
+      `}` +
+      `#train-unit{` +
+        `position:absolute;` +
+        `top:0;` +
+        `display:flex;` +
+        `flex-direction:row;` +
+        `align-items:flex-end;` +
+        `gap:0;` +
+        `white-space:nowrap;` +
+      `}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
       `</style>` +
 
+      // 意思提示
       `<div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;` +
       `padding:8px 14px;text-align:center;width:100%;max-width:380px;">` +
       `<div style="font-size:.7rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
       `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
       `${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
-      `<div id="train-stage" style="position:relative;width:100%;height:160px;overflow:hidden;">` +
-      `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" ` +
-      `onerror="this.style.display='none'">` +
+      // 火車舞台
+      `<div id="train-stage">` +
+        `<div id="train-unit">` +
+          // 火車頭（第一個單元）
+          `<div class="train-unit" style="display:inline-flex;flex-direction:column;align-items:center;width:90px;">` +
+            `<div style="width:72px;height:72px;"></div>` +
+            `<img src="${_pathPrefix}/images/trainhead.png" ` +
+              `style="width:90px;height:auto;display:block;" alt="火車頭" onerror="this.style.opacity='.3'">` +
+          `</div>` +
+          // 四個車廂
+          wagonUnits +
+        `</div>` +
       `</div>` +
 
-      `<div id="slot-row">${slotHtml}</div>` +
-
+      // 互動區：字卡
       `<div id="wagon-interactive" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;">` +
       `<div style="font-size:.78rem;color:#64748b;font-weight:600;">⬆ 將國字拖曳到上方車廂</div>` +
       `<div id="idiom-cards-area" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">${cardHtml}</div>` +
@@ -363,9 +424,11 @@ export class IdiomGame extends GameEngine {
       `<button id="btn-hint-idiom" style="padding:7px 20px;border-radius:20px;background:#fef3c7;` +
       `border:2px solid #f59e0b;font-size:.85rem;font-weight:700;cursor:pointer;color:#92400e;">💡 提示</button>` +
       `</div>` +
+
       `</div>`
     )
   }
+
 
   /** 綁定模式一的拖曳事件（含 touch 支援） */
   _bindMode1Events (q) {
@@ -490,8 +553,7 @@ export class IdiomGame extends GameEngine {
     if (slot.dataset.char) this._returnCard(slot.dataset.char)
     slot.dataset.char = ch
     slot.classList.add('filled')
-    const inner = slot.querySelector('.wagon-slot-inner')
-    if (inner) inner.textContent = ch
+    slot.textContent = ch
     const card = [...document.querySelectorAll('.idiom-card')]
       .find(c => c.dataset.char === ch && c.style.visibility !== 'hidden')
     if (card) card.style.visibility = 'hidden'
@@ -506,8 +568,7 @@ export class IdiomGame extends GameEngine {
   }
 
   _clearSlot (slot) {
-    const inner = slot.querySelector('.wagon-slot-inner')
-    if (inner) inner.textContent = ''
+    slot.textContent  = ''
     slot.dataset.char = ''
     slot.classList.remove('filled')
   }
@@ -703,10 +764,8 @@ export class IdiomGame extends GameEngine {
   // ───────────────────────────────────────────────────
 
   destroy () {
-    if (this._touchClone) {
-      this._touchClone.remove()
-      this._touchClone = null
-    }
+    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null }
+    if (this._touchClone) { this._touchClone.remove(); this._touchClone = null }
     if (this._trainOverlay && this._trainOverlay.parentNode) {
       this._trainOverlay.parentNode.removeChild(this._trainOverlay)
       this._trainOverlay = null
