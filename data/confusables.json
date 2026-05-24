@@ -6,8 +6,12 @@
         "sentence": "大家都飲迎新同學",
         "wrong_position": 3,
         "wrong": "飲"
+      },
+       { 
+        "sentence": "小朋友都很喜嚾寶可夢",
+        "wrong_position": 7, 
+        "wrong": "嚾" 
       }
-       { "sentence": "小朋友都很喜嚾寶可夢", "wrong_position": 7, "wrong": "嚾" }
     ],
     "explanation": {
       "嚾": "ㄏㄨㄢ",

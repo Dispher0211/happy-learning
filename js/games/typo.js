@@ -166,25 +166,27 @@ export class TypoGame extends GameEngine {
     } else {
       pool = _shuffle([...prioritized, ...rest]);
     }
-    const selected = pool.slice(0, count);
+    // ── 動態補題：生字簿中不在 confusables 的字，動態從 characters.json 生成 ──
+    const coveredChars = new Set(this._allConfusables.map(i => i.correct));
+    const missingChars = [...myChars].filter(ch => !coveredChars.has(ch));
+    const dynamicItems = missingChars
+      .map(ch => _buildDynamicQuestion(ch, this._allConfusables))
+      .filter(Boolean);
+
+    // 動態題放最前（優先出現），再補 pool
+    const combined = [..._shuffle(dynamicItems), ...pool];
+    const selected = combined.slice(0, count);
 
     // 轉換為 GameEngine 標準格式
     // 支援新格式（sentences[]）與舊格式（sentence/wrong_position/wrong）
     this.questions = selected.map(item => {
       // ① 從 sentences[] 隨機挑一個句子（新格式），或用舊格式單句
+      //    wrong 固定來自 sentenceData（句子設計時已確保語意正確）
       const sentenceData = _pickSentence(item);
-
-      // ② 從 related_characters 中隨機挑一個錯字（排除 correct）
-      //    若 related_characters 只有 1 個可用或為空，回退到 sentenceData.wrong
-      const wrong = _pickRandomWrong(item, sentenceData);
-
-      // ③ 將句子中 sentenceData.wrong 換成新的 wrong（若不同）
-      const { sentence, wrongPosition } = _substituteWrong(
-        sentenceData.sentence,
-        sentenceData.wrong_position,
-        sentenceData.wrong ?? item.wrong ?? '',
-        wrong
-      );
+      const wrong = sentenceData.wrong ?? item.wrong ?? '';
+      const sentence = sentenceData.sentence ?? '';
+      const wrongPosition = sentenceData.wrong_position
+        ?? _findWrongPos(sentence, wrong);
 
       return {
         char: item.correct,
@@ -193,8 +195,9 @@ export class TypoGame extends GameEngine {
         sentence,
         wrongPosition,
         explanation: item.explanation ?? {},
-        relatedChars: item.related_characters ?? [],
-        radical: _getRadical(item.explanation, item.correct),
+        // relatedChars 是干擾字來源池（不含正確字）；正確字在 _renderMode1 另外加入
+        relatedChars: (item.related_characters ?? []).filter(ch => ch !== item.correct),
+        radical: item.radical || _getRadical(item.explanation, item.correct),
         mode: Math.random() < MODE1_RATIO ? 'mode1' : 'mode2',
       };
     });
@@ -1031,6 +1034,83 @@ function _getRadical(explanation, correctChar) {
  * @param {T[]} arr
  * @returns {T[]}
  */
+/**
+ * 為不在 confusables.json 的生字，動態生成一道改錯別字題目
+ * 策略：
+ *   1. 從 characters.json 找該字的詞語
+ *   2. 選一個 2-5 字的詞語作為句子骨幹
+ *   3. 從 confusables.json 找與該字形近的 wrong 字（related_characters 含此字的條目）
+ *   4. 將詞語中的正確字換成 wrong 字，確保句子語意合理（因為詞語本身正確）
+ * @param {string} char
+ * @param {Array}  allConf
+ * @returns {object|null}
+ */
+function _buildDynamicQuestion(char, allConf) {
+  const charData = (JSONLoader.get('characters') ?? []).find(
+    d => (d['字'] ?? d.char) === char
+  );
+  if (!charData) return null;
+
+  // 收集 2-5 字的詞語（含此字）
+  const words = [];
+  for (const pron of charData.pronunciations ?? []) {
+    for (const w of pron.words ?? []) {
+      if (w.length >= 2 && w.length <= 5 && w.includes(char)) words.push(w);
+    }
+  }
+  if (words.length === 0) return null;
+
+  const sentence = words[Math.floor(Math.random() * words.length)];
+  const wrongPosition = [...sentence].indexOf(char);
+  if (wrongPosition === -1) return null;
+
+  // 找形近字：confusables 裡 related_characters 含此字的條目
+  let wrongCandidates = [];
+  for (const item of allConf) {
+    const rel = item.related_characters ?? [];
+    if (rel.includes(char) && item.correct !== char) {
+      wrongCandidates.push(item.correct);
+      wrongCandidates.push(..._extractWrongs(item));
+    }
+  }
+  wrongCandidates = [...new Set(wrongCandidates.filter(c => c !== char && c.length === 1))];
+
+  // fallback：從 explanation 找注音前兩碼相同的字
+  if (wrongCandidates.length === 0) {
+    const zhuyin = charData.pronunciations?.[0]?.zhuyin ?? '';
+    for (const item of allConf) {
+      for (const [k, v] of Object.entries(item.explanation ?? {})) {
+        if (k !== char && typeof v === 'string' && v.startsWith(zhuyin.slice(0, 2))) {
+          wrongCandidates.push(k);
+        }
+      }
+    }
+    wrongCandidates = [...new Set(wrongCandidates.filter(c => c !== char && c.length === 1))];
+  }
+
+  if (wrongCandidates.length === 0) return null;
+
+  const wrong = wrongCandidates[Math.floor(Math.random() * wrongCandidates.length)];
+  const sentenceChars = [...sentence];
+  sentenceChars[wrongPosition] = wrong;
+  const wrongSentence = sentenceChars.join('');
+
+  const explanation = {};
+  explanation[char] = charData.pronunciations?.[0]?.zhuyin ?? '';
+  for (const item of allConf) {
+    if ((item.explanation ?? {})[wrong]) { explanation[wrong] = item.explanation[wrong]; break; }
+  }
+
+  return {
+    correct: char,
+    sentences: [{ sentence: wrongSentence, wrong_position: wrongPosition, wrong }],
+    explanation,
+    related_characters: _shuffle(wrongCandidates).slice(0, 4),
+    radical: charData.radical ?? '',
+    _isDynamic: true,
+  };
+}
+
 function _shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -1077,13 +1157,13 @@ function _pickSentence(item) {
  * @param {{ wrong: string }} sentenceData
  * @returns {string}
  */
+/**
+ * 取得本次題目使用的錯字
+ * 錯字固定為 sentenceData.wrong（該句子設計時指定，確保語意正確）
+ * related_characters 只作為選項干擾，不用來替換句中字
+ */
 function _pickRandomWrong(item, sentenceData) {
-  const correct = item.correct;
-  const related = (item.related_characters ?? []).filter(
-    ch => ch !== correct && ch.length === 1
-  );
-  if (related.length === 0) return sentenceData.wrong ?? item.wrong ?? correct;
-  return related[Math.floor(Math.random() * related.length)];
+  return sentenceData.wrong ?? item.wrong ?? item.correct;
 }
 
 /**
