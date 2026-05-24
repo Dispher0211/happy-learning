@@ -482,9 +482,7 @@ export class TypoGame extends GameEngine {
         <div class="typo-reveal-answer">
           正確答案：<span class="typo-reveal-char">${q.correct}</span>
         </div>
-        ${explanation
-          ? `<div class="typo-reveal-explanation">字義：${_renderTypoExplanation(explanation)}</div>`
-          : ''}
+
         ${radical
           ? `<div class="typo-reveal-radical">部首：${radical}</div>`
           : ''}
@@ -730,6 +728,7 @@ export class TypoGame extends GameEngine {
         }
         this._hwRecognizing = true;
         confirmBtn.disabled = true;
+        confirmBtn.textContent = '🤖 辨識中...';
 
         try {
           // 直接使用 import 的 HandwritingManager（不依賴 globalThis）
@@ -758,6 +757,7 @@ export class TypoGame extends GameEngine {
           const btn = document.getElementById('typo-btn-confirm');
           if (btn && !btn.closest('[data-destroyed]')) {
             btn.disabled = false;
+            btn.textContent = '確認';
           }
         }
       };
@@ -1738,14 +1738,7 @@ export function injectTypoStyles() {
     .typo-chest-wrong .chest-label {
       color: #c0392b !important;
     }
-    /* ── 字義注音 inline pv2 ── */
-    .typo-reveal-explanation .pv2 {
-      display: inline-flex;
-      align-items: flex-start;
-      font-size: 0.95em;
-      vertical-align: middle;
-      margin: 0 1px;
-    }
+    /* 字義純文字顯示，不使用 pv2 */
     .typo-recognized-hint {
       display: flex;
       flex-direction: column;
