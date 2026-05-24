@@ -36,6 +36,7 @@ import { GameConfig } from './GameConfig.js';
 import { AppState } from '../state.js';
 import { JSONLoader } from '../json_loader.js';
 import { HandwritingManager } from '../handwriting.js';
+import { GeminiManager } from '../gemini.js';
 
 // HandwritingManager 透過 globalThis 存取（避免循環依賴）
 // globalThis.HandwritingManager 由 handwriting.js 掛載
@@ -169,9 +170,9 @@ export class TypoGame extends GameEngine {
     // ── 動態補題：生字簿中不在 confusables 的字，動態從 characters.json 生成 ──
     const coveredChars = new Set(this._allConfusables.map(i => i.correct));
     const missingChars = [...myChars].filter(ch => !coveredChars.has(ch));
-    const dynamicItems = missingChars
-      .map(ch => _buildDynamicQuestion(ch, this._allConfusables))
-      .filter(Boolean);
+    const dynamicItems = (await Promise.all(
+      missingChars.map(ch => _buildDynamicQuestion(ch, this._allConfusables))
+    )).filter(Boolean);
 
     // 動態題放最前（優先出現），再補 pool
     const combined = [..._shuffle(dynamicItems), ...pool];
@@ -1035,23 +1036,22 @@ function _getRadical(explanation, correctChar) {
  * @returns {T[]}
  */
 /**
- * 為不在 confusables.json 的生字，動態生成一道改錯別字題目
- * 策略：
- *   1. 從 characters.json 找該字的詞語
- *   2. 選一個 2-5 字的詞語作為句子骨幹
- *   3. 從 confusables.json 找與該字形近的 wrong 字（related_characters 含此字的條目）
- *   4. 將詞語中的正確字換成 wrong 字，確保句子語意合理（因為詞語本身正確）
+ * 為不在 confusables.json 的生字，透過 AI 動態生成改錯別字題目
+ * 流程：
+ *   1. 從 characters.json 找該字的 2-5 字詞語
+ *   2. 呼叫 GeminiManager.generateTypoQuestion 取得 AI 造句 + 混淆字
+ *   3. AI 失敗時 fallback 到形近字靜態邏輯
  * @param {string} char
  * @param {Array}  allConf
- * @returns {object|null}
+ * @returns {Promise<object|null>}
  */
-function _buildDynamicQuestion(char, allConf) {
+async function _buildDynamicQuestion(char, allConf) {
+  // Step1：從 characters.json 找詞語
   const charData = (JSONLoader.get('characters') ?? []).find(
     d => (d['字'] ?? d.char) === char
   );
   if (!charData) return null;
 
-  // 收集 2-5 字的詞語（含此字）
   const words = [];
   for (const pron of charData.pronunciations ?? []) {
     for (const w of pron.words ?? []) {
@@ -1060,11 +1060,45 @@ function _buildDynamicQuestion(char, allConf) {
   }
   if (words.length === 0) return null;
 
-  const sentence = words[Math.floor(Math.random() * words.length)];
-  const wrongPosition = [...sentence].indexOf(char);
+  const word = words[Math.floor(Math.random() * words.length)];
+
+  // Step2：嘗試 AI 出題
+  try {
+    const aiResult = await GeminiManager.generateTypoQuestion({ char, word });
+    if (aiResult) {
+      const explanation = {};
+      explanation[char] = charData.pronunciations?.[0]?.zhuyin ?? '';
+      // 從 allConf 找混淆字的注音
+      for (const conf of aiResult.confusables) {
+        for (const item of allConf) {
+          if ((item.explanation ?? {})[conf]) {
+            explanation[conf] = item.explanation[conf];
+            break;
+          }
+        }
+      }
+      return {
+        correct: char,
+        sentences: [{
+          sentence:       aiResult.sentence,
+          wrong_position: aiResult.wrong_position,
+          wrong:          aiResult.wrong,
+        }],
+        explanation,
+        related_characters: aiResult.confusables,
+        radical: charData.radical ?? '',
+        _isDynamic: true,
+        _aiGenerated: true,
+      };
+    }
+  } catch (e) {
+    console.warn('[TypoGame] AI 出題失敗，使用靜態邏輯:', e.message);
+  }
+
+  // Step3：AI 失敗 fallback — 靜態形近字邏輯
+  const wrongPosition = [...word].indexOf(char);
   if (wrongPosition === -1) return null;
 
-  // 找形近字：confusables 裡 related_characters 含此字的條目
   let wrongCandidates = [];
   for (const item of allConf) {
     const rel = item.related_characters ?? [];
@@ -1075,25 +1109,11 @@ function _buildDynamicQuestion(char, allConf) {
   }
   wrongCandidates = [...new Set(wrongCandidates.filter(c => c !== char && c.length === 1))];
 
-  // fallback：從 explanation 找注音前兩碼相同的字
-  if (wrongCandidates.length === 0) {
-    const zhuyin = charData.pronunciations?.[0]?.zhuyin ?? '';
-    for (const item of allConf) {
-      for (const [k, v] of Object.entries(item.explanation ?? {})) {
-        if (k !== char && typeof v === 'string' && v.startsWith(zhuyin.slice(0, 2))) {
-          wrongCandidates.push(k);
-        }
-      }
-    }
-    wrongCandidates = [...new Set(wrongCandidates.filter(c => c !== char && c.length === 1))];
-  }
-
   if (wrongCandidates.length === 0) return null;
 
   const wrong = wrongCandidates[Math.floor(Math.random() * wrongCandidates.length)];
-  const sentenceChars = [...sentence];
+  const sentenceChars = [...word];
   sentenceChars[wrongPosition] = wrong;
-  const wrongSentence = sentenceChars.join('');
 
   const explanation = {};
   explanation[char] = charData.pronunciations?.[0]?.zhuyin ?? '';
@@ -1103,7 +1123,7 @@ function _buildDynamicQuestion(char, allConf) {
 
   return {
     correct: char,
-    sentences: [{ sentence: wrongSentence, wrong_position: wrongPosition, wrong }],
+    sentences: [{ sentence: sentenceChars.join(''), wrong_position: wrongPosition, wrong }],
     explanation,
     related_characters: _shuffle(wrongCandidates).slice(0, 4),
     radical: charData.radical ?? '',
