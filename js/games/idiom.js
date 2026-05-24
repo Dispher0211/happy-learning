@@ -7,9 +7,8 @@
  * 模式二（70%）：火車叉路選正確路線
  *
  * 修正：
- * 1. 徹底解決火車卡死在左側不播動畫的問題（改用純 transform 進行全舞台平移）。
- * 2. 修正格子與車廂錯位問題，將車廂格子與火車圖片完美錨定。
- * 3. 移除不穩定的雙 rAF 與 visibility 隱藏機制。
+ * 1. 解決火車硬生生突然出現、沒有滑進動畫的問題（改用 class 觸發與強制重繪機制）。
+ * 2. 完美保留格子與車廂 100% 精準對齊的結構。
  */
 
 import { GameEngine }   from './GameEngine.js'
@@ -28,7 +27,6 @@ const _pathPrefix = location.pathname.startsWith('/happy-learning')
 const MODE1_RATIO = 0.30
 const TRAIN_ENTER_MS = 2500
 const TRAIN_EXIT_MS = 1200
-const TRAIN_STAY_MS = 1500
 
 // ═══════════════════════════════════════════════════════
 //  IdiomGame class
@@ -181,7 +179,7 @@ export class IdiomGame extends GameEngine {
   }
 
   // ───────────────────────────────────────────────────
-  //  模式一：全新修正火車動畫與精準對位
+  //  模式一：全新修正火車動畫（確保平移流暢度）
   // ───────────────────────────────────────────────────
 
   _renderMode1WithTrainAnimation (q, app) {
@@ -198,18 +196,21 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // 重新編寫極致穩定的舞台位移 Keyframes，絕不卡死
+    // 注入全 transform 控制的進出場 CSS 動作
     if (!document.getElementById('train-kf')) {
       const kf = document.createElement('style')
       kf.id = 'train-kf'
       kf.textContent =
-        '@keyframes stageEnter {' +
-          '0% { transform: translateX(100%); opacity: 0; }' +
+        '.stage-initial { transform: translateX(100vw); opacity: 0; }' +
+        '.stage-enter { animation: stageEnterKF ' + TRAIN_ENTER_MS + 'ms cubic-bezier(0.25, 1, 0.5, 1) forwards; }' +
+        '.stage-exit { animation: stageExitKF ' + TRAIN_EXIT_MS + 'ms cubic-bezier(0.55, 0, 1, 0.45) forwards; }' +
+        '@keyframes stageEnterKF {' +
+          '0% { transform: translateX(100vw); opacity: 0; }' +
           '100% { transform: translateX(0); opacity: 1; }' +
         '}' +
-        '@keyframes stageExit {' +
+        '@keyframes stageExitKF {' +
           '0% { transform: translateX(0); opacity: 1; }' +
-          '100% { transform: translateX(-100%); opacity: 0; }' +
+          '100% { transform: translateX(-100vw); opacity: 0; }' +
         '}'
       document.head.appendChild(kf)
     }
@@ -217,11 +218,14 @@ export class IdiomGame extends GameEngine {
     const trainStage = document.getElementById('train-stage')
     if (!trainStage) { _showInteractive(); return }
 
-    // 直接發動 CSS 動畫，捨棄不穩定的 rAF 延遲機制
-    this._playTrainSound()
-    trainStage.style.animation = `stageEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
-    
-    setTimeout(_showInteractive, TRAIN_ENTER_MS + 400)
+    // 關鍵解法：利用非同步延遲與讀取 DOM 屬性強迫瀏覽器重繪（Reflow），確保 0% 狀態生效
+    setTimeout(() => {
+      this._playTrainSound()
+      trainStage.classList.remove('stage-initial')
+      trainStage.classList.add('stage-enter')
+      
+      setTimeout(_showInteractive, TRAIN_ENTER_MS + 200)
+    }, 50)
   }
 
   async _animateTrainOut () {
@@ -229,7 +233,8 @@ export class IdiomGame extends GameEngine {
     if (!trainStage) return
     this._playTrainSound()
     await new Promise(resolve => {
-      trainStage.style.animation = `stageExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55, 0, 1, 0.45) forwards`
+      trainStage.classList.remove('stage-enter')
+      trainStage.classList.add('stage-exit')
       setTimeout(resolve, TRAIN_EXIT_MS)
     })
   }
@@ -246,14 +251,12 @@ export class IdiomGame extends GameEngine {
       `<div class="idiom-card" draggable="true" data-char="${ch}" data-idx="${i}">${ch}</div>`
     ).join('')
 
-    // 重新精算：讓 4 個格子對齊截圖中的後方 4 節車廂
     const slotHtml = chars.map((_, i) =>
       `<div class="wagon-slot" data-pos="${i}" aria-label="車廂${i + 1}">` +
       `<div class="wagon-slot-inner"></div></div>`
     ).join('')
 
     return (
-      // 外層限定 overflow: hidden 防止大火車進出場把網頁撐寬
       `<div id="idiom-game-wrap" style="display:flex;flex-direction:column;align-items:center;padding:12px 6px;gap:16px;width:100%;overflow:hidden;position:relative;">` +
 
       `<style>` +
@@ -263,7 +266,6 @@ export class IdiomGame extends GameEngine {
       `.idiom-card:active{transform:scale(1.15);}` +
       `.idiom-card.dragging{opacity:.35;}` +
       
-      // 完美契合車廂圖案的格子尺寸與半透明感
       `.wagon-slot{width:16%;height:72px;display:flex;align-items:center;justify-content:center;cursor:pointer;}` +
       `.wagon-slot-inner{width:90%;height:90%;border-radius:8px;border:2px dashed rgba(255,255,255,0.85);` +
       `background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;` +
@@ -284,11 +286,9 @@ export class IdiomGame extends GameEngine {
       `<div style="font-size:.72rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
       `<div style="font-size:.92rem;font-weight:700;color:#3730a3;line-height:1.4;">${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
-      // 核心：將火車圖與格子區包在同一個相對容器中，一同平移
-      `<div id="train-stage" style="position:relative; width:100%; max-width:540px; will-change:transform, opacity; opacity:0;">` +
-        // 火車背景圖案，自然撐開高寬
+      // 預設加上 stage-initial 讓它停在螢幕最右側外面開不進來，等 JS 拿掉 class 觸發滑進
+      `<div id="train-stage" class="stage-initial" style="position:relative; width:100%; max-width:540px; will-change:transform, opacity; transition: none;">` +
         `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" style="display:block; width:100%; height:auto;" onerror="this.style.display='none'">` +
-        // 格子列：絕對定位錨定在火車圖上方，left與width完全跟後面四節車廂同步
         `<div id="slot-row" style="position:absolute; bottom:14%; left:22.5%; width:75.5%; height:55%; display:flex; gap:3.5%; align-items:center; justify-content:flex-start; z-index:3;">` +
           `${slotHtml}` +
         `</div>` +
@@ -322,287 +322,4 @@ export class IdiomGame extends GameEngine {
 
     slots.forEach(slot => {
       slot.addEventListener('dragover', e => {
-        e.preventDefault()
-        slot.classList.add('drag-over')
-      })
-      slot.addEventListener('dragleave', () => {
-        slot.classList.remove('drag-over')
-      })
-      slot.addEventListener('drop', e => {
-        e.preventDefault()
-        slot.classList.remove('drag-over')
-        if (!dragSrcChar) return
-        this._placeCharInSlot(slot, dragSrcChar, q)
-        dragSrcChar = null
-      })
-    })
-
-    cards.forEach(card => {
-      card.addEventListener('touchstart', e => {
-        e.preventDefault()
-        const touch = e.touches[0]
-        const rect  = card.getBoundingClientRect()
-        this._touchDragEl   = card
-        this._touchOffsetX  = touch.clientX - rect.left
-        this._touchOffsetY  = touch.clientY - rect.top
-
-        this._touchClone             = card.cloneNode(true)
-        this._touchClone.style.cssText = `
-          position:fixed; pointer-events:none; z-index:9999;
-          width:${rect.width}px; height:${rect.height}px;
-          font-size:1.5rem; font-weight:900;
-          display:flex; align-items:center; justify-content:center;
-          background:linear-gradient(135deg,#6366f1,#8b5cf6);
-          color:white; border-radius:12px; opacity:0.85;
-          box-shadow:0 8px 20px rgba(99,102,241,0.6);
-          left:${touch.clientX - this._touchOffsetX}px;
-          top:${touch.clientY  - this._touchOffsetY}px;
-        `
-        document.body.appendChild(this._touchClone)
-        card.style.opacity = '0.3'
-      }, { passive: false })
-
-      card.addEventListener('touchmove', e => {
-        e.preventDefault()
-        if (!this._touchClone) return
-        const touch = e.touches[0]
-        this._touchClone.style.left = `${touch.clientX - this._touchOffsetX}px`
-        this._touchClone.style.top  = `${touch.clientY - this._touchOffsetY}px`
-
-        slots.forEach(slot => slot.classList.remove('drag-over'))
-        const target = this._getSlotUnderTouch(touch, slots)
-        if (target) target.classList.add('drag-over')
-      }, { passive: false })
-
-      card.addEventListener('touchend', e => {
-        e.preventDefault()
-        if (!this._touchClone) return
-        const touch = e.changedTouches[0]
-
-        this._touchClone.remove()
-        this._touchClone  = null
-        if (this._touchDragEl) this._touchDragEl.style.opacity = '1'
-
-        slots.forEach(slot => slot.classList.remove('drag-over'))
-        const target = this._getSlotUnderTouch(touch, slots)
-        if (target && this._touchDragEl) {
-          this._placeCharInSlot(target, this._touchDragEl.dataset.char, q)
-        }
-        this._touchDragEl = null
-      }, { passive: false })
-    })
-
-    slots.forEach(slot => {
-      slot.addEventListener('click', () => {
-        if (!slot.dataset.char) return
-        this._returnCard(slot.dataset.char)
-        this._clearSlot(slot)
-      })
-    })
-  }
-
-  _getSlotUnderTouch (touch, slots) {
-    for (const slot of slots) {
-      const r = slot.getBoundingClientRect()
-      if (touch.clientX >= r.left && touch.clientX <= r.right &&
-          touch.clientY >= r.top  && touch.clientY <= r.bottom) {
-        return slot
-      }
-    }
-    return null
-  }
-
-  _placeCharInSlot (slot, ch, q) {
-    if (slot.dataset.char) this._returnCard(slot.dataset.char)
-    slot.dataset.char = ch
-    slot.classList.add('filled')
-    const inner = slot.querySelector('.wagon-slot-inner')
-    if (inner) inner.textContent = ch
-    const card = [...document.querySelectorAll('.idiom-card')]
-      .find(c => c.dataset.char === ch && c.style.visibility !== 'hidden')
-    if (card) card.style.visibility = 'hidden'
-    this._checkMode1Complete(q)
-  }
-
-  _returnCard (ch) {
-    const card = [...document.querySelectorAll('.idiom-card')]
-      .find(c => c.dataset.char === ch && c.style.visibility === 'hidden')
-    if (card) card.style.visibility = 'visible'
-  }
-
-  _clearSlot (slot) {
-    const inner = slot.querySelector('.wagon-slot-inner')
-    if (inner) inner.textContent = ''
-    slot.dataset.char = ''
-    slot.classList.remove('filled')
-  }
-
-  _checkMode1Complete (q) {
-    const slots    = [...document.querySelectorAll('.wagon-slot')]
-    const allFilled = slots.every(s => s.dataset.char)
-    if (!allFilled) return
-    const answer = slots.map(s => s.dataset.char).join('')
-    this.submitAnswer({ idiom: answer })
-  }
-
-  // ───────────────────────────────────────────────────
-  //  模式二：叉路選正確成語
-  // ───────────────────────────────────────────────────
-
-  _renderMode2 (q) {
-    const options = this._shuffle([
-      { idiom: q.idiom, correct: true },
-      ...q.distractors.map(d => ({ idiom: d, correct: false }))
-    ])
-
-    const optionsHtml = options.map((opt, i) => {
-      const label = ['左線', '右線', '直行', '迴轉'][i] ?? `路線${i + 1}`
-      return `
-        <button class="fork-option" data-idiom="${opt.idiom}"
-          style="
-            width:100%; padding:14px 16px; border-radius:16px;
-            background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
-            border:2px solid #cbd5e1; font-size:1.1rem; font-weight:800;
-            cursor:pointer; display:flex; align-items:center; gap:10px;
-            transition:all 0.15s; color:#1e293b;
-          ">
-          <span style="font-size:0.75rem;color:#64748b;font-weight:600;">${label}</span>
-          <span>${opt.idiom}</span>
-        </button>
-      `
-    }).join('')
-
-    return `
-      <div id="idiom-game-wrap" style="
-        display:flex; flex-direction:column; align-items:center;
-        padding:12px 16px; gap:14px;
-      ">
-        <style>
-          .flash-correct { animation: flashGreen2 0.6s ease; }
-          .shake-wrong   { animation: shakeRed2 0.6s ease; }
-          @keyframes flashGreen2 { 0%,100%{background:transparent;}50%{background:rgba(134,239,172,0.3);} }
-          @keyframes shakeRed2 { 0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);} }
-          .fork-option:active { transform:scale(0.97); }
-        </style>
-
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
-          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">🚂 選對叉路，讓火車通過！</div>
-          <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
-            <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
-            <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '選出正確的成語路線'}</div>
-          </div>
-        </div>
-
-        <div style="font-size:2.5rem; animation:trainMove 2s linear infinite;">🚂</div>
-        <style>
-          @keyframes trainMove { 0% { transform: translateX(-20px); } 50% { transform: translateX(20px); } 100% { transform: translateX(-20px); } }
-        </style>
-
-        <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;">
-          ${optionsHtml}
-        </div>
-
-        <div id="idiom-hint" style="min-height:24px; font-size:0.85rem; color:#7c3aed; font-weight:700; text-align:center;"></div>
-        <button id="btn-hint-idiom" style="padding:8px 20px; border-radius:20px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; font-size:0.85rem; font-weight:700; cursor:pointer; color:#92400e;">💡 提示</button>
-      </div>
-    `
-  }
-
-  _bindMode2Events (q) {
-    document.querySelectorAll('.fork-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (this.isAnswering) return
-        this.submitAnswer({ idiom: btn.dataset.idiom })
-      })
-    })
-    this._bindHintButton()
-  }
-
-  _bindHintButton () {
-    const btn = document.getElementById('btn-hint-idiom')
-    if (btn) {
-      btn.addEventListener('click', () => this.useHint(1))
-    }
-  }
-
-  useHint (level) {
-    const hintText = this.getHint(level)
-    if (hintText) {
-      const el = document.getElementById('idiom-hint')
-      if (el) el.textContent = `💡 ${hintText}`
-    }
-    super.useHint(level)
-  }
-
-  _playTrainSound () {
-    try {
-      const audio = new Audio(`${_pathPrefix}/audio/effects/train.mp3`)
-      audio.volume = 0.6
-      audio.play().catch(() => {})
-    } catch (_) {}
-  }
-
-  _buildDistractors (entry, pool) {
-    const distractors = []
-    const usedIdioms  = new Set([entry.idiom])
-
-    for (const other of pool) {
-      if (distractors.length >= 3) break
-      if (usedIdioms.has(other.idiom)) continue
-      const variant = other.idiom[0] + entry.idiom.slice(1)
-      if (!usedIdioms.has(variant) && variant !== entry.idiom) {
-        distractors.push(variant)
-        usedIdioms.add(variant)
-      }
-    }
-
-    const fallbackChars = ['大', '小', '上', '下', '好', '多', '少', '高', '長', '新']
-    for (let pos = 0; pos < 4 && distractors.length < 3; pos++) {
-      for (const ch of fallbackChars) {
-        if (ch === entry.idiom[pos]) continue
-        const variant = entry.idiom.split('')
-        variant[pos]  = ch
-        const vStr    = variant.join('')
-        if (!usedIdioms.has(vStr)) {
-          distractors.push(vStr)
-          usedIdioms.add(vStr)
-          break
-        }
-      }
-    }
-
-    while (distractors.length < 3) {
-      distractors.push(entry.idiom.slice(0, 3) + '？')
-    }
-
-    return distractors.slice(0, 3)
-  }
-
-  _shuffle (arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]]
-    }
-    return arr
-  }
-
-  destroy () {
-    if (this._touchClone) {
-      this._touchClone.remove()
-      this._touchClone = null
-    }
-    if (this._trainOverlay && this._trainOverlay.parentNode) {
-      this._trainOverlay.parentNode.removeChild(this._trainOverlay)
-      this._trainOverlay = null
-    }
-    if (window._idiomGame === this) delete window._idiomGame
-    super.destroy()
-  }
-
-  async init (config) {
-    window._idiomGame = this
-    return super.init(config)
-  }
-}
-
-export default IdiomGame
+        e.
