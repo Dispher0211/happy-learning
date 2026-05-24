@@ -252,66 +252,68 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // ── 同一台火車進場流程 ──────────────────────────────
-    // 用 fixed overlay 做入場動畫（繞開 overflow 限制）
-    // 停住後：overlay 不淡出，直接 remove + 同步顯示 #train-img
-    // 這樣視覺上是「同一台火車」
-    const _doEnterAnim = () => {
+    const _startSlide = (imgEl) => {
+      // imgEl 是已完成載入的 <img>，可以安全做動畫
       const ov = document.createElement('div')
       ov.id = 'train-enter-ov'
       ov.style.cssText = [
-        'position:fixed', 'inset:0', 'width:100vw', 'height:100vh',
+        'position:fixed', 'inset:0',
         'pointer-events:none', 'z-index:9998', 'overflow:hidden',
         'display:flex', 'align-items:center', 'justify-content:center',
       ].join(';')
 
-      const im = document.createElement('img')
-      im.src = `${_pathPrefix}/images/train.png`
+      // 直接使用已載入的圖片（clone 保留快取）
+      const im = imgEl.cloneNode(false)
       im.style.cssText = [
         'width:95vw', 'max-width:520px', 'height:auto', 'display:block',
         'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))',
-        'will-change:transform', 'transform:translateX(110vw)', 'transition:none',
+        'will-change:transform',
+        'transform:translateX(110vw)',
+        'transition:none',
       ].join(';')
 
       ov.appendChild(im)
       document.body.appendChild(ov)
       this._trainOverlay = ov
 
-      // 強制 reflow → 啟動滑入
+      // reflow 確保初始位置已繪製
       void im.offsetWidth
+
+      // 播音效 + 啟動滑入
       this._playTrainSound()
       im.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
       im.style.transform  = 'translateX(0px)'
 
-      // 入場結束後：瞬間切換成 #train-img（無縫接替）
+      // 入場結束：瞬間切換成頁面內 #train-img（同尺寸同位置，無縫接替）
       setTimeout(() => {
-        // 1. 顯示頁面內的靜態 #train-img（位置一致，故無跳動）
         const si = document.getElementById('train-img')
         if (si) {
           si.style.visibility = 'visible'
           si.style.opacity    = '1'
         }
-        // 2. 立刻移除 overlay（不淡出，避免兩台並存）
+        // 不淡出，直接移除 overlay，避免兩台並存
         if (ov.parentNode) ov.parentNode.removeChild(ov)
         this._trainOverlay = null
-
-        // 3. 顯示互動區
         _showInteractive()
       }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
+    // 預載圖片，確保 imgEl 已完全繪製後才做動畫
     const probe = new Image()
-    probe.onload  = _doEnterAnim
+    probe.onload = () => _startSlide(probe)
     probe.onerror = () => {
       const si = document.getElementById('train-img')
       if (si) si.style.display = 'none'
       _showInteractive()
     }
     probe.src = `${_pathPrefix}/images/train.png`
+    // 若已在快取中（complete=true），手動觸發
+    if (probe.complete && probe.naturalWidth > 0) {
+      _startSlide(probe)
+    }
   }
 
-  // 答對後：#train-img 直接向左加速滑出（同一台火車離站）
-  async _animateTrainOut () {
+    async _animateTrainOut () {
     const train = document.getElementById('train-img')
     if (!train || train.style.display === 'none') return
 
