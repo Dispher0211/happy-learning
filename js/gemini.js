@@ -38,7 +38,6 @@ const TEXT_MODEL_CHAIN = [
   'gemini-2.5-flash-lite',          // 備援：RPD 最高（1000/天）
   'gemini-3.1-flash-lite-preview',  // 最終：preview 版，服務不穩定
 ]
-]
 
 const API_URL = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
@@ -256,7 +255,7 @@ export const GeminiManager = {
           chars[idx] = wrong
           const wrongSentence = chars.join('')
 
-          console.log(\`[GeminiManager] generateTypoQuestion 成功 char=${char} word=${word} wrong=${wrong}\`)
+          console.log(`[GeminiManager] generateTypoQuestion 成功 char=${char} word=${word} wrong=${wrong}`)
           return {
             sentence:       wrongSentence,
             correct_sentence: correctSentence,
@@ -266,10 +265,10 @@ export const GeminiManager = {
           }
         } catch (e) {
           if (e.status === 429) {
-            console.warn(\`GeminiManager: generateTypoQuestion [${model}] 429，切換模型\`)
+            console.warn(`GeminiManager: generateTypoQuestion [${model}] 429，切換模型`)
             break
           }
-          console.warn(\`GeminiManager: generateTypoQuestion [${model}] 失敗 — ${e.message}\`)
+          console.warn(`GeminiManager: generateTypoQuestion [${model}] 失敗 — ${e.message}`)
         }
       }
     }
