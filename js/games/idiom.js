@@ -256,7 +256,7 @@ export class IdiomGame extends GameEngine {
     // 計算目標 left：讓 train-unit 水平置中於 stage
     // train-unit 寬度 = 5 個單元 × 90px = 450px
     // stage 寬度動態取得
-    const unitW  = 5 * 110  // px（5個單元：頭+4車廂）
+    const unitW  = 5 * 140  // px（5個單元：頭+4車廂）
     const stageW = stage.offsetWidth || 360
     const targetLeft = Math.max(0, (stageW - unitW) / 2)  // px
 
@@ -332,20 +332,20 @@ export class IdiomGame extends GameEngine {
 
     // 4個車廂單元（每個包含 trainbox 圖 + 上方 drop zone）
     const wagonUnits = chars.map((_, i) => (
-      `<div class="train-unit" style="position:relative;display:inline-flex;flex-direction:column;align-items:center;width:110px;">` +
+      `<div class="train-unit" style="position:relative;display:inline-flex;flex-direction:column;align-items:center;width:140px;">` +
         `<div class="wagon-slot" data-pos="${i}" style="` +
-          `width:88px;height:88px;border-radius:12px;` +
+          `width:110px;height:110px;border-radius:14px;` +
           `border:3px dashed rgba(255,255,255,.9);` +
           `background:rgba(255,255,255,.15);` +
           `display:flex;align-items:center;justify-content:center;` +
-          `font-size:2.2rem;font-weight:900;color:#fff;` +
+          `font-size:2.6rem;font-weight:900;color:#fff;` +
           `text-shadow:0 2px 6px rgba(0,0,0,.7);` +
           `margin-bottom:4px;cursor:pointer;` +
           `transition:background .2s,border-color .2s;` +
         `">` +
         `</div>` +
         `<img src="${_pathPrefix}/images/trainbox.png" ` +
-          `style="width:110px;height:auto;display:block;" alt="車廂" onerror="this.style.opacity='.3'">` +
+          `style="width:140px;height:auto;display:block;" alt="車廂" onerror="this.style.opacity='.3'">` +
       `</div>`
     )).join('')
 
@@ -357,9 +357,9 @@ export class IdiomGame extends GameEngine {
 
       `<style>` +
       `.idiom-card{` +
-        `width:64px;height:64px;border-radius:14px;` +
+        `width:76px;height:76px;border-radius:16px;` +
         `background:#6366f1;color:white;` +
-        `font-size:1.8rem;font-weight:900;` +
+        `font-size:2.1rem;font-weight:900;` +
         `display:flex;align-items:center;justify-content:center;` +
         `cursor:grab;user-select:none;touch-action:none;` +
         `border:3px solid #4338ca;` +
@@ -380,7 +380,7 @@ export class IdiomGame extends GameEngine {
       `#train-stage{` +
         `position:relative;` +
         `width:100%;` +
-        `height:240px;` +
+        `height:300px;` +
         `overflow:hidden;` +
       `}` +
       `#train-unit{` +
@@ -406,10 +406,10 @@ export class IdiomGame extends GameEngine {
       `<div id="train-stage">` +
         `<div id="train-unit">` +
           // 火車頭（第一個單元）
-          `<div class="train-unit" style="display:inline-flex;flex-direction:column;align-items:flex-end;width:110px;">` +
-            `<div style="width:88px;height:88px;"></div>` +
+          `<div class="train-unit" style="display:inline-flex;flex-direction:column;align-items:flex-end;width:140px;">` +
+            `<div style="width:110px;height:110px;"></div>` +
             `<img src="${_pathPrefix}/images/trainhead.png" ` +
-              `style="width:110px;height:auto;display:block;margin-top:8px;" alt="火車頭" onerror="this.style.opacity='.3'">` +
+              `style="width:140px;height:auto;display:block;margin-top:8px;" alt="火車頭" onerror="this.style.opacity='.3'">` +
           `</div>` +
           // 四個車廂
           wagonUnits +
