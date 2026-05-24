@@ -189,10 +189,14 @@ export class IdiomGame extends GameEngine {
       const slots = document.querySelectorAll('.wagon-slot')
       const chars = question.idiom.split('')
       slots.forEach((slot, i) => {
-        slot.textContent      = chars[i]
-        slot.dataset.char     = chars[i]
-        slot.style.background = '#bbf7d0'
-        slot.style.border     = '2px solid #16a34a'
+        slot.dataset.char = chars[i]
+        slot.classList.add('filled')
+        const inner = slot.querySelector('.wagon-slot-inner')
+        if (inner) {
+          inner.textContent    = chars[i]
+          inner.style.background = 'rgba(134,239,172,0.6)'
+          inner.style.border     = '2px solid #16a34a'
+        }
       })
     } else {
       document.querySelectorAll('.fork-option').forEach(btn => {
@@ -237,6 +241,32 @@ export class IdiomGame extends GameEngine {
     app.innerHTML = this._buildMode1Shell(q)
     this._bindHintButton()
 
+    // ── 用 fixed overlay 做火車動畫，完全繞過 overflow 限制 ──
+    const overlay = document.createElement('div')
+    overlay.id = 'train-overlay'
+    overlay.style.cssText = [
+      'position:fixed','top:0','left:0','width:100vw','height:100vh',
+      'pointer-events:none','z-index:9998','overflow:hidden',
+      'display:flex','align-items:center','justify-content:center',
+    ].join(';')
+
+    const img = document.createElement('img')
+    img.src = `${_pathPrefix}/images/train.png`
+    img.alt = '火車'
+    img.style.cssText = [
+      'width:95vw','max-width:520px','height:auto',
+      'display:block',
+      'filter:drop-shadow(0 6px 16px rgba(0,0,0,0.4))',
+      'will-change:transform',
+      // 初始在右側外
+      'transform:translateX(110vw)',
+      'transition:none',
+    ].join(';')
+
+    overlay.appendChild(img)
+    document.body.appendChild(overlay)
+    this._trainOverlay = overlay
+
     const _showInteractive = () => {
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
@@ -248,158 +278,201 @@ export class IdiomGame extends GameEngine {
     }
 
     const _startEnter = () => {
-      const img = document.getElementById('train-img')
-      if (!img) { _showInteractive(); return }
-      img.style.transition = 'none'
-      img.style.visibility = 'visible'
-      img.style.transform  = 'translateX(110vw)'
-      void img.offsetWidth
       this._playTrainSound()
+      void img.offsetWidth
       img.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
       img.style.transform  = 'translateX(0px)'
-      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+
+      // 入場結束後淡出 overlay 並顯示互動區
+      setTimeout(() => {
+        // 淡出 overlay 火車（讓靜態 train-img 接手顯示）
+        overlay.style.transition = 'opacity 0.3s ease'
+        overlay.style.opacity = '0'
+        setTimeout(() => {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+        }, 350)
+
+        // 顯示靜態 train-img（已在頁面內）
+        const staticImg = document.getElementById('train-img-static') || document.getElementById('train-img')
+        if (staticImg) {
+          staticImg.style.visibility = 'visible'
+          staticImg.style.opacity = '1'
+        }
+        _showInteractive()
+      }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
-    const trainImg = document.getElementById('train-img')
-    if (!trainImg) { _showInteractive(); return }
-
-    if (trainImg.complete && trainImg.naturalWidth > 0) {
+    if (img.complete && img.naturalWidth > 0) {
       requestAnimationFrame(_startEnter)
     } else {
-      trainImg.onload  = _startEnter
-      trainImg.onerror = () => {
-        const t = document.getElementById('train-img')
-        if (t) t.style.display = 'none'
+      img.onload  = _startEnter
+      img.onerror = () => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+        const staticImg = document.getElementById('train-img')
+        if (staticImg) staticImg.style.display = 'none'
         _showInteractive()
       }
     }
   }
 
   async _trainExitAnimation () {
-    const img = document.getElementById('train-img')
-    if (!img || img.style.display === 'none') return
+    // 建立 fixed overlay 做離場動畫
+    const staticImg = document.getElementById('train-img-static') || document.getElementById('train-img')
+    if (!staticImg || staticImg.style.display === 'none') return
+
+    const overlay = document.createElement('div')
+    overlay.style.cssText = [
+      'position:fixed','top:0','left:0','width:100vw','height:100vh',
+      'pointer-events:none','z-index:9998','overflow:hidden',
+      'display:flex','align-items:center','justify-content:center',
+    ].join(';')
+
+    const img = document.createElement('img')
+    img.src = staticImg.src
+    img.style.cssText = [
+      'width:95vw','max-width:520px','height:auto',
+      'display:block',
+      'filter:drop-shadow(0 6px 16px rgba(0,0,0,0.4))',
+      'will-change:transform','transform:translateX(0px)','transition:none',
+    ].join(';')
+
+    overlay.appendChild(img)
+    document.body.appendChild(overlay)
+
+    // 隱藏頁面內的靜態圖
+    staticImg.style.visibility = 'hidden'
+
+    await new Promise(r => setTimeout(r, 30))
     this._playTrainSound()
     void img.offsetWidth
     img.style.transition = `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45)`
     img.style.transform  = 'translateX(-120vw)'
+
     await new Promise(r => setTimeout(r, TRAIN_EXIT_MS))
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
   }
 
   /** 建立模式一的完整 HTML 骨架 */
   _buildMode1Shell (q) {
-    const chars   = q.idiom.split('')
+    const chars    = q.idiom.split('')
     const shuffled = this._shuffle([...chars])
 
+    // 字卡（下方選項）
     const cardHtml = shuffled.map((ch, i) =>
-      `<div class="idiom-card" draggable="true" data-char="${ch}" data-idx="${i}">
-        ${ch}
-      </div>`
+      `<div class="idiom-card" draggable="true" data-char="${ch}" data-idx="${i}">${ch}</div>`
     ).join('')
 
-    const wagonHtml = chars.map((_, i) =>
-      `<div class="wagon-slot" data-pos="${i}" aria-label="車廂${i + 1}"></div>`
+    // 車廂格子（覆蓋在火車圖上）
+    const slotHtml = chars.map((_, i) =>
+      `<div class="wagon-slot" data-pos="${i}" aria-label="車廂${i + 1}">
+         <div class="wagon-slot-inner"></div>
+       </div>`
     ).join('')
 
-    return `
+    return \`
       <div id="idiom-game-wrap" style="
         display:flex; flex-direction:column; align-items:center;
-        padding:12px 8px; gap:12px; min-height:60vh; justify-content:flex-start;
+        padding:8px 4px; gap:10px; width:100%;
       ">
         <style>
+          /* ── 字卡 ── */
           .idiom-card {
-            width:56px; height:56px; border-radius:12px;
-            background:linear-gradient(135deg,#6366f1,#8b5cf6);
-            color:white; font-size:1.5rem; font-weight:900;
+            width:64px; height:64px; border-radius:14px;
+            background:#6366f1;
+            color:white; font-size:1.8rem; font-weight:900;
             display:flex; align-items:center; justify-content:center;
-            box-shadow:0 4px 12px rgba(99,102,241,0.4);
             cursor:grab; user-select:none; touch-action:none;
-            transition:transform 0.15s, box-shadow 0.15s;
+            border:3px solid #4338ca;
+            transition:transform 0.12s;
           }
-          .idiom-card:active { transform:scale(1.1); box-shadow:0 8px 20px rgba(99,102,241,0.6); }
-          .idiom-card.dragging { opacity:0.4; }
+          .idiom-card:active  { transform:scale(1.15); }
+          .idiom-card.dragging { opacity:0.35; }
+
+          /* ── 車廂格子 ── */
           .wagon-slot {
-            width:60px; height:60px; border-radius:10px;
-            border:3px dashed #94a3b8;
-            background:rgba(255,255,255,0.7);
+            width:68px; height:72px;
             display:flex; align-items:center; justify-content:center;
-            font-size:1.5rem; font-weight:900; color:#1e293b;
+            cursor:pointer; position:relative;
+          }
+          .wagon-slot-inner {
+            width:58px; height:62px; border-radius:8px;
+            border:3px dashed rgba(255,255,255,0.85);
+            background:rgba(255,255,255,0.15);
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.8rem; font-weight:900; color:#fff;
             transition:background 0.2s, border-color 0.2s;
+            text-shadow:0 2px 4px rgba(0,0,0,0.6);
           }
-          .wagon-slot.drag-over {
-            background:#e0e7ff; border-color:#6366f1; border-style:solid;
+          .wagon-slot.drag-over .wagon-slot-inner {
+            background:rgba(255,255,255,0.45);
+            border-color:#fff; border-style:solid;
           }
-          .flash-correct { animation: flashGreen 0.6s ease; }
-          .shake-wrong   { animation: shakeRed 0.6s ease; }
-          @keyframes flashGreen {
-            0%,100% { background:transparent; }
-            50% { background:rgba(134,239,172,0.3); }
+          .wagon-slot.filled .wagon-slot-inner {
+            background:rgba(99,102,241,0.75);
+            border-color:#a5b4fc; border-style:solid;
           }
-          @keyframes shakeRed {
-            0%,100% { transform:translateX(0); }
-            20%,60% { transform:translateX(-8px); }
-            40%,80% { transform:translateX(8px); }
+
+          /* ── 動畫 ── */
+          .flash-correct { animation:fG 0.6s ease; }
+          .shake-wrong   { animation:sR 0.6s ease; }
+          @keyframes fG { 0%,100%{background:transparent;} 50%{background:rgba(134,239,172,.25);} }
+          @keyframes sR { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} }
+
+          /* ── 靜態火車圖 ── */
+          #train-img-static {
+            width:100%; max-width:480px; height:auto;
+            display:block; visibility:hidden; /* 動畫結束後才顯示 */
           }
-          #train-img {
-            width:90vw; max-width:380px; height:auto;
-            display:block; margin:0 auto;
-            filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));
-            visibility:hidden;
+          #train-slots-row {
+            display:flex; gap:4px; justify-content:flex-end;
+            width:100%; max-width:480px;
+            padding-right:6px;
+            margin-top:-16px; /* 向上覆蓋到火車車廂區 */
+            position:relative; z-index:2;
           }
-          #wagon-interactive {
-            opacity:0; transform:translateY(20px);
-            width:100%;
-          }
+          #wagon-interactive { opacity:0; transform:translateY(16px); width:100%; }
         </style>
 
-        <!-- 遊戲標題 + 意思提示 -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
-          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
-            🚂 排列車廂，組成成語
-          </div>
-          <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
-            <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
-            <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '請依提示排列四個字'}</div>
-          </div>
+        <!-- 意思提示 -->
+        <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:8px 14px;text-align:center;width:100%;max-width:380px;">
+          <div style="font-size:0.7rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>
+          <div style="font-size:0.9rem;font-weight:700;color:#3730a3;line-height:1.4;">\${q.meaning || q.example || '請依提示排列四個字'}</div>
         </div>
 
-        <!-- 火車圖片（CSS 動畫） -->
-        <div style="width:100%; overflow:hidden; padding:4px 0;">
-          <img id="train-img" src="${_pathPrefix}/images/train.png"
-               alt="火車" onerror="this.style.display='none'">
+        <!-- 火車圖片（靜態，動畫結束後才可見） -->
+        <img id="train-img-static" src="\${_pathPrefix}/images/train.png" alt="火車"
+             onerror="this.style.display='none'">
+
+        <!-- 車廂格子列（疊在火車車廂上方） -->
+        <div id="train-slots-row">
+          \${slotHtml}
         </div>
 
-        <!-- 互動區：車廂格子 + 字卡選項 -->
-        <div id="wagon-interactive" style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;">
+        <!-- 互動區：字卡 + 提示 -->
+        <div id="wagon-interactive" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;">
 
-          <!-- 車廂格子（4個） -->
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-            ${wagonHtml}
+          <div style="font-size:0.78rem;color:#64748b;font-weight:600;">⬆ 將字卡拖曳到上方車廂</div>
+
+          <div id="idiom-cards-area" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            \${cardHtml}
           </div>
 
-          <!-- 字卡選項 -->
-          <div id="idiom-cards-area" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            ${cardHtml}
-          </div>
+          <div id="idiom-hint" style="min-height:22px;font-size:0.85rem;color:#7c3aed;font-weight:700;text-align:center;"></div>
 
-          <!-- 提示顯示 -->
-          <div id="idiom-hint" style="
-            min-height:24px; font-size:0.85rem; color:#7c3aed;
-            font-weight:700; text-align:center;
-          "></div>
-
-          <!-- 提示按鈕 -->
           <button id="btn-hint-idiom" style="
-            padding:8px 20px; border-radius:20px;
-            background:linear-gradient(135deg,#fef3c7,#fde68a);
-            border:2px solid #f59e0b; font-size:0.85rem;
-            font-weight:700; cursor:pointer; color:#92400e;
+            padding:7px 20px;border-radius:20px;
+            background:#fef3c7;border:2px solid #f59e0b;
+            font-size:0.85rem;font-weight:700;cursor:pointer;color:#92400e;
           ">💡 提示</button>
         </div>
+
+        <!-- 舊 train-img id 保留供動畫系統參考 -->
+        <img id="train-img" src="\${_pathPrefix}/images/train.png" style="display:none" alt="">
       </div>
-    `
+    \`
   }
 
-  /** 綁定模式一的拖曳事件（含 touch 支援） */
+    /** 綁定模式一的拖曳事件（含 touch 支援） */
   _bindMode1Events (q) {
     const cards = document.querySelectorAll('.idiom-card')
     const slots = document.querySelectorAll('.wagon-slot')
@@ -500,10 +573,7 @@ export class IdiomGame extends GameEngine {
       slot.addEventListener('click', () => {
         if (!slot.dataset.char) return
         this._returnCard(slot.dataset.char)
-        slot.textContent  = ''
-        slot.dataset.char = ''
-        slot.style.background = ''
-        slot.style.border     = ''
+        this._clearSlot(slot)
       })
     })
   }
@@ -522,22 +592,18 @@ export class IdiomGame extends GameEngine {
 
   /** 將字放入車廂格子 */
   _placeCharInSlot (slot, ch, q) {
-    // 若格子已有字，先歸還
     if (slot.dataset.char) {
       this._returnCard(slot.dataset.char)
     }
-    slot.textContent  = ch
     slot.dataset.char = ch
-    slot.style.background   = 'linear-gradient(135deg,#ddd6fe,#c4b5fd)'
-    slot.style.border       = '2px solid #7c3aed'
-    slot.style.borderStyle  = 'solid'
+    slot.classList.add('filled')
+    const inner = slot.querySelector('.wagon-slot-inner')
+    if (inner) inner.textContent = ch
 
-    // 隱藏對應字卡
     const card = [...document.querySelectorAll('.idiom-card')]
-      .find(c => c.dataset.char === ch && c.style.opacity !== '0.3' && c.style.visibility !== 'hidden')
+      .find(c => c.dataset.char === ch && c.style.visibility !== 'hidden')
     if (card) card.style.visibility = 'hidden'
 
-    // 檢查是否全部填完
     this._checkMode1Complete(q)
   }
 
@@ -546,6 +612,14 @@ export class IdiomGame extends GameEngine {
     const card = [...document.querySelectorAll('.idiom-card')]
       .find(c => c.dataset.char === ch && c.style.visibility === 'hidden')
     if (card) card.style.visibility = 'visible'
+  }
+
+  /** 清空格子（含 inner text 和 class） */
+  _clearSlot (slot) {
+    const inner = slot.querySelector('.wagon-slot-inner')
+    if (inner) inner.textContent = ''
+    slot.dataset.char = ''
+    slot.classList.remove('filled')
   }
 
   /** 檢查模式一是否全部填完並自動送出 */
@@ -739,10 +813,13 @@ export class IdiomGame extends GameEngine {
   // ───────────────────────────────────────────────────
 
   destroy () {
-    // 清除 touch 複製元素（若存在）
     if (this._touchClone) {
       this._touchClone.remove()
       this._touchClone = null
+    }
+    if (this._trainOverlay && this._trainOverlay.parentNode) {
+      this._trainOverlay.parentNode.removeChild(this._trainOverlay)
+      this._trainOverlay = null
     }
     if (window._idiomGame === this) delete window._idiomGame
     super.destroy()
