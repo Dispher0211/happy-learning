@@ -605,11 +605,11 @@ export class IdiomGame extends GameEngine {
     )
 
     // 4個火車站 HTML（左側固定，每站顯示成語選項）
-    const STATION_H = 110  // px，每個車站高度
+    const STATION_H = 150  // px，每個車站高度
     const stationsHTML = options.map((opt, i) => (
       `<div class="m2-station" data-idiom="${opt.idiom}" data-idx="${i}" style="` +
         `position:absolute;left:0;top:${i * STATION_H}px;` +
-        `width:160px;height:${STATION_H - 8}px;` +
+        `width:180px;height:${STATION_H - 12}px;` +
         `display:flex;flex-direction:column;align-items:center;justify-content:flex-end;` +
         `cursor:pointer;` +
       `">` +
@@ -624,7 +624,7 @@ export class IdiomGame extends GameEngine {
       `</div>`
     )).join('')
 
-    const CANVAS_H = 4 * STATION_H + 20
+    const CANVAS_H = 4 * STATION_H + 40
 
     return (
       `<div id="idiom-game-wrap" style="` +
@@ -696,7 +696,7 @@ export class IdiomGame extends GameEngine {
       ...q.distractors.map(d => ({ idiom: d, correct: false }))
     ])
 
-    const STATION_H = 110
+    const STATION_H = 150
     const STATION_COUNT = 4
     let currentIdx = 0  // 目前選中的車站 index
 
@@ -748,13 +748,47 @@ export class IdiomGame extends GameEngine {
       }
     }, { passive: true })
 
-    // 確認送出
+    // 確認送出：火車 rAF 從右移到選中車站，再送出答案
     const _confirm = () => {
       if (this.isAnswering) return
-      // 重新取得 options（同順序）
-      const all = [...document.querySelectorAll('.m2-station')]
-      const chosen = all[currentIdx]?.dataset.idiom
-      if (chosen) this.submitAnswer({ idiom: chosen })
+
+      const canvas  = document.getElementById('m2-canvas')
+      const wrap    = document.getElementById('m2-train-wrap')
+      if (!canvas || !wrap) return
+
+      // 禁用按鈕防重複點擊
+      document.getElementById('m2-confirm').disabled = true
+      document.getElementById('m2-up').disabled      = true
+      document.getElementById('m2-down').disabled    = true
+
+      const canvasW    = canvas.offsetWidth  || 700
+      const trainW     = 160  // 頭+廂約160px
+      const startRight = 0    // 初始在最右
+      // 目標：移到車站旁（left 約 200px = 車站 180px + gap）
+      const targetRight = canvasW - 200 - trainW
+
+      const MOVE_MS   = 800
+      const startTime = performance.now()
+      const easeOut   = t => 1 - Math.pow(1 - t, 3)
+
+      this._playTrainSound()
+
+      const _anim = (now) => {
+        const p = Math.min((now - startTime) / MOVE_MS, 1)
+        const e = easeOut(p)
+        // 用 right 從0 移到 targetRight
+        const right = startRight + (targetRight - startRight) * e
+        wrap.style.right = right + 'px'
+        if (p < 1) {
+          requestAnimationFrame(_anim)
+        } else {
+          // 動畫結束後送出答案
+          const all = [...document.querySelectorAll('.m2-station')]
+          const chosen = all[currentIdx]?.dataset.idiom
+          if (chosen) this.submitAnswer({ idiom: chosen })
+        }
+      }
+      requestAnimationFrame(_anim)
     }
 
     document.getElementById('m2-confirm')?.addEventListener('click', _confirm)
@@ -799,36 +833,33 @@ export class IdiomGame extends GameEngine {
   // ───────────────────────────────────────────────────
 
   _buildDistractors (entry, pool) {
+    // 優先從題目池取其他真實成語作干擾
+    const usedIdioms = new Set([entry.idiom])
     const distractors = []
-    const usedIdioms  = new Set([entry.idiom])
 
-    for (const other of pool) {
+    // 1. 從題目池取其他成語
+    const poolOthers = this._shuffle(
+      pool.filter(e => e.idiom !== entry.idiom && e.idiom?.length === 4)
+    )
+    for (const other of poolOthers) {
       if (distractors.length >= 3) break
-      if (usedIdioms.has(other.idiom)) continue
-      const variant = other.idiom[0] + entry.idiom.slice(1)
-      if (!usedIdioms.has(variant) && variant !== entry.idiom) {
-        distractors.push(variant)
-        usedIdioms.add(variant)
+      if (!usedIdioms.has(other.idiom)) {
+        distractors.push(other.idiom)
+        usedIdioms.add(other.idiom)
       }
     }
 
-    const fallbackChars = ['大', '小', '上', '下', '好', '多', '少', '高', '長', '新']
-    for (let pos = 0; pos < 4 && distractors.length < 3; pos++) {
-      for (const ch of fallbackChars) {
-        if (ch === entry.idiom[pos]) continue
-        const variant = entry.idiom.split('')
-        variant[pos]  = ch
-        const vStr    = variant.join('')
-        if (!usedIdioms.has(vStr)) {
-          distractors.push(vStr)
-          usedIdioms.add(vStr)
-          break
-        }
+    // 2. 若不足，從全庫隨機補充真實成語
+    if (distractors.length < 3) {
+      const allIdioms = JSONLoader.get('idioms') ?? []
+      const extras = this._shuffle(
+        allIdioms.filter(e => e.idiom !== entry.idiom && !usedIdioms.has(e.idiom) && e.idiom?.length === 4)
+      )
+      for (const e of extras) {
+        if (distractors.length >= 3) break
+        distractors.push(e.idiom)
+        usedIdioms.add(e.idiom)
       }
-    }
-
-    while (distractors.length < 3) {
-      distractors.push(entry.idiom.slice(0, 3) + '？')
     }
 
     return distractors.slice(0, 3)
