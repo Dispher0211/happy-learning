@@ -78,52 +78,48 @@ export class IdiomGame extends GameEngine {
    * loadQuestions(config)
    */
   async loadQuestions (config) {
-    const count = config?.count ?? 5
+    const count     = config?.count ?? 5
+    const allIdioms = JSONLoader.get('idioms') ?? []
 
-    const myIdioms    = AppState.idioms ?? []
-    const allIdioms   = JSONLoader.get('idioms') ?? []
-    const charSet     = new Set(AppState.characters?.map(c => c.char || c['字']) ?? [])
+    // ── 1. 從成語簿（家長設定）取得完整資料 ──
+    const myIdioms       = AppState.idioms ?? []
+    const myIdiomEntries = myIdioms
+      .map(str => allIdioms.find(e => e.idiom === str))
+      .filter(Boolean)
 
-    const relatedIdioms = allIdioms.filter(entry =>
-      entry.related_characters?.some(ch => charSet.has(ch))
+    // ── 2. 補充：從全庫隨機取，填滿至 count 題 ──
+    const mySet   = new Set(myIdioms)
+    const extra   = this._shuffle(
+      allIdioms.filter(e => !mySet.has(e.idiom) && e.meaning)
     )
 
-    const myIdiomEntries = myIdioms.map(idiomStr => {
-      const found = allIdioms.find(e => e.idiom === idiomStr)
-      if (found) return found
-      return { idiom: idiomStr, zhuyin: '', meaning: '', example: '', related_characters: [] }
-    })
+    // 合併：成語簿優先，不足再補全庫
+    const pool = [...this._shuffle(myIdiomEntries), ...extra]
 
-    const seen   = new Set()
-    const merged = []
-    for (const entry of [...myIdiomEntries, ...relatedIdioms]) {
+    const seen      = new Set()
+    const candidate = []
+    for (const entry of pool) {
       if (!seen.has(entry.idiom)) {
         seen.add(entry.idiom)
-        merged.push(entry)
+        candidate.push(entry)
       }
+      if (candidate.length >= count) break
     }
 
-    if (merged.length === 0) return []
+    if (candidate.length === 0) return []
 
-    const shuffled  = this._shuffle([...merged])
-    const questions = []
-    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-      const entry      = shuffled[i]
-      const mode       = i < Math.round(count * MODE1_RATIO) ? 1 : 2
-      const distractors = this._buildDistractors(entry, shuffled)
-      questions.push({
-        char:        entry.related_characters?.[0] ?? entry.idiom[0],
-        idiom:       entry.idiom,
-        zhuyin:      entry.zhuyin,
-        meaning:     entry.meaning,
-        example:     entry.example,
-        mode,
-        distractors
-      })
-    }
+    const questions = candidate.map((entry, i) => ({
+      char:        entry.related_characters?.[0] ?? entry.idiom[0],
+      idiom:       entry.idiom,
+      zhuyin:      entry.zhuyin,
+      meaning:     entry.meaning,
+      example:     entry.example,
+      mode:        i < Math.round(count * MODE1_RATIO) ? 1 : 2,
+      distractors: this._buildDistractors(entry, candidate),
+    }))
 
-    this._idiomPool  = questions
-    this.questions   = questions
+    this._idiomPool = questions
+    this.questions  = questions
     return this.questions
   }
 
