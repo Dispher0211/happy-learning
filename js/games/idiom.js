@@ -3,14 +3,15 @@
  * Task 22
  *
  * 遊戲規則：
- *   模式一（30%）：火車從右邊進入，定位後消失，小朋友將字卡拖到4個車廂排列成成語
- *   模式二（70%）：火車叉路選正確路線
+ * 模式一（30%）：火車從右邊進入，定位後消失，小朋友將字卡拖到4個車廂排列成成語
+ * 模式二（70%）：火車叉路選正確路線
  *
  * 修正：
- *   1. super('idiom') 修正標題 undefined 問題
- *   2. 模式一加入 touch 拖曳支援
- *   3. 使用 train.png 圖片做 CSS 動畫（從右入場→停下→消失）搭配 train.mp3
- *   4. 車廂格子支援拖放與 touch 放置
+ * 1. super('idiom') 修正標題 undefined 問題
+ * 2. 模式一加入 touch 拖曳支援
+ * 3. 使用 train.png 圖片做 CSS 動畫（從右入場→停下→消失）搭配 train.mp3
+ * 4. 車廂格子支援拖放與 touch 放置
+ * 5. 修正火車動畫因 left/transform 衝突與 overflow 剪裁導致無法順利進出畫面的問題
  */
 
 import { GameEngine }   from './GameEngine.js'
@@ -22,7 +23,6 @@ import { AudioManager } from '../audio.js'
 //  常數
 // ═══════════════════════════════════════════════════════
 
-/** 模式一（拖曳排列車廂）佔全部題目的比例 */
 // GitHub Pages 路徑前綴（與 audio.js 同邏輯）
 const _pathPrefix = location.pathname.startsWith('/happy-learning')
   ? '/happy-learning'
@@ -233,10 +233,10 @@ export class IdiomGame extends GameEngine {
 
   /**
    * 模式一主流程：
-   *   1. 播放 train.mp3
-   *   2. CSS 火車圖片從右邊進入 → 停在中央
-   *   3. 短暫停留後，顯示車廂互動區
-   *   4. 答題後，fire train.mp3 + 火車向左開走消失
+   * 1. 播放 train.mp3
+   * 2. CSS 火車圖片從右邊進入 → 停在中央
+   * 3. 短暫停留後，顯示車廂互動區
+   * 4. 答題後，fire train.mp3 + 火車向左開走消失
    */
   _renderMode1WithTrainAnimation (q, app) {
     app.innerHTML = this._buildMode1Shell(q)
@@ -254,18 +254,18 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // 注入 keyframes（用 left 屬性動畫，不用 transform）
+    // ✅ 修正：改用與定位不衝突、純粹基於原始位置移動的高效能 transform 動畫
     if (!document.getElementById('train-kf')) {
       const kf = document.createElement('style')
       kf.id = 'train-kf'
       kf.textContent =
-        '@keyframes trainEnter{' +
-          '0%{left:120%;opacity:0;}' +
-          '100%{left:50%;opacity:1;}' +
+        '@keyframes trainEnter {' +
+          '0% { transform: translateX(150vw); opacity: 0; }' +
+          '100% { transform: translateX(0); opacity: 1; }' +
         '}' +
-        '@keyframes trainExit{' +
-          '0%{left:50%;opacity:1;}' +
-          '100%{left:-150%;opacity:0;}' +
+        '@keyframes trainExit {' +
+          '0% { transform: translateX(0); opacity: 1; }' +
+          '100% { transform: translateX(-150vw); opacity: 0; }' +
         '}'
       document.head.appendChild(kf)
     }
@@ -275,19 +275,16 @@ export class IdiomGame extends GameEngine {
 
     trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
 
-    // 雙 rAF 確保 DOM 穩定後再啟動動畫
+    // 啟動入場動畫
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this._playTrainSound()
-        trainImg.style.visibility = 'visible'
-        trainImg.style.animation  =
-          `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,1,0.5,1) forwards`
-        setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-      })
+      this._playTrainSound()
+      trainImg.style.animation =
+        `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,1,0.5,1) forwards`
+      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     })
   }
 
-    async _animateTrainOut () {
+  async _animateTrainOut () {
     const train = document.getElementById('train-img')
     if (!train || train.style.display === 'none') return
     this._playTrainSound()
@@ -297,7 +294,7 @@ export class IdiomGame extends GameEngine {
     })
   }
 
-    // 保留舊名稱別名，避免其他地方呼叫報錯
+  // 保留舊名稱別名，避免其他地方呼叫報錯
   async _trainExitAnimation () {
     return this._animateTrainOut()
   }
@@ -317,8 +314,9 @@ export class IdiomGame extends GameEngine {
     ).join('')
 
     return (
+      // ✅ 修正：把 overflow: hidden 加在最外層，防止火車在畫面右側時撐開網頁，同時移除了內層舞台的裁切
       `<div id="idiom-game-wrap" style="` +
-      `display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:10px;width:100%;">` +
+      `display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:10px;width:100%;overflow:hidden;position:relative;">` +
 
       `<style>` +
       `.idiom-card{width:64px;height:64px;border-radius:14px;background:#6366f1;color:white;` +
@@ -337,7 +335,10 @@ export class IdiomGame extends GameEngine {
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{position:absolute;left:50%;transform:translateX(-50%);width:80vw;max-width:480px;height:auto;visibility:hidden;will-change:left,opacity;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      
+      // ✅ 修正：移除不穩定的 left 與 visibility 設定。預設移至右側 150vw 處，並由 margin 處理水平置中基準點
+      `#train-img{position:relative; display:block; width:80vw; max-width:480px; height:auto; margin:0 auto; transform:translateX(150vw); will-change:transform, opacity; filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
       `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
@@ -349,7 +350,8 @@ export class IdiomGame extends GameEngine {
       `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
       `${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
-      `<div id="train-stage" style="position:relative;width:100%;height:160px;overflow:hidden;">` +
+      // ✅ 修正：移除 overflow:hidden 避免裁剪外部動畫起跑點，改用 flex 垂直置中
+      `<div id="train-stage" style="position:relative;width:100%;display:flex;justify-content:center;padding:20px 0;">` +
       `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" ` +
       `onerror="this.style.display='none'">` +
       `</div>` +
@@ -575,7 +577,6 @@ export class IdiomGame extends GameEngine {
           </div>
         </div>
 
-        <!-- 裝飾用小火車（emoji） -->
         <div style="font-size:2.5rem; animation:trainMove 2s linear infinite;">🚂</div>
         <style>
           @keyframes trainMove {
@@ -720,9 +721,5 @@ export class IdiomGame extends GameEngine {
     return super.init(config)
   }
 }
-
-// ═══════════════════════════════════════════════════════
-//  匯出
-// ═══════════════════════════════════════════════════════
 
 export default IdiomGame
