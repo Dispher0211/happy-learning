@@ -822,9 +822,15 @@ export class IdiomGame extends GameEngine {
 
   _playTrainSound () {
     try {
+      // 先停止上一個
+      if (this._trainAudio) {
+        this._trainAudio.pause()
+        this._trainAudio.currentTime = 0
+      }
       const audio = new Audio(`${_pathPrefix}/audio/effects/train.mp3`)
       audio.volume = 0.6
       audio.play().catch(() => {})
+      this._trainAudio = audio
     } catch (_) {}
   }
 
@@ -883,6 +889,11 @@ export class IdiomGame extends GameEngine {
 
   destroy () {
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null }
+    if (this._trainAudio) {
+      this._trainAudio.pause()
+      this._trainAudio.currentTime = 0
+      this._trainAudio = null
+    }
     if (this._touchClone) { this._touchClone.remove(); this._touchClone = null }
     if (this._trainOverlay && this._trainOverlay.parentNode) {
       this._trainOverlay.parentNode.removeChild(this._trainOverlay)
