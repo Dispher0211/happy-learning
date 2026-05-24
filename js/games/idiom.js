@@ -32,7 +32,7 @@ const _pathPrefix = location.pathname.startsWith('/happy-learning')
 const MODE1_RATIO = 0.30
 
 /** 火車入場動畫時間（毫秒） */
-const TRAIN_ENTER_MS = 1800
+const TRAIN_ENTER_MS = 1400
 
 /** 火車出場動畫時間（毫秒） */
 const TRAIN_EXIT_MS = 1200
@@ -243,6 +243,8 @@ export class IdiomGame extends GameEngine {
     this._bindHintButton()
 
     const _showInteractive = () => {
+      const slotRow = document.getElementById('slot-row')
+      if (slotRow) slotRow.style.opacity = '1'
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
         wagonArea.style.transition = 'opacity 0.5s ease, transform 0.5s ease'
@@ -265,10 +267,10 @@ export class IdiomGame extends GameEngine {
       // 直接使用已載入的圖片（clone 保留快取）
       const im = imgEl.cloneNode(false)
       im.style.cssText = [
-        'width:95vw', 'max-width:520px', 'height:auto', 'display:block',
+        'width:80vw', 'max-width:480px', 'height:auto', 'display:block',
         'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))',
         'will-change:transform',
-        'transform:translateX(110vw)',
+        'transform:translateX(60vw)',
         'transition:none',
       ].join(';')
 
@@ -381,9 +383,10 @@ export class IdiomGame extends GameEngine {
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{width:95vw;max-width:520px;height:auto;display:block;visibility:hidden;will-change:transform;transform:translateX(0);filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      `#train-img{width:80vw;max-width:480px;height:auto;display:block;visibility:hidden;will-change:transform;transform:translateX(0);filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
-      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;}` +
+      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;` +
+      `opacity:0;transition:opacity 0.4s ease;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
       `</style>` +
 
