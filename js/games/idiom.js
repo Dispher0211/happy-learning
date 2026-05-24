@@ -11,7 +11,7 @@
  * 2. 模式一加入 touch 拖曳支援
  * 3. 使用 train.png 圖片做 CSS 動畫（從右入場→停下→消失）搭配 train.mp3
  * 4. 車廂格子支援拖放與 touch 放置
- * 5. 修正火車動畫因 left/transform 衝突與 overflow 剪裁導致無法順利進出畫面的問題
+ * 5. 徹底解決火車動畫因外層 height/overflow 裁剪及 visibility/rAF 渲染時間差導致看不見的問題。
  */
 
 import { GameEngine }   from './GameEngine.js'
@@ -236,7 +236,7 @@ export class IdiomGame extends GameEngine {
    * 1. 播放 train.mp3
    * 2. CSS 火車圖片從右邊進入 → 停在中央
    * 3. 短暫停留後，顯示車廂互動區
-   * 4. 答題後，fire train.mp3 + 火車向左開走消失
+   * 4. 答題後，火車向左開走消失
    */
   _renderMode1WithTrainAnimation (q, app) {
     app.innerHTML = this._buildMode1Shell(q)
@@ -254,18 +254,18 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    // ✅ 修正：改用與定位不衝突、純粹基於原始位置移動的高效能 transform 動畫
+    // ✅ 修正：改用全新不打架的純 transform 位移關鍵影格（以元素原本水平置中處為 0）
     if (!document.getElementById('train-kf')) {
       const kf = document.createElement('style')
       kf.id = 'train-kf'
       kf.textContent =
         '@keyframes trainEnter {' +
-          '0% { transform: translateX(150vw); opacity: 0; }' +
+          '0% { transform: translateX(120vw); opacity: 0; }' +
           '100% { transform: translateX(0); opacity: 1; }' +
         '}' +
         '@keyframes trainExit {' +
           '0% { transform: translateX(0); opacity: 1; }' +
-          '100% { transform: translateX(-150vw); opacity: 0; }' +
+          '100% { transform: translateX(-120vw); opacity: 0; }' +
         '}'
       document.head.appendChild(kf)
     }
@@ -275,13 +275,10 @@ export class IdiomGame extends GameEngine {
 
     trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
 
-    // 啟動入場動畫
-    requestAnimationFrame(() => {
-      this._playTrainSound()
-      trainImg.style.animation =
-        `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,1,0.5,1) forwards`
-      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-    })
+    // ✅ 修正：移除極不穩定的 visibility 切換與雙重 rAF 延遲，直接套用 animation
+    this._playTrainSound()
+    trainImg.style.animation = `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
+    setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
   }
 
   async _animateTrainOut () {
@@ -289,7 +286,7 @@ export class IdiomGame extends GameEngine {
     if (!train || train.style.display === 'none') return
     this._playTrainSound()
     await new Promise(resolve => {
-      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45) forwards`
+      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55, 0, 1, 0.45) forwards`
       setTimeout(resolve, TRAIN_EXIT_MS)
     })
   }
@@ -314,7 +311,7 @@ export class IdiomGame extends GameEngine {
     ).join('')
 
     return (
-      // ✅ 修正：把 overflow: hidden 加在最外層，防止火車在畫面右側時撐開網頁，同時移除了內層舞台的裁切
+      // ✅ 修正：將 overflow: hidden 移到最外層大容器，完美防止火車出場與預備入場時撐出網頁捲軸
       `<div id="idiom-game-wrap" style="` +
       `display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:10px;width:100%;overflow:hidden;position:relative;">` +
 
@@ -336,8 +333,8 @@ export class IdiomGame extends GameEngine {
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
       
-      // ✅ 修正：移除不穩定的 left 與 visibility 設定。預設移至右側 150vw 處，並由 margin 處理水平置中基準點
-      `#train-img{position:relative; display:block; width:80vw; max-width:480px; height:auto; margin:0 auto; transform:translateX(150vw); will-change:transform, opacity; filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      // ✅ 修正：移除 position: absolute 造成的定位盲區。火車預設為 relative 且 margin: 0 auto 自然水平置中，初始狀態先被 translateX 往右挪開
+      `#train-img{position:relative; display:block; width:80vw; max-width:480px; height:auto; margin:0 auto; transform:translateX(120vw); will-change:transform, opacity; filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
       `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
@@ -350,8 +347,8 @@ export class IdiomGame extends GameEngine {
       `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
       `${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
-      // ✅ 修正：移除 overflow:hidden 避免裁剪外部動畫起跑點，改用 flex 垂直置中
-      `<div id="train-stage" style="position:relative;width:100%;display:flex;justify-content:center;padding:20px 0;">` +
+      // ✅ 修正：移除高寬死限 (height:160px) 與內層 overflow:hidden 避免裁剪到體積過大的火車
+      `<div id="train-stage" style="position:relative;width:100%;display:flex;justify-content:center;padding:16px 0 24px 0;">` +
       `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" ` +
       `onerror="this.style.display='none'">` +
       `</div>` +
