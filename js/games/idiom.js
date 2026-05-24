@@ -32,7 +32,7 @@ const _pathPrefix = location.pathname.startsWith('/happy-learning')
 const MODE1_RATIO = 0.30
 
 /** 火車入場動畫時間（毫秒） */
-const TRAIN_ENTER_MS = 1400
+const TRAIN_ENTER_MS = 2500
 
 /** 火車出場動畫時間（毫秒） */
 const TRAIN_EXIT_MS = 1200
@@ -254,72 +254,92 @@ export class IdiomGame extends GameEngine {
       this._bindMode1Events(q)
     }
 
-    const _startSlide = (imgEl) => {
-      // imgEl 是已完成載入的 <img>，可以安全做動畫
+    const _runAnimation = (im) => {
+      // ── 建立 fixed overlay（不用 overflow:hidden，讓 GPU 正常渲染）──
       const ov = document.createElement('div')
       ov.id = 'train-enter-ov'
-      ov.style.cssText = [
-        'position:fixed', 'inset:0',
-        'pointer-events:none', 'z-index:9998', 'overflow:hidden',
-        'display:flex', 'align-items:center', 'justify-content:center',
-      ].join(';')
+      // 用 position:fixed + top/bottom:0 + clip-path 取代 overflow:hidden
+      // 這樣 GPU layer 不會優化掉畫面外的元素
+      ov.style.cssText = (
+        'position:fixed;top:0;bottom:0;left:0;right:0;' +
+        'pointer-events:none;z-index:9998;' +
+        'overflow:hidden;'
+      )
 
-      // 直接使用已載入的圖片（clone 保留快取）
-      const im = imgEl.cloneNode(false)
-      im.style.cssText = [
-        'width:80vw', 'max-width:480px', 'height:auto', 'display:block',
-        'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))',
-        'will-change:transform',
-        'transform:translateX(60vw)',
-        'transition:none',
-      ].join(';')
+      // 用一個相對定位的包裝，讓火車能絕對定位在垂直置中
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = (
+        'position:absolute;top:50%;left:0;width:100%;' +
+        'transform:translateY(-50%);' +
+        'display:flex;justify-content:center;'
+      )
 
-      ov.appendChild(im)
+      // 設定圖片樣式：初始位置在右方外 100%（相對於 100vw = 一個螢幕寬）
+      im.style.cssText = (
+        'width:80vw;max-width:480px;height:auto;display:block;' +
+        'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));' +
+        'will-change:transform;' +
+        'transform:translateX(100vw);' +  // 剛好在螢幕右外，GPU 一定渲染
+        'transition:none;'
+      )
+
+      wrapper.appendChild(im)
+      ov.appendChild(wrapper)
       document.body.appendChild(ov)
       this._trainOverlay = ov
 
-      // reflow 確保初始位置已繪製
-      void im.offsetWidth
-
-      // 雙 rAF：讓瀏覽器先渲染初始位置再啟動動畫（修正 Android/Safari 跳過起點問題）
-      requestAnimationFrame(() => {
+      // 用 decode() 確保圖片已完全解碼可繪製，再啟動動畫
+      const _start = () => {
+        // 第1幀：確認初始 transform 已被瀏覽器認識
         requestAnimationFrame(() => {
-          this._playTrainSound()
-          im.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
-          im.style.transform  = 'translateX(0)'
+          // 第2幀：啟動滑入動畫
+          requestAnimationFrame(() => {
+            this._playTrainSound()
+            im.style.transition = (
+              `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
+            )
+            im.style.transform = 'translateX(0)'
+
+            // 動畫啟動後才開始計時（在此 rAF 內啟動 setTimeout）
+            setTimeout(() => {
+              // overlay 結束，顯示頁面內靜態火車圖
+              const si = document.getElementById('train-img')
+              if (si) si.style.visibility = 'visible'
+              if (ov.parentNode) ov.parentNode.removeChild(ov)
+              this._trainOverlay = null
+              _showInteractive()
+            }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+          })
         })
-      })
+      }
 
-      // 入場結束：瞬間切換成頁面內 #train-img（同尺寸同位置，無縫接替）
-      setTimeout(() => {
+      // decode() 確保圖片可繪製（不支援時直接執行）
+      if (typeof im.decode === 'function') {
+        im.decode().then(_start).catch(_start)
+      } else {
+        _start()
+      }
+    }
+
+    // ── 圖片載入策略 ──────────────────────────────────────
+    const imgSrc = `${_pathPrefix}/images/train.png`
+
+    const _tryLoad = () => {
+      const im = new Image()
+      im.onload = () => _runAnimation(im)
+      im.onerror = () => {
         const si = document.getElementById('train-img')
-        if (si) {
-          si.style.visibility = 'visible'
-          si.style.opacity    = '1'
-        }
-        // 不淡出，直接移除 overlay，避免兩台並存
-        if (ov.parentNode) ov.parentNode.removeChild(ov)
-        this._trainOverlay = null
+        if (si) si.style.display = 'none'
         _showInteractive()
-      }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+      }
+      im.src = imgSrc
+      // 快取命中：complete 在 src 設定後立即為 true
+      if (im.complete && im.naturalWidth > 0) {
+        _runAnimation(im)
+      }
     }
 
-    // 預載圖片，確保 imgEl 已完全繪製後才做動畫
-    let _slideCalled = false
-    const _onceDo = (fn) => { if (_slideCalled) return; _slideCalled = true; fn() }
-
-    const probe = new Image()
-    probe.onload  = () => _onceDo(() => _startSlide(probe))
-    probe.onerror = () => _onceDo(() => {
-      const si = document.getElementById('train-img')
-      if (si) si.style.display = 'none'
-      _showInteractive()
-    })
-    probe.src = `${_pathPrefix}/images/train.png`
-    // 若已在快取中（complete=true），同步觸發（onload 不會再重複）
-    if (probe.complete && probe.naturalWidth > 0) {
-      _onceDo(() => _startSlide(probe))
-    }
+    _tryLoad()
   }
 
   async _animateTrainOut () {
@@ -385,8 +405,7 @@ export class IdiomGame extends GameEngine {
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
       `#train-img{width:80vw;max-width:480px;height:auto;display:block;visibility:hidden;will-change:transform;transform:translateX(0);filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
-      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;` +
-      `opacity:0;transition:opacity 0.4s ease;}` +
+      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
       `</style>` +
 
