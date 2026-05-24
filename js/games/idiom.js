@@ -279,10 +279,14 @@ export class IdiomGame extends GameEngine {
       // reflow 確保初始位置已繪製
       void im.offsetWidth
 
-      // 播音效 + 啟動滑入
-      this._playTrainSound()
-      im.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
-      im.style.transform  = 'translateX(0px)'
+      // 雙 rAF：讓瀏覽器先渲染初始位置再啟動動畫（修正 Android/Safari 跳過起點問題）
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this._playTrainSound()
+          im.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
+          im.style.transform  = 'translateX(0)'
+        })
+      })
 
       // 入場結束：瞬間切換成頁面內 #train-img（同尺寸同位置，無縫接替）
       setTimeout(() => {
@@ -299,36 +303,42 @@ export class IdiomGame extends GameEngine {
     }
 
     // 預載圖片，確保 imgEl 已完全繪製後才做動畫
+    let _slideCalled = false
+    const _onceDo = (fn) => { if (_slideCalled) return; _slideCalled = true; fn() }
+
     const probe = new Image()
-    probe.onload = () => _startSlide(probe)
-    probe.onerror = () => {
+    probe.onload  = () => _onceDo(() => _startSlide(probe))
+    probe.onerror = () => _onceDo(() => {
       const si = document.getElementById('train-img')
       if (si) si.style.display = 'none'
       _showInteractive()
-    }
+    })
     probe.src = `${_pathPrefix}/images/train.png`
-    // 若已在快取中（complete=true），手動觸發
+    // 若已在快取中（complete=true），同步觸發（onload 不會再重複）
     if (probe.complete && probe.naturalWidth > 0) {
-      _startSlide(probe)
+      _onceDo(() => _startSlide(probe))
     }
   }
 
-    async _animateTrainOut () {
+  async _animateTrainOut () {
     const train = document.getElementById('train-img')
     if (!train || train.style.display === 'none') return
 
-    this._playTrainSound()
-
-    // 強制確認目前位置
     void train.offsetWidth
 
-    train.style.transition =
-      `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45), ` +
-      `opacity ${TRAIN_EXIT_MS}ms ease`
-    train.style.transform = 'translateX(-140vw) scale(0.92)'
-    train.style.opacity   = '0'
-
-    await new Promise(r => setTimeout(r, TRAIN_EXIT_MS))
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this._playTrainSound()
+          train.style.transition =
+            `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45), ` +
+            `opacity ${TRAIN_EXIT_MS}ms ease`
+          train.style.transform = 'translateX(-140vw) scale(0.92)'
+          train.style.opacity   = '0'
+          setTimeout(resolve, TRAIN_EXIT_MS)
+        })
+      })
+    })
   }
 
   // 保留舊名稱別名，避免其他地方呼叫報錯
@@ -336,7 +346,7 @@ export class IdiomGame extends GameEngine {
     return this._animateTrainOut()
   }
 
-    /** 建立模式一的完整 HTML 骨架（重新設計：火車圖放大+車廂格子疊加） */
+  /** 建立模式一的完整 HTML 骨架（重新設計：火車圖放大+車廂格子疊加） */
   _buildMode1Shell (q) {
     const chars    = q.idiom.split('')
     const shuffled = this._shuffle([...chars])
@@ -399,7 +409,7 @@ export class IdiomGame extends GameEngine {
     )
   }
 
-    /** 綁定模式一的拖曳事件（含 touch 支援） */
+  /** 綁定模式一的拖曳事件（含 touch 支援） */
   _bindMode1Events (q) {
     const cards = document.querySelectorAll('.idiom-card')
     const slots = document.querySelectorAll('.wagon-slot')
