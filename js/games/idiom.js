@@ -17,6 +17,7 @@ import { GameEngine }   from './GameEngine.js'
 import { GameConfig }   from './GameConfig.js'
 import { AppState }     from '../state.js'
 import { AudioManager } from '../audio.js'
+import { JSONLoader }   from '../json_loader.js'
 
 // ═══════════════════════════════════════════════════════
 //  常數
@@ -80,7 +81,7 @@ export class IdiomGame extends GameEngine {
     const count = config?.count ?? 5
 
     const myIdioms    = AppState.idioms ?? []
-    const allIdioms   = AppState.jsonData?.idioms ?? []
+    const allIdioms   = JSONLoader.get('idioms') ?? []
     const charSet     = new Set(AppState.characters?.map(c => c.char || c['字']) ?? [])
 
     const relatedIdioms = allIdioms.filter(entry =>
@@ -257,7 +258,7 @@ export class IdiomGame extends GameEngine {
     // train-unit 寬度 = 5 個單元 × 90px = 450px
     // stage 寬度動態取得
     const unitW  = 5 * 140  // px（5個單元：頭+4車廂）
-    const stageW = stage.offsetWidth || 360
+    const stageW = stage.offsetWidth || 600
     const targetLeft = Math.max(0, (stageW - unitW) / 2)  // px
 
     // 初始位置：在 stage 右側外
@@ -297,7 +298,7 @@ export class IdiomGame extends GameEngine {
     const stage = document.getElementById('train-stage')
     if (!unit) return
 
-    const stageW = stage ? (stage.offsetWidth || 360) : 360
+    const stageW = stage ? (stage.offsetWidth || 600) : 600
     const startLeft = parseFloat(unit.style.left) || 0
     const targetLeft = -(stageW + 50)
     const DURATION = TRAIN_EXIT_MS
@@ -352,7 +353,7 @@ export class IdiomGame extends GameEngine {
     return (
       `<div id="idiom-game-wrap" style="` +
         `display:flex;flex-direction:column;align-items:center;` +
-        `padding:8px 4px;gap:12px;width:100%;` +
+        `padding:8px 8px;gap:12px;width:100%;max-width:100%;` +
       `">` +
 
       `<style>` +
@@ -380,6 +381,7 @@ export class IdiomGame extends GameEngine {
       `#train-stage{` +
         `position:relative;` +
         `width:100%;` +
+        `max-width:100%;` +
         `height:300px;` +
         `overflow:hidden;` +
       `}` +
