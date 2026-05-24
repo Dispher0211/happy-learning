@@ -163,7 +163,9 @@ export class IdiomGame extends GameEngine {
       container.classList.add('flash-correct')
       setTimeout(() => container.classList.remove('flash-correct'), 600)
     }
-    return Promise.resolve()
+    if (this._currentMode === 1) {
+      await this._trainExitAnimation()
+    }
   }
 
   /**
@@ -232,41 +234,54 @@ export class IdiomGame extends GameEngine {
    *   4. 答題後，fire train.mp3 + 火車向左開走消失
    */
   _renderMode1WithTrainAnimation (q, app) {
-    // 先渲染基本骨架（含火車動畫佔位）
     app.innerHTML = this._buildMode1Shell(q)
     this._bindHintButton()
 
-    // 播放火車進站音效
-    this._playTrainSound()
-
-    // 啟動進站動畫
-    const trainImg = document.getElementById('train-img')
-    if (trainImg) {
-      // 初始位置：在畫面右方外
-      trainImg.style.transition = 'none'
-      trainImg.style.transform  = 'translateX(110vw)'
-      trainImg.style.opacity    = '1'
-
-      // 下一幀開始滑入
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          trainImg.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
-          trainImg.style.transform  = 'translateX(0)'
-        })
-      })
-    }
-
-    // 入場完成後，顯示車廂互動區
-    setTimeout(() => {
+    const _showInteractive = () => {
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
         wagonArea.style.opacity    = '1'
         wagonArea.style.transform  = 'translateY(0)'
         wagonArea.style.transition = 'all 0.4s ease'
       }
-      // 綁定拖曳互動事件
       this._bindMode1Events(q)
-    }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+    }
+
+    const trainImg = document.getElementById('train-img')
+    if (!trainImg) { _showInteractive(); return }
+
+    const _startEnter = () => {
+      trainImg.style.visibility = 'visible'
+      trainImg.style.transition = 'none'
+      trainImg.style.transform  = 'translateX(110vw)'
+      this._playTrainSound()
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          trainImg.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
+          trainImg.style.transform  = 'translateX(0px)'
+        })
+      })
+      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+    }
+
+    if (trainImg.complete && trainImg.naturalWidth > 0) {
+      _startEnter()
+    } else {
+      trainImg.onload  = _startEnter
+      trainImg.onerror = () => {
+        trainImg.style.display = 'none'
+        _showInteractive()
+      }
+    }
+  }
+
+  async _trainExitAnimation () {
+    const trainImg = document.getElementById('train-img')
+    if (!trainImg) return
+    this._playTrainSound()
+    trainImg.style.transition = `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45)`
+    trainImg.style.transform  = 'translateX(-120vw)'
+    await new Promise(r => setTimeout(r, TRAIN_EXIT_MS))
   }
 
   /** 建立模式一的完整 HTML 骨架 */
@@ -327,6 +342,7 @@ export class IdiomGame extends GameEngine {
             width:90vw; max-width:380px; height:auto;
             display:block; margin:0 auto;
             filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            visibility:hidden;
           }
           #wagon-interactive {
             opacity:0; transform:translateY(20px);
@@ -334,9 +350,20 @@ export class IdiomGame extends GameEngine {
           }
         </style>
 
-        <!-- 遊戲標題 -->
-        <div style="font-size:1rem; font-weight:800; color:#475569; text-align:center;">
-          🚂 排列車廂，組成成語
+        <!-- 遊戲標題 + 意思提示（不顯示成語本身） -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
+          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
+            🚂 排列車廂，組成成語
+          </div>
+          <div style="
+            background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;
+            padding:10px 16px;text-align:center;width:100%;max-width:340px;
+          ">
+            <div style="font-size:0.75rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
+            <div style="font-size:0.95rem;font-weight:700;color:#3730a3;line-height:1.5;">
+              ${q.meaning || q.example || '（請依四個字的順序排列成語）'}
+            </div>
+          </div>
         </div>
 
         <!-- 火車圖片（CSS 動畫） -->
@@ -578,8 +605,19 @@ export class IdiomGame extends GameEngine {
           .fork-option:active { transform:scale(0.97); }
         </style>
 
-        <div style="font-size:1rem;font-weight:800;color:#475569;text-align:center;">
-          🚂 選對叉路，讓火車通過！
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
+          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
+            🚂 選對叉路，讓火車通過！
+          </div>
+          <div style="
+            background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;
+            padding:10px 16px;text-align:center;width:100%;max-width:340px;
+          ">
+            <div style="font-size:0.75rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
+            <div style="font-size:0.95rem;font-weight:700;color:#3730a3;line-height:1.5;">
+              ${q.meaning || q.example || '（選出正確的成語路線）'}
+            </div>
+          </div>
         </div>
 
         <!-- 裝飾用小火車（emoji） -->
