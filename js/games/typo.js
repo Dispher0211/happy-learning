@@ -988,10 +988,14 @@ function _pickDistractors(relatedChars, correct, allConfusables, count) {
     .filter(c => c !== correct && c.length === 1);
 
   // 不足則從其他 confusables 補充
+  // 支援新格式（sentences[].wrong）與舊格式（.wrong）
   if (candidates.length < count) {
     for (const item of allConfusables) {
       if (item.correct !== correct) {
-        candidates.push(item.correct, item.wrong);
+        candidates.push(item.correct);
+        // 新格式：從 sentences[] 取 wrong；舊格式：item.wrong
+        const wrongs = _extractWrongs(item);
+        candidates.push(...wrongs);
       }
       if (candidates.length >= count + 5) break;
     }
