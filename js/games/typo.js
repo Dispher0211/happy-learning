@@ -326,12 +326,6 @@ export class TypoGame extends GameEngine {
   async playCorrectAnimation(stars) {
     // ── 答對動畫：closebox全螢幕 → 消失 → key1~4輪播旋轉(配open.mp3) → 消失 → openbox全螢幕 → 星星 ──
 
-    // 播放音效（與 closebox 出現同步）
-    try {
-      const audio = new Audio('audio/effects/open.mp3');
-      audio.play().catch(() => {});
-    } catch (_e) {}
-
     // ── 步驟一：closebox 全螢幕出現 ──
     const overlay = document.createElement('div');
     overlay.className = 'typo-anim-overlay';
@@ -351,6 +345,12 @@ export class TypoGame extends GameEngine {
     fsImg.style.display = 'none';
 
     // ── 步驟三：key1→key2→key3→key4→key1 輪播（模擬旋轉），共 4 格 × 200ms = 0.8s × 2圈 ──
+    // 音效與 key 出現同步播放
+    try {
+      const audio = new Audio('audio/effects/open.mp3');
+      audio.play().catch(() => {});
+    } catch (_e) {}
+
     const keyFrames = ['images/key1.png','images/key2.png','images/key3.png','images/key4.png'];
     const keyEl = document.createElement('img');
     keyEl.className = 'typo-fs-img';
