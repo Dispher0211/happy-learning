@@ -349,7 +349,7 @@ export class PolyphoneGame extends GameEngine {
         y: yBase,   // %
         vy: 0.006 + Math.random() * 0.004,
         phase: Math.random() * Math.PI * 2,
-        radius: 38, // px，用於碰撞
+        radius: 46, // px，用於碰撞（配合 80px 泡泡）
         exploded: false,
       });
     });
@@ -952,7 +952,7 @@ export class PolyphoneGame extends GameEngine {
     .pp-sky {
       position: relative;
       width: 100%;
-      height: 340px;
+      height: 420px;
       overflow: hidden;
       border-radius: 14px;
       background:
@@ -981,8 +981,8 @@ export class PolyphoneGame extends GameEngine {
     }
     .pp-bubble {
       position: absolute;
-      width: 64px;
-      height: 64px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       display: flex;
@@ -1122,11 +1122,18 @@ export class PolyphoneGame extends GameEngine {
 
     /* 手機小螢幕 */
     @media (max-height: 600px) {
-      .pp-sky { height: 260px; }
+      .pp-sky { height: 320px; }
     }
     @media (min-width: 600px) {
-      .pp-sky           { max-width: 520px; margin: 0 auto; }
-      .pp-cannon-canvas { max-width: 520px; }
+      .pp-sky           { max-width: 680px; margin: 0 auto; }
+      .pp-cannon-canvas { max-width: 680px; }
+      .pp-sky           { height: 480px; }
+    }
+    @media (min-width: 1024px) {
+      .pp-game { max-width: 760px; margin: 0 auto; }
+      .pp-sky  { max-width: 760px; height: 520px; }
+      .pp-cannon-canvas { max-width: 760px; }
+      .pp-bubble { width: 90px; height: 90px; }
     }
 
     /* ── pv2 注音系統（泡泡用）── */

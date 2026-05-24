@@ -822,16 +822,26 @@ export class IdiomGame extends GameEngine {
 
   _playTrainSound () {
     try {
-      // 先停止上一個
-      if (this._trainAudio) {
-        this._trainAudio.pause()
-        this._trainAudio.currentTime = 0
-      }
+      // 停止所有正在播放的火車音效
+      this._stopAllTrainAudio()
       const audio = new Audio(`${_pathPrefix}/audio/effects/train.mp3`)
       audio.volume = 0.6
       audio.play().catch(() => {})
-      this._trainAudio = audio
+      // 播完後自動從陣列移除
+      audio.addEventListener('ended', () => {
+        this._trainAudioList = (this._trainAudioList || []).filter(a => a !== audio)
+      })
+      this._trainAudioList = this._trainAudioList || []
+      this._trainAudioList.push(audio)
     } catch (_) {}
+  }
+
+  _stopAllTrainAudio () {
+    if (!this._trainAudioList) return
+    for (const a of this._trainAudioList) {
+      try { a.pause(); a.currentTime = 0 } catch (_) {}
+    }
+    this._trainAudioList = []
   }
 
   // ───────────────────────────────────────────────────
@@ -889,11 +899,7 @@ export class IdiomGame extends GameEngine {
 
   destroy () {
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null }
-    if (this._trainAudio) {
-      this._trainAudio.pause()
-      this._trainAudio.currentTime = 0
-      this._trainAudio = null
-    }
+    this._stopAllTrainAudio()
     if (this._touchClone) { this._touchClone.remove(); this._touchClone = null }
     if (this._trainOverlay && this._trainOverlay.parentNode) {
       this._trainOverlay.parentNode.removeChild(this._trainOverlay)

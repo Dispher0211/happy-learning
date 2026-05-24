@@ -764,8 +764,8 @@ export class WritingGame extends GameEngine {
             alt="魔法書"
             class="writing-magic-book-img"
             style="
-              width: min(72vw, 220px);
-              height: min(72vw, 220px);
+              width: min(80vw, 340px);
+              height: min(80vw, 340px);
               object-fit: contain;
               border-radius: 12px;
               animation: sw-appear 0.4s ease;
@@ -1088,7 +1088,7 @@ function injectWritingStyles() {
       border: 2px solid #c0caee;
       border-radius: 16px;
       width: 100%;
-      max-width: 290px;
+      max-width: 400px;
       position: relative;
       transition: box-shadow 0.3s ease, transform 0.1s ease;
     }
@@ -1103,10 +1103,10 @@ function injectWritingStyles() {
     /* ── Canvas 及米字格 ── */
     .writing-canvas-wrapper {
       position: relative;
-      /* 響應式：小螢幕縮小，最大 240px
+      /* 響應式：小螢幕縮小，最大 360px
          canvas DOM 屬性 240×240 不變，scaleX/scaleY 由 getBoundingClientRect 動態補償 */
-      width: min(72vw, 240px);
-      height: min(72vw, 240px);
+      width: min(80vw, 360px);
+      height: min(80vw, 360px);
     }
 
     .writing-canvas {
@@ -1140,7 +1140,7 @@ function injectWritingStyles() {
 
     .writing-btn {
       flex: 1;
-      max-width: 80px;
+      max-width: 110px;
       padding: 8px 4px;
       border: 2px solid #c0caee;
       border-radius: 10px;
@@ -1211,7 +1211,7 @@ function injectWritingStyles() {
       display: flex;
       gap: 10px;
       width: 100%;
-      max-width: 290px;
+      max-width: 400px;
     }
 
     .hint-btn {
@@ -1245,7 +1245,7 @@ function injectWritingStyles() {
     /* ── 提示內容 ── */
     .writing-hint-content {
       width: 100%;
-      max-width: 290px;
+      max-width: 400px;
       padding: 10px 14px;
       background: #fffbe8;
       border: 1px solid #ffe082;
