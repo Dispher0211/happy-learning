@@ -204,15 +204,32 @@ export class TypoGame extends GameEngine {
     const selected = combined.slice(0, count);
 
     // 轉換為 GameEngine 標準格式
-    // 支援新格式（sentences[]）與舊格式（sentence/wrong_position/wrong）
     this.questions = selected.map(item => {
-      // ① 從 sentences[] 隨機挑一個句子（新格式），或用舊格式單句
-      //    wrong 固定來自 sentenceData（句子設計時已確保語意正確）
+      // ① 從 sentences[] 隨機挑一個句子
       const sentenceData = _pickSentence(item);
-      const wrong = sentenceData.wrong ?? item.wrong ?? '';
-      const sentence = sentenceData.sentence ?? '';
-      const wrongPosition = sentenceData.wrong_position
-        ?? _findWrongPos(sentence, wrong);
+
+      let wrong, sentence, wrongPosition;
+
+      if (item._isDynamic) {
+        // 動態 AI 題：wrong 已由 AI 決定，直接使用
+        wrong = sentenceData.wrong ?? item.wrong ?? '';
+        sentence = sentenceData.sentence ?? '';
+        wrongPosition = sentenceData.wrong_position ?? _findWrongPos(sentence, wrong);
+      } else {
+        // confusables.json 題：
+        // ② 從 related_characters 排除 correct，隨機挑一個字作為本次錯字
+        const originalWrong = sentenceData.wrong ?? item.wrong ?? '';
+        wrong = _pickRandomWrongFromRelated(item, originalWrong);
+        // ③ 將句子中指定位置的字替換成新錯字
+        const substituted = _substituteWrong(
+          sentenceData.sentence,
+          sentenceData.wrong_position ?? _findWrongPos(sentenceData.sentence, originalWrong),
+          originalWrong,
+          wrong
+        );
+        sentence = substituted.sentence;
+        wrongPosition = substituted.wrongPosition;
+      }
 
       return {
         char: item.correct,
@@ -515,12 +532,12 @@ export class TypoGame extends GameEngine {
    * @returns {string} HTML 字串
    */
   _renderMode1(question) {
-    // 準備 4 個寶箱選項：正確字 + 3 個干擾字
+    // 準備 5 個寶箱選項：正確字 + 4 個干擾字
     const distractors = _pickDistractors(
       question.relatedChars,
       question.correct,
       this._allConfusables,
-      3
+      4
     );
     const options = _shuffle([question.correct, ...distractors]);
     this._chestOptions = options;
@@ -1249,6 +1266,22 @@ function _pickRandomWrong(item, sentenceData) {
 }
 
 /**
+ * 從 related_characters 排除 correct，隨機挑一個字作為本次錯字
+ * 若 related_characters 不夠，fallback 到 originalWrong
+ * @param {object} item           confusables 資料
+ * @param {string} originalWrong  原句設計的錯字（fallback）
+ * @returns {string}
+ */
+function _pickRandomWrongFromRelated(item, originalWrong) {
+  const correct = item.correct;
+  const candidates = (item.related_characters ?? []).filter(
+    ch => ch !== correct && ch.length === 1
+  );
+  if (candidates.length === 0) return originalWrong;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+/**
  * 將句子中指定位置的字換成新的錯字（若不同）
  * 若 originalWrong 與 newWrong 相同則直接回傳原句
  * @param {string} sentence
@@ -1766,10 +1799,9 @@ export function injectTypoStyles() {
     .typo-chests {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      flex-wrap: nowrap;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-top: 8px;
-      overflow-x: auto;
       padding: 4px 0;
     }
     .typo-chest {
@@ -1778,11 +1810,12 @@ export function injectTypoStyles() {
       align-items: center;
       gap: 4px;
       cursor: pointer;
-      padding: 12px;
+      padding: 10px;
       background: #fff8e1;
       border: 3px solid #e0b000;
       border-radius: 12px;
-      min-width: 76px;
+      min-width: 70px;
+      flex: 0 0 calc(20% - 12px);
       transition: transform 0.15s, box-shadow 0.15s;
       user-select: none;
     }
