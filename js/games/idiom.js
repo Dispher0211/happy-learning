@@ -23,6 +23,12 @@ import { AudioManager } from '../audio.js'
 // ═══════════════════════════════════════════════════════
 
 /** 模式一（拖曳排列車廂）佔全部題目的比例 */
+// GitHub Pages 路徑前綴（與 audio.js 同邏輯）
+const _pathPrefix = location.pathname.startsWith('/happy-learning')
+  ? '/happy-learning'
+  : ''
+
+/** 模式一（拖曳排列車廂）佔全部題目的比例 */
 const MODE1_RATIO = 0.30
 
 /** 火車入場動畫時間（毫秒） */
@@ -335,7 +341,7 @@ export class IdiomGame extends GameEngine {
 
         <!-- 火車圖片（CSS 動畫） -->
         <div style="width:100%; overflow:hidden; padding:4px 0;">
-          <img id="train-img" src="../../images/train.png"
+          <img id="train-img" src="${_pathPrefix}/images/train.png"
                alt="火車" onerror="this.style.display='none'">
         </div>
 
@@ -641,7 +647,7 @@ export class IdiomGame extends GameEngine {
 
   _playTrainSound () {
     try {
-      const audio = new Audio('../../audio/train.mp3')
+      const audio = new Audio(`${_pathPrefix}/audio/train.mp3`)
       audio.volume = 0.6
       audio.play().catch(() => {})
     } catch (_) {}
