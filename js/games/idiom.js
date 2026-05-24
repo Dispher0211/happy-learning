@@ -38,7 +38,7 @@ const TRAIN_ENTER_MS = 1800
 const TRAIN_EXIT_MS = 1200
 
 /** 火車停留等待互動時間（定位後顯示車廂） */
-const TRAIN_STAY_MS = 600
+const TRAIN_STAY_MS = 2000
 
 // ═══════════════════════════════════════════════════════
 //  IdiomGame class
@@ -164,7 +164,7 @@ export class IdiomGame extends GameEngine {
       setTimeout(() => container.classList.remove('flash-correct'), 600)
     }
     if (this._currentMode === 1) {
-      await this._trainExitAnimation()
+      await this._animateTrainOut()
     }
   }
 
@@ -245,45 +245,61 @@ export class IdiomGame extends GameEngine {
     const _showInteractive = () => {
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
-        wagonArea.style.transition = 'opacity 0.4s ease, transform 0.4s ease'
+        wagonArea.style.transition = 'opacity 0.5s ease, transform 0.5s ease'
         wagonArea.style.opacity    = '1'
         wagonArea.style.transform  = 'translateY(0)'
       }
       this._bindMode1Events(q)
     }
 
-    // 用 fixed overlay 做入場動畫，避免被 overflow 截掉
+    // ── 同一台火車進場流程 ──────────────────────────────
+    // 用 fixed overlay 做入場動畫（繞開 overflow 限制）
+    // 停住後：overlay 不淡出，直接 remove + 同步顯示 #train-img
+    // 這樣視覺上是「同一台火車」
     const _doEnterAnim = () => {
-      const ov  = document.createElement('div')
-      ov.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
-        'pointer-events:none;z-index:9998;overflow:hidden;' +
-        'display:flex;align-items:center;justify-content:center;'
-      const im  = document.createElement('img')
-      im.src    = `${_pathPrefix}/images/train.png`
-      im.style.cssText = 'width:95vw;max-width:520px;height:auto;display:block;' +
-        'will-change:transform;transform:translateX(110vw);transition:none;' +
-        'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));'
+      const ov = document.createElement('div')
+      ov.id = 'train-enter-ov'
+      ov.style.cssText = [
+        'position:fixed', 'inset:0', 'width:100vw', 'height:100vh',
+        'pointer-events:none', 'z-index:9998', 'overflow:hidden',
+        'display:flex', 'align-items:center', 'justify-content:center',
+      ].join(';')
+
+      const im = document.createElement('img')
+      im.src = `${_pathPrefix}/images/train.png`
+      im.style.cssText = [
+        'width:95vw', 'max-width:520px', 'height:auto', 'display:block',
+        'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))',
+        'will-change:transform', 'transform:translateX(110vw)', 'transition:none',
+      ].join(';')
+
       ov.appendChild(im)
       document.body.appendChild(ov)
       this._trainOverlay = ov
 
+      // 強制 reflow → 啟動滑入
       void im.offsetWidth
       this._playTrainSound()
       im.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
       im.style.transform  = 'translateX(0px)'
 
+      // 入場結束後：瞬間切換成 #train-img（無縫接替）
       setTimeout(() => {
-        ov.style.transition = 'opacity 0.3s ease'
-        ov.style.opacity    = '0'
-        setTimeout(() => { if (ov.parentNode) ov.parentNode.removeChild(ov) }, 350)
-        // 顯示頁面內靜態火車圖
+        // 1. 顯示頁面內的靜態 #train-img（位置一致，故無跳動）
         const si = document.getElementById('train-img')
-        if (si) { si.style.visibility = 'visible' }
+        if (si) {
+          si.style.visibility = 'visible'
+          si.style.opacity    = '1'
+        }
+        // 2. 立刻移除 overlay（不淡出，避免兩台並存）
+        if (ov.parentNode) ov.parentNode.removeChild(ov)
+        this._trainOverlay = null
+
+        // 3. 顯示互動區
         _showInteractive()
       }, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
-    // 預載圖片後啟動
     const probe = new Image()
     probe.onload  = _doEnterAnim
     probe.onerror = () => {
@@ -294,28 +310,28 @@ export class IdiomGame extends GameEngine {
     probe.src = `${_pathPrefix}/images/train.png`
   }
 
-  async _trainExitAnimation () {
-    const ov = document.createElement('div')
-    ov.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
-      'pointer-events:none;z-index:9998;overflow:hidden;' +
-      'display:flex;align-items:center;justify-content:center;'
-    const im = document.createElement('img')
-    im.src   = `${_pathPrefix}/images/train.png`
-    im.style.cssText = 'width:95vw;max-width:520px;height:auto;display:block;' +
-      'will-change:transform;transform:translateX(0px);transition:none;' +
-      'filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));'
-    ov.appendChild(im)
-    document.body.appendChild(ov)
-    // 隱藏靜態圖
-    const si = document.getElementById('train-img')
-    if (si) si.style.visibility = 'hidden'
-    await new Promise(r => setTimeout(r, 30))
+  // 答對後：#train-img 直接向左加速滑出（同一台火車離站）
+  async _animateTrainOut () {
+    const train = document.getElementById('train-img')
+    if (!train || train.style.display === 'none') return
+
     this._playTrainSound()
-    void im.offsetWidth
-    im.style.transition = `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45)`
-    im.style.transform  = 'translateX(-120vw)'
+
+    // 強制確認目前位置
+    void train.offsetWidth
+
+    train.style.transition =
+      `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45), ` +
+      `opacity ${TRAIN_EXIT_MS}ms ease`
+    train.style.transform = 'translateX(-140vw) scale(0.92)'
+    train.style.opacity   = '0'
+
     await new Promise(r => setTimeout(r, TRAIN_EXIT_MS))
-    if (ov.parentNode) ov.parentNode.removeChild(ov)
+  }
+
+  // 保留舊名稱別名，避免其他地方呼叫報錯
+  async _trainExitAnimation () {
+    return this._animateTrainOut()
   }
 
     /** 建立模式一的完整 HTML 骨架（重新設計：火車圖放大+車廂格子疊加） */
@@ -353,8 +369,7 @@ export class IdiomGame extends GameEngine {
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#train-img{width:100%;max-width:480px;height:auto;display:block;visibility:hidden;` +
-      `filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
+      `#train-img{width:95vw;max-width:520px;height:auto;display:block;visibility:hidden;will-change:transform;transform:translateX(0);filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
       `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
       `margin-top:-80px;padding-right:4px;position:relative;z-index:2;}` +
       `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
