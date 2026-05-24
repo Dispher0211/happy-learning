@@ -240,47 +240,48 @@ export class IdiomGame extends GameEngine {
     const _showInteractive = () => {
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
+        wagonArea.style.transition = 'opacity 0.4s ease, transform 0.4s ease'
         wagonArea.style.opacity    = '1'
         wagonArea.style.transform  = 'translateY(0)'
-        wagonArea.style.transition = 'all 0.4s ease'
       }
       this._bindMode1Events(q)
+    }
+
+    const _startEnter = () => {
+      const img = document.getElementById('train-img')
+      if (!img) { _showInteractive(); return }
+      img.style.transition = 'none'
+      img.style.visibility = 'visible'
+      img.style.transform  = 'translateX(110vw)'
+      void img.offsetWidth
+      this._playTrainSound()
+      img.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
+      img.style.transform  = 'translateX(0px)'
+      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
     }
 
     const trainImg = document.getElementById('train-img')
     if (!trainImg) { _showInteractive(); return }
 
-    const _startEnter = () => {
-      trainImg.style.visibility = 'visible'
-      trainImg.style.transition = 'none'
-      trainImg.style.transform  = 'translateX(110vw)'
-      this._playTrainSound()
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          trainImg.style.transition = `transform ${TRAIN_ENTER_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
-          trainImg.style.transform  = 'translateX(0px)'
-        })
-      })
-      setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
-    }
-
     if (trainImg.complete && trainImg.naturalWidth > 0) {
-      _startEnter()
+      requestAnimationFrame(_startEnter)
     } else {
       trainImg.onload  = _startEnter
       trainImg.onerror = () => {
-        trainImg.style.display = 'none'
+        const t = document.getElementById('train-img')
+        if (t) t.style.display = 'none'
         _showInteractive()
       }
     }
   }
 
   async _trainExitAnimation () {
-    const trainImg = document.getElementById('train-img')
-    if (!trainImg) return
+    const img = document.getElementById('train-img')
+    if (!img || img.style.display === 'none') return
     this._playTrainSound()
-    trainImg.style.transition = `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45)`
-    trainImg.style.transform  = 'translateX(-120vw)'
+    void img.offsetWidth
+    img.style.transition = `transform ${TRAIN_EXIT_MS}ms cubic-bezier(0.55,0,1,0.45)`
+    img.style.transform  = 'translateX(-120vw)'
     await new Promise(r => setTimeout(r, TRAIN_EXIT_MS))
   }
 
@@ -350,19 +351,14 @@ export class IdiomGame extends GameEngine {
           }
         </style>
 
-        <!-- 遊戲標題 + 意思提示（不顯示成語本身） -->
+        <!-- 遊戲標題 + 意思提示 -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
           <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
             🚂 排列車廂，組成成語
           </div>
-          <div style="
-            background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;
-            padding:10px 16px;text-align:center;width:100%;max-width:340px;
-          ">
-            <div style="font-size:0.75rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
-            <div style="font-size:0.95rem;font-weight:700;color:#3730a3;line-height:1.5;">
-              ${q.meaning || q.example || '（請依四個字的順序排列成語）'}
-            </div>
+          <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
+            <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
+            <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '請依提示排列四個字'}</div>
           </div>
         </div>
 
@@ -609,14 +605,9 @@ export class IdiomGame extends GameEngine {
           <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
             🚂 選對叉路，讓火車通過！
           </div>
-          <div style="
-            background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;
-            padding:10px 16px;text-align:center;width:100%;max-width:340px;
-          ">
-            <div style="font-size:0.75rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
-            <div style="font-size:0.95rem;font-weight:700;color:#3730a3;line-height:1.5;">
-              ${q.meaning || q.example || '（選出正確的成語路線）'}
-            </div>
+          <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
+            <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
+            <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '選出正確的成語路線'}</div>
           </div>
         </div>
 
@@ -685,7 +676,7 @@ export class IdiomGame extends GameEngine {
 
   _playTrainSound () {
     try {
-      const audio = new Audio(`${_pathPrefix}/audio/train.mp3`)
+      const audio = new Audio(`${_pathPrefix}/audio/effects/train.mp3`)
       audio.volume = 0.6
       audio.play().catch(() => {})
     } catch (_) {}
