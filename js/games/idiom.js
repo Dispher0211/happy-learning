@@ -7,11 +7,9 @@
  * 模式二（70%）：火車叉路選正確路線
  *
  * 修正：
- * 1. super('idiom') 修正標題 undefined 問題
- * 2. 模式一加入 touch 拖曳支援
- * 3. 使用 train.png 圖片做 CSS 動畫（從右入場→停下→消失）搭配 train.mp3
- * 4. 車廂格子支援拖放與 touch 放置
- * 5. 徹底解決火車動畫因外層 height/overflow 裁剪及 visibility/rAF 渲染時間差導致看不見的問題。
+ * 1. 徹底解決火車卡死在左側不播動畫的問題（改用純 transform 進行全舞台平移）。
+ * 2. 修正格子與車廂錯位問題，將車廂格子與火車圖片完美錨定。
+ * 3. 移除不穩定的雙 rAF 與 visibility 隱藏機制。
  */
 
 import { GameEngine }   from './GameEngine.js'
@@ -23,22 +21,14 @@ import { AudioManager } from '../audio.js'
 //  常數
 // ═══════════════════════════════════════════════════════
 
-// GitHub Pages 路徑前綴（與 audio.js 同邏輯）
 const _pathPrefix = location.pathname.startsWith('/happy-learning')
   ? '/happy-learning'
   : ''
 
-/** 模式一（拖曳排列車廂）佔全部題目的比例 */
 const MODE1_RATIO = 0.30
-
-/** 火車入場動畫時間（毫秒） */
 const TRAIN_ENTER_MS = 2500
-
-/** 火車出場動畫時間（毫秒） */
 const TRAIN_EXIT_MS = 1200
-
-/** 火車停留等待互動時間（定位後顯示車廂） */
-const TRAIN_STAY_MS = 2000
+const TRAIN_STAY_MS = 1500
 
 // ═══════════════════════════════════════════════════════
 //  IdiomGame class
@@ -47,38 +37,19 @@ const TRAIN_STAY_MS = 2000
 export class IdiomGame extends GameEngine {
 
   constructor () {
-    // ✅ 修正：傳入 'idiom' 讓 GameEngine 能正確取得遊戲名稱
     super('idiom')
-
-    // 本局成語題庫
     this._idiomPool = []
-
-    // touch 拖曳狀態
-    this._touchDragEl   = null   // 正在被拖曳的 DOM 元素
-    this._touchClone    = null   // touch 拖曳時的視覺複製元素
+    this._touchDragEl   = null
+    this._touchClone    = null
     this._touchOffsetX  = 0
     this._touchOffsetY  = 0
-
-    // 全部答對計數，用於判斷進站特效
     this._allCorrect = true
-
-    // 目前模式：1 = 拖曳排列；2 = 叉路選擇
     this._currentMode = 2
-
-    // 火車動畫狀態
     this._trainAnimating = false
   }
 
-  // ───────────────────────────────────────────────────
-  //  GameEngine 抽象方法實作
-  // ───────────────────────────────────────────────────
-
-  /**
-   * loadQuestions(config)
-   */
   async loadQuestions (config) {
     const count = config?.count ?? 5
-
     const myIdioms    = AppState.idioms ?? []
     const allIdioms   = AppState.jsonData?.idioms ?? []
     const charSet     = new Set(AppState.characters?.map(c => c.char || c['字']) ?? [])
@@ -126,9 +97,6 @@ export class IdiomGame extends GameEngine {
     return this.questions
   }
 
-  /**
-   * renderQuestion(question)
-   */
   renderQuestion (question) {
     const app = this._getContainer()
     if (!app) return
@@ -144,18 +112,12 @@ export class IdiomGame extends GameEngine {
     }
   }
 
-  /**
-   * judgeAnswer(answer)
-   */
   async judgeAnswer (answer) {
     const q       = this.currentQuestion
     const correct = answer?.idiom?.trim() === q.idiom.trim()
     return { correct, correctAnswer: q.idiom }
   }
 
-  /**
-   * playCorrectAnimation()
-   */
   async playCorrectAnimation () {
     AudioManager.playEffect('correct')
     const container = document.getElementById('idiom-game-wrap')
@@ -168,9 +130,6 @@ export class IdiomGame extends GameEngine {
     }
   }
 
-  /**
-   * playWrongAnimation()
-   */
   async playWrongAnimation () {
     AudioManager.playEffect('wrong')
     const container = document.getElementById('idiom-game-wrap')
@@ -181,9 +140,6 @@ export class IdiomGame extends GameEngine {
     return Promise.resolve()
   }
 
-  /**
-   * showCorrectAnswer(question)
-   */
   showCorrectAnswer (question) {
     if (question.mode === 1) {
       const slots = document.querySelectorAll('.wagon-slot')
@@ -211,9 +167,6 @@ export class IdiomGame extends GameEngine {
     }
   }
 
-  /**
-   * getHint(level)
-   */
   getHint (level) {
     const q = this.currentQuestion
     if (level === 1) {
@@ -228,75 +181,63 @@ export class IdiomGame extends GameEngine {
   }
 
   // ───────────────────────────────────────────────────
-  //  模式一：火車入場 + 車廂拖放
+  //  模式一：全新修正火車動畫與精準對位
   // ───────────────────────────────────────────────────
 
-  /**
-   * 模式一主流程：
-   * 1. 播放 train.mp3
-   * 2. CSS 火車圖片從右邊進入 → 停在中央
-   * 3. 短暫停留後，顯示車廂互動區
-   * 4. 答題後，火車向左開走消失
-   */
   _renderMode1WithTrainAnimation (q, app) {
     app.innerHTML = this._buildMode1Shell(q)
     this._bindHintButton()
 
     const _showInteractive = () => {
-      const slotRow = document.getElementById('slot-row')
-      if (slotRow) slotRow.style.opacity = '1'
       const wagonArea = document.getElementById('wagon-interactive')
       if (wagonArea) {
-        wagonArea.style.transition = 'opacity 0.5s ease, transform 0.5s ease'
+        wagonArea.style.transition = 'opacity 0.4s ease, transform 0.4s ease'
         wagonArea.style.opacity    = '1'
         wagonArea.style.transform  = 'translateY(0)'
       }
       this._bindMode1Events(q)
     }
 
-    // ✅ 修正：改用全新不打架的純 transform 位移關鍵影格（以元素原本水平置中處為 0）
+    // 重新編寫極致穩定的舞台位移 Keyframes，絕不卡死
     if (!document.getElementById('train-kf')) {
       const kf = document.createElement('style')
       kf.id = 'train-kf'
       kf.textContent =
-        '@keyframes trainEnter {' +
-          '0% { transform: translateX(120vw); opacity: 0; }' +
+        '@keyframes stageEnter {' +
+          '0% { transform: translateX(100%); opacity: 0; }' +
           '100% { transform: translateX(0); opacity: 1; }' +
         '}' +
-        '@keyframes trainExit {' +
+        '@keyframes stageExit {' +
           '0% { transform: translateX(0); opacity: 1; }' +
-          '100% { transform: translateX(-120vw); opacity: 0; }' +
+          '100% { transform: translateX(-100%); opacity: 0; }' +
         '}'
       document.head.appendChild(kf)
     }
 
-    const trainImg = document.getElementById('train-img')
-    if (!trainImg) { _showInteractive(); return }
+    const trainStage = document.getElementById('train-stage')
+    if (!trainStage) { _showInteractive(); return }
 
-    trainImg.onerror = () => { trainImg.style.display = 'none'; _showInteractive() }
-
-    // ✅ 修正：移除極不穩定的 visibility 切換與雙重 rAF 延遲，直接套用 animation
+    // 直接發動 CSS 動畫，捨棄不穩定的 rAF 延遲機制
     this._playTrainSound()
-    trainImg.style.animation = `trainEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
-    setTimeout(_showInteractive, TRAIN_ENTER_MS + TRAIN_STAY_MS)
+    trainStage.style.animation = `stageEnter ${TRAIN_ENTER_MS}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
+    
+    setTimeout(_showInteractive, TRAIN_ENTER_MS + 400)
   }
 
   async _animateTrainOut () {
-    const train = document.getElementById('train-img')
-    if (!train || train.style.display === 'none') return
+    const trainStage = document.getElementById('train-stage')
+    if (!trainStage) return
     this._playTrainSound()
     await new Promise(resolve => {
-      train.style.animation = `trainExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55, 0, 1, 0.45) forwards`
+      trainStage.style.animation = `stageExit ${TRAIN_EXIT_MS}ms cubic-bezier(0.55, 0, 1, 0.45) forwards`
       setTimeout(resolve, TRAIN_EXIT_MS)
     })
   }
 
-  // 保留舊名稱別名，避免其他地方呼叫報錯
   async _trainExitAnimation () {
     return this._animateTrainOut()
   }
 
-  /** 建立模式一的完整 HTML 骨架（重新設計：火車圖放大+車廂格子疊加） */
   _buildMode1Shell (q) {
     const chars    = q.idiom.split('')
     const shuffled = this._shuffle([...chars])
@@ -305,73 +246,67 @@ export class IdiomGame extends GameEngine {
       `<div class="idiom-card" draggable="true" data-char="${ch}" data-idx="${i}">${ch}</div>`
     ).join('')
 
+    // 重新精算：讓 4 個格子對齊截圖中的後方 4 節車廂
     const slotHtml = chars.map((_, i) =>
       `<div class="wagon-slot" data-pos="${i}" aria-label="車廂${i + 1}">` +
       `<div class="wagon-slot-inner"></div></div>`
     ).join('')
 
     return (
-      // ✅ 修正：將 overflow: hidden 移到最外層大容器，完美防止火車出場與預備入場時撐出網頁捲軸
-      `<div id="idiom-game-wrap" style="` +
-      `display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:10px;width:100%;overflow:hidden;position:relative;">` +
+      // 外層限定 overflow: hidden 防止大火車進出場把網頁撐寬
+      `<div id="idiom-game-wrap" style="display:flex;flex-direction:column;align-items:center;padding:12px 6px;gap:16px;width:100%;overflow:hidden;position:relative;">` +
 
       `<style>` +
-      `.idiom-card{width:64px;height:64px;border-radius:14px;background:#6366f1;color:white;` +
+      `.idiom-card{width:60px;height:60px;border-radius:14px;background:#6366f1;color:white;` +
       `font-size:1.8rem;font-weight:900;display:flex;align-items:center;justify-content:center;` +
       `cursor:grab;user-select:none;touch-action:none;border:3px solid #4338ca;transition:transform .12s;}` +
       `.idiom-card:active{transform:scale(1.15);}` +
       `.idiom-card.dragging{opacity:.35;}` +
-      `.wagon-slot{width:72px;height:76px;display:flex;align-items:center;justify-content:center;cursor:pointer;}` +
-      `.wagon-slot-inner{width:62px;height:66px;border-radius:8px;border:3px dashed rgba(255,255,255,.9);` +
-      `background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;` +
-      `font-size:1.9rem;font-weight:900;color:#fff;transition:background .2s;` +
-      `text-shadow:0 2px 6px rgba(0,0,0,.7);}` +
-      `.wagon-slot.drag-over .wagon-slot-inner{background:rgba(255,255,255,.45);border-color:#fff;border-style:solid;}` +
-      `.wagon-slot.filled .wagon-slot-inner{background:rgba(99,102,241,.7);border-color:#a5b4fc;border-style:solid;}` +
+      
+      // 完美契合車廂圖案的格子尺寸與半透明感
+      `.wagon-slot{width:16%;height:72px;display:flex;align-items:center;justify-content:center;cursor:pointer;}` +
+      `.wagon-slot-inner{width:90%;height:90%;border-radius:8px;border:2px dashed rgba(255,255,255,0.85);` +
+      `background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;` +
+      `font-size:1.7rem;font-weight:900;color:#fff;transition:all .2s;` +
+      `text-shadow:0 2px 5px rgba(0,0,0,0.6);box-shadow:inset 0 0 8px rgba(0,0,0,0.15);}` +
+      
+      `.wagon-slot.drag-over .wagon-slot-inner{background:rgba(255,255,255,.55);border-color:#fff;border-style:solid;}` +
+      `.wagon-slot.filled .wagon-slot-inner{background:rgba(99,102,241,.85);border-color:#fff;border-style:solid;box-shadow:0 4px 10px rgba(0,0,0,0.2);}` +
       `.flash-correct{animation:fG .6s ease;}` +
       `.shake-wrong{animation:sR .6s ease;}` +
       `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
       `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
       
-      // ✅ 修正：移除 position: absolute 造成的定位盲區。火車預設為 relative 且 margin: 0 auto 自然水平置中，初始狀態先被 translateX 往右挪開
-      `#train-img{position:relative; display:block; width:80vw; max-width:480px; height:auto; margin:0 auto; transform:translateX(120vw); will-change:transform, opacity; filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}` +
-      
-      `#slot-row{display:flex;gap:2px;justify-content:flex-end;width:100%;max-width:480px;` +
-      `margin-top:-80px;padding-right:4px;position:relative;z-index:2;opacity:0;transition:opacity 0.4s ease;}` +
-      `#wagon-interactive{opacity:0;transform:translateY(14px);width:100%;}` +
+      `#wagon-interactive{opacity:0;transform:translateY(12px);width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;}` +
       `</style>` +
 
-      `<div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;` +
-      `padding:8px 14px;text-align:center;width:100%;max-width:380px;">` +
-      `<div style="font-size:.7rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
-      `<div style="font-size:.9rem;font-weight:700;color:#3730a3;line-height:1.4;">` +
-      `${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
+      `<div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 14px;text-align:center;width:100%;max-width:380px;z-index:5;">` +
+      `<div style="font-size:.72rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
+      `<div style="font-size:.92rem;font-weight:700;color:#3730a3;line-height:1.4;">${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
 
-      // ✅ 修正：移除高寬死限 (height:160px) 與內層 overflow:hidden 避免裁剪到體積過大的火車
-      `<div id="train-stage" style="position:relative;width:100%;display:flex;justify-content:center;padding:16px 0 24px 0;">` +
-      `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" ` +
-      `onerror="this.style.display='none'">` +
+      // 核心：將火車圖與格子區包在同一個相對容器中，一同平移
+      `<div id="train-stage" style="position:relative; width:100%; max-width:540px; will-change:transform, opacity; opacity:0;">` +
+        // 火車背景圖案，自然撐開高寬
+        `<img id="train-img" src="${_pathPrefix}/images/train.png" alt="火車" style="display:block; width:100%; height:auto;" onerror="this.style.display='none'">` +
+        // 格子列：絕對定位錨定在火車圖上方，left與width完全跟後面四節車廂同步
+        `<div id="slot-row" style="position:absolute; bottom:14%; left:22.5%; width:75.5%; height:55%; display:flex; gap:3.5%; align-items:center; justify-content:flex-start; z-index:3;">` +
+          `${slotHtml}` +
+        `</div>` +
       `</div>` +
 
-      `<div id="slot-row">${slotHtml}</div>` +
-
-      `<div id="wagon-interactive" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;">` +
-      `<div style="font-size:.78rem;color:#64748b;font-weight:600;">⬆ 將國字拖曳到上方車廂</div>` +
-      `<div id="idiom-cards-area" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">${cardHtml}</div>` +
+      `<div id="wagon-interactive">` +
+      `<div style="font-size:.8rem;color:#64748b;font-weight:600;">⬆ 將國字拖曳到上方車廂</div>` +
+      `<div id="idiom-cards-area" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;width:100%;max-width:400px;">${cardHtml}</div>` +
       `<div id="idiom-hint" style="min-height:22px;font-size:.85rem;color:#7c3aed;font-weight:700;text-align:center;"></div>` +
-      `<button id="btn-hint-idiom" style="padding:7px 20px;border-radius:20px;background:#fef3c7;` +
-      `border:2px solid #f59e0b;font-size:.85rem;font-weight:700;cursor:pointer;color:#92400e;">💡 提示</button>` +
+      `<button id="btn-hint-idiom" style="padding:8px 24px;border-radius:20px;background:#fef3c7;border:2px solid #f59e0b;font-size:.88rem;font-weight:700;cursor:pointer;color:#92400e;box-shadow:0 2px 6px rgba(0,0,0,0.08);">💡 提示</button>` +
       `</div>` +
       `</div>`
     )
   }
 
-  /** 綁定模式一的拖曳事件（含 touch 支援） */
   _bindMode1Events (q) {
     const cards = document.querySelectorAll('.idiom-card')
     const slots = document.querySelectorAll('.wagon-slot')
-
-    // ── 滑鼠拖曳（desktop） ───────────────────────────
     let dragSrcChar = null
 
     cards.forEach(card => {
@@ -402,7 +337,6 @@ export class IdiomGame extends GameEngine {
       })
     })
 
-    // ── Touch 拖曳（mobile） ──────────────────────────
     cards.forEach(card => {
       card.addEventListener('touchstart', e => {
         e.preventDefault()
@@ -412,7 +346,6 @@ export class IdiomGame extends GameEngine {
         this._touchOffsetX  = touch.clientX - rect.left
         this._touchOffsetY  = touch.clientY - rect.top
 
-        // 建立視覺複製元素
         this._touchClone             = card.cloneNode(true)
         this._touchClone.style.cssText = `
           position:fixed; pointer-events:none; z-index:9999;
@@ -436,7 +369,6 @@ export class IdiomGame extends GameEngine {
         this._touchClone.style.left = `${touch.clientX - this._touchOffsetX}px`
         this._touchClone.style.top  = `${touch.clientY - this._touchOffsetY}px`
 
-        // 高亮最近的車廂格子
         slots.forEach(slot => slot.classList.remove('drag-over'))
         const target = this._getSlotUnderTouch(touch, slots)
         if (target) target.classList.add('drag-over')
@@ -447,12 +379,10 @@ export class IdiomGame extends GameEngine {
         if (!this._touchClone) return
         const touch = e.changedTouches[0]
 
-        // 清除複製元素
         this._touchClone.remove()
         this._touchClone  = null
         if (this._touchDragEl) this._touchDragEl.style.opacity = '1'
 
-        // 找到放置目標
         slots.forEach(slot => slot.classList.remove('drag-over'))
         const target = this._getSlotUnderTouch(touch, slots)
         if (target && this._touchDragEl) {
@@ -462,7 +392,6 @@ export class IdiomGame extends GameEngine {
       }, { passive: false })
     })
 
-    // 點擊格子可取回字卡
     slots.forEach(slot => {
       slot.addEventListener('click', () => {
         if (!slot.dataset.char) return
@@ -472,7 +401,6 @@ export class IdiomGame extends GameEngine {
     })
   }
 
-  /** 取得 touch 點下方的車廂格子 */
   _getSlotUnderTouch (touch, slots) {
     for (const slot of slots) {
       const r = slot.getBoundingClientRect()
@@ -484,7 +412,6 @@ export class IdiomGame extends GameEngine {
     return null
   }
 
-  /** 將字放入車廂格子 */
   _placeCharInSlot (slot, ch, q) {
     if (slot.dataset.char) this._returnCard(slot.dataset.char)
     slot.dataset.char = ch
@@ -497,7 +424,6 @@ export class IdiomGame extends GameEngine {
     this._checkMode1Complete(q)
   }
 
-  /** 將字放回字卡區 */
   _returnCard (ch) {
     const card = [...document.querySelectorAll('.idiom-card')]
       .find(c => c.dataset.char === ch && c.style.visibility === 'hidden')
@@ -511,7 +437,6 @@ export class IdiomGame extends GameEngine {
     slot.classList.remove('filled')
   }
 
-  /** 檢查模式一是否全部填完並自動送出 */
   _checkMode1Complete (q) {
     const slots    = [...document.querySelectorAll('.wagon-slot')]
     const allFilled = slots.every(s => s.dataset.char)
@@ -555,19 +480,13 @@ export class IdiomGame extends GameEngine {
         <style>
           .flash-correct { animation: flashGreen2 0.6s ease; }
           .shake-wrong   { animation: shakeRed2 0.6s ease; }
-          @keyframes flashGreen2 {
-            0%,100%{background:transparent;}50%{background:rgba(134,239,172,0.3);}
-          }
-          @keyframes shakeRed2 {
-            0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}
-          }
+          @keyframes flashGreen2 { 0%,100%{background:transparent;}50%{background:rgba(134,239,172,0.3);} }
+          @keyframes shakeRed2 { 0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);} }
           .fork-option:active { transform:scale(0.97); }
         </style>
 
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:0 8px;">
-          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">
-            🚂 選對叉路，讓火車通過！
-          </div>
+          <div style="font-size:0.85rem;font-weight:700;color:#64748b;text-align:center;">🚂 選對叉路，讓火車通過！</div>
           <div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 16px;text-align:center;width:100%;max-width:340px;">
             <div style="font-size:0.72rem;color:#818cf8;font-weight:700;margin-bottom:4px;">💡 成語意思</div>
             <div style="font-size:0.92rem;font-weight:700;color:#3730a3;line-height:1.5;">${q.meaning || q.example || '選出正確的成語路線'}</div>
@@ -576,28 +495,15 @@ export class IdiomGame extends GameEngine {
 
         <div style="font-size:2.5rem; animation:trainMove 2s linear infinite;">🚂</div>
         <style>
-          @keyframes trainMove {
-            0%   { transform: translateX(-20px); }
-            50%  { transform: translateX(20px); }
-            100% { transform: translateX(-20px); }
-          }
+          @keyframes trainMove { 0% { transform: translateX(-20px); } 50% { transform: translateX(20px); } 100% { transform: translateX(-20px); } }
         </style>
 
         <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;">
           ${optionsHtml}
         </div>
 
-        <div id="idiom-hint" style="
-          min-height:24px; font-size:0.85rem; color:#7c3aed;
-          font-weight:700; text-align:center;
-        "></div>
-
-        <button id="btn-hint-idiom" style="
-          padding:8px 20px; border-radius:20px;
-          background:linear-gradient(135deg,#fef3c7,#fde68a);
-          border:2px solid #f59e0b; font-size:0.85rem;
-          font-weight:700; cursor:pointer; color:#92400e;
-        ">💡 提示</button>
+        <div id="idiom-hint" style="min-height:24px; font-size:0.85rem; color:#7c3aed; font-weight:700; text-align:center;"></div>
+        <button id="btn-hint-idiom" style="padding:8px 20px; border-radius:20px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; font-size:0.85rem; font-weight:700; cursor:pointer; color:#92400e;">💡 提示</button>
       </div>
     `
   }
@@ -611,10 +517,6 @@ export class IdiomGame extends GameEngine {
     })
     this._bindHintButton()
   }
-
-  // ───────────────────────────────────────────────────
-  //  提示系統
-  // ───────────────────────────────────────────────────
 
   _bindHintButton () {
     const btn = document.getElementById('btn-hint-idiom')
@@ -632,10 +534,6 @@ export class IdiomGame extends GameEngine {
     super.useHint(level)
   }
 
-  // ───────────────────────────────────────────────────
-  //  火車音效
-  // ───────────────────────────────────────────────────
-
   _playTrainSound () {
     try {
       const audio = new Audio(`${_pathPrefix}/audio/effects/train.mp3`)
@@ -643,10 +541,6 @@ export class IdiomGame extends GameEngine {
       audio.play().catch(() => {})
     } catch (_) {}
   }
-
-  // ───────────────────────────────────────────────────
-  //  干擾選項建立
-  // ───────────────────────────────────────────────────
 
   _buildDistractors (entry, pool) {
     const distractors = []
@@ -684,10 +578,6 @@ export class IdiomGame extends GameEngine {
     return distractors.slice(0, 3)
   }
 
-  // ───────────────────────────────────────────────────
-  //  工具：Fisher-Yates 打亂
-  // ───────────────────────────────────────────────────
-
   _shuffle (arr) {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -695,10 +585,6 @@ export class IdiomGame extends GameEngine {
     }
     return arr
   }
-
-  // ───────────────────────────────────────────────────
-  //  生命週期
-  // ───────────────────────────────────────────────────
 
   destroy () {
     if (this._touchClone) {
