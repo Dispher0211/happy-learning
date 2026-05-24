@@ -5,12 +5,6 @@
  * 遊戲規則：
  * 模式一（30%）：火車從右邊進入，定位後，小朋友將字卡拖到4個車廂排列成成語
  * 模式二（70%）：火車叉路選正確路線
- *
- * 修正：
- * 1. 解決火車「突然出現、沒有滑動」的問題：
- * 預設給予 .stage-initial（人在右側畫面外且透明），透過雙重 requestAnimationFrame 與 setTimeout 
- * 非同步加上 .stage-enter，迫使瀏覽器重新計算樣式，完美觸發從右到左的滑進動畫。
- * 2. 保持車廂格子 (#slot-row) 與火車大舞台主體完美絕對定位結合。
  */
 
 import { GameEngine }   from './GameEngine.js'
@@ -181,11 +175,11 @@ export class IdiomGame extends GameEngine {
   }
 
   // ───────────────────────────────────────────────────
-  //  模式一：精準滑動核心（修復突然出現問題）
+  //  模式一：精準滑動與事件綁定
   // ───────────────────────────────────────────────────
 
   _renderMode1WithTrainAnimation (q, app) {
-    // 1. 先行渲染大殼子，此時火車擁有 .stage-initial 類別，隱藏且在畫面最右側 (100vw)
+    // 1. 渲染畫面骨架（此時火車帶有 stage-initial 藏在右側 100vw 外）
     app.innerHTML = this._buildMode1Shell(q)
     this._bindHintButton()
 
@@ -205,16 +199,14 @@ export class IdiomGame extends GameEngine {
 
     if (!trainStage) { _showInteractive(); return }
 
-    // 2. 使用雙重 requestAnimationFrame：確保瀏覽器已經完成初始位置（右側外）的渲染後，再追加進入動畫類別！
+    // 2. 利用雙重 rAF 確保初始位置渲染完成，隨即灌入進場 Class 發動平滑滑動
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         this._playTrainSound()
-        
-        // 移除初始靜止狀態，加入滑行 CSS 動畫
         trainStage.classList.remove('stage-initial')
         trainStage.classList.add('stage-enter')
-
-        // 當滑動完成時 (2.5秒)，顯示下方拖拽字卡區與虛線框
+        
+        // 火車滑動到位後，再優雅淡入字卡與車廂框
         setTimeout(_showInteractive, TRAIN_ENTER_MS)
       })
     })
@@ -260,26 +252,4 @@ export class IdiomGame extends GameEngine {
       `.wagon-slot-inner{width:92%;height:85%;border-radius:8px;border:2px dashed rgba(255,255,255,0.85);` +
       `background:rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;` +
       `font-size:1.6rem;font-weight:900;color:#fff;transition:all .2s;` +
-      `text-shadow:0 2px 4px rgba(0,0,0,0.6);box-shadow:inset 0 0 6px rgba(0,0,0,0.2);}` +
-      `.wagon-slot.drag-over .wagon-slot-inner{background:rgba(255,255,255,.45);border-color:#fff;border-style:solid;}` +
-      `.wagon-slot.filled .wagon-slot-inner{background:rgba(99,102,241,.9);border-color:#fff;border-style:solid;box-shadow:0 4px 8px rgba(0,0,0,0.3);}` +
-      `.flash-correct{animation:fG .6s ease;}` +
-      `.shake-wrong{animation:sR .6s ease;}` +
-      
-      /* 強大且滑順的火車專用 CSS 動畫定義 */
-      `.stage-initial { transform: translateX(100vw); opacity: 0; }` +
-      `.stage-enter { animation: trainMoveIn ${TRAIN_ENTER_MS}ms cubic-bezier(0.25, 1, 0.5, 1) forwards; }` +
-      `.stage-exit { animation: trainMoveOut ${TRAIN_EXIT_MS}ms cubic-bezier(0.55, 0, 1, 0.45) forwards; }` +
-      `@keyframes trainMoveIn { 0% { transform: translateX(100vw); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }` +
-      `@keyframes trainMoveOut { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(-120vw); opacity: 0; } }` +
-      
-      `@keyframes fG{0%,100%{background:transparent;}50%{background:rgba(134,239,172,.25);}}` +
-      `@keyframes sR{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}` +
-      `#wagon-interactive{opacity:0;transform:translateY(12px);width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;}` +
-      `</style>` +
-
-      `<div style="background:#f0f4ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 14px;text-align:center;width:100%;max-width:380px;z-index:5;">` +
-      `<div style="font-size:.72rem;color:#818cf8;font-weight:700;margin-bottom:3px;">💡 成語意思</div>` +
-      `<div style="font-size:.92rem;font-weight:700;color:#3730a3;line-height:1.4;">${q.meaning || q.example || '請依提示排列四個字'}</div></div>` +
-
-      // 核心架構：預設套用 stage-initial 藏
+      `text-shadow:0 2px 4px rgba(0,0,0,0.6);box-shadow:inset 0 0 6px rgba(0,0,0,0.
