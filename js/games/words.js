@@ -42,11 +42,12 @@ const CAR_SPEEDS = {
 };
 
 // 詞語卡片在跑道上的下落速度（%/ms）
-const WORD_FALL_SPEEDS = {
-  hard:       0.018,
-  medium:     0.022,
-  easy:       0.026,
-  easy_plus:  0.030,
+// 卡片落下的 CSS animation 總時長（ms）
+const CARD_FALL_DURATION = {
+  hard:       3800,
+  medium:     4800,
+  easy:       5800,
+  easy_plus:  6800,
 };
 
 // 每題總卡片數（正確+錯誤合計）
@@ -483,20 +484,23 @@ export class WordsGame extends GameEngine {
         y: 2,        // 從跑道頂部可見處開始落下
         eaten: false,
         lane: item.lane,
-        entering: true,
       };
       this._wordCards.push(card);
 
-      // 立即插入 DOM（不等批次 _renderCards），確保第一幀 y=2 就渲染
+      // 立即插入 DOM，CSS animation 控制從頂部落下
       const layer = document.getElementById('wd-cards-layer');
       if (layer) {
+        const dur = CARD_FALL_DURATION[q.level] || CARD_FALL_DURATION.medium;
         const div = document.createElement('div');
-        div.className = 'wd-card wd-card--neutral wd-card--entering';
+        div.className = 'wd-card wd-card--neutral wd-card--falling';
         div.id = `wd-card-${card.id}`;
         div.style.left = card.x + '%';
-        div.style.top  = card.y + '%';
+        div.style.animationDuration = dur + 'ms';
         div.textContent = card.word;
         layer.appendChild(div);
+        // 記錄開始時間，供碰撞偵測計算目前 y
+        card.startTs = timestamp;
+        card.fallDur = dur;
       }
     }
   }
@@ -505,17 +509,13 @@ export class WordsGame extends GameEngine {
   // _renderCards — 渲染詞語卡片到 DOM
   // ════════════════════════════════════════════
   _renderCards() {
-    const layer = document.getElementById('wd-cards-layer');
-    if (!layer) return;
-    layer.innerHTML = this._wordCards
-      .filter(c => !c.eaten)
-      .map(c => `
-        <div class="wd-card wd-card--neutral${c.entering ? ' wd-card--entering' : ''}"
-             id="wd-card-${c.id}"
-             style="left:${c.x}%;top:${c.y}%">
-          ${c.word}
-        </div>
-      `).join('');
+    // CSS animation 模式：只移除已吃到的卡片，不重建整個 DOM
+    for (const card of this._wordCards) {
+      if (card.eaten) {
+        const el = document.getElementById(`wd-card-${card.id}`);
+        if (el) el.remove();
+      }
+    }
   }
 
   // ════════════════════════════════════════════
@@ -553,23 +553,17 @@ export class WordsGame extends GameEngine {
     const relTs = timestamp - this._gameStartTs;
     this._trySpawnCard(relTs, q);
 
-    // ── 更新卡片位置並偵測碰撞 ──
-    const fallSpeed = WORD_FALL_SPEEDS[q.level] || WORD_FALL_SPEEDS.medium;
+    // ── 碰撞偵測（卡片位置由 CSS animation 控制，JS 從 startTs 計算 y）──
     let cardsUpdated = false;
 
     for (const card of this._wordCards) {
       if (card.eaten) continue;
-      card.y += fallSpeed * delta;
 
-      // 進入動畫：移動超過 8% 後移除 entering（動畫已完成）
-      if (card.entering && card.y > 10) {
-        card.entering = false;
-        const el = document.getElementById(`wd-card-${card.id}`);
-        if (el) el.classList.remove('wd-card--entering');
-      }
+      // 計算卡片目前 y（%）：依動畫進度線性估算（0% → 110%）
+      const elapsed = timestamp - (card.startTs || timestamp);
+      card.y = (elapsed / card.fallDur) * 110;
 
       // 碰撞偵測：卡片 Y 接近賽車（82~95%），且 X 與賽車同車道（±6%）
-      // ±6% 確保兩條車道（28% 和 72%，間距 44%）不會互相誤判
       if (card.y >= 82 && card.y <= 95 && Math.abs(card.x - this._carX) < 6) {
         card.eaten = true;
         cardsUpdated = true;
@@ -619,10 +613,12 @@ export class WordsGame extends GameEngine {
         }
       }
 
-      // 卡片離開畫面底部 → 移除（不循環，依佇列補充）
-      if (card.y > 108) {
+      // 卡片落出底部（animation 完成）→ 標記已離開
+      if (card.y >= 110) {
         card.eaten = true;
         cardsUpdated = true;
+        const el = document.getElementById(`wd-card-${card.id}`);
+        if (el) el.remove();
       }
     }
 
@@ -643,13 +639,7 @@ export class WordsGame extends GameEngine {
     }
 
     if (cardsUpdated) this._renderCards();
-    else {
-      for (const card of this._wordCards) {
-        if (card.eaten) continue;
-        const el = document.getElementById(`wd-card-${card.id}`);
-        if (el) el.style.top = card.y + '%';
-      }
-    }
+    // CSS animation 控制位置，不需要 JS 更新 top
 
     requestAnimationFrame(ts => this._gameLoop(ts));
   }
@@ -1275,14 +1265,18 @@ export class WordsGame extends GameEngine {
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    /* 卡片從頂部進入動畫：從小變大＋淡入，視覺清楚 */
-    .wd-card--entering {
-      animation: wd-card-dropin 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    /* 卡片從跑道頂部落到底部（duration 由 JS 動態設定）*/
+    .wd-card--falling {
+      top: 0%;
+      animation-name: wd-card-fall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
     }
-    @keyframes wd-card-dropin {
-      0%   { opacity: 0; transform: translateX(-50%) scaleY(0.1) scaleX(0.6); }
-      60%  { opacity: 1; transform: translateX(-50%) scaleY(1.1) scaleX(1.0); }
-      100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    @keyframes wd-card-fall {
+      0%   { top: -8%; opacity: 0; transform: translateX(-50%) scale(0.7); }
+      8%   { opacity: 1; transform: translateX(-50%) scale(1); }
+      95%  { opacity: 1; }
+      100% { top: 110%; opacity: 0; transform: translateX(-50%) scale(1); }
     }
     .wd-card--neutral {
       background: rgba(52,73,94,0.92);

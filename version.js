@@ -15,4 +15,4 @@
  */
 
 // 應用程式版本號（遵循 Semantic Versioning：major.minor.patch）
-export const APP_VERSION = '1.1.18'
+export const APP_VERSION = '1.1.19'
