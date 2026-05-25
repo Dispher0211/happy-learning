@@ -256,6 +256,12 @@ export class WordsGame extends GameEngine {
     this._stopAllAnimations();
     this._removeInputListeners();
 
+    // 清除上一題殘留的飛行星星動畫元素（stars.js 產生的 star_xxx id 元素）
+    document.querySelectorAll('[id^="star_"]').forEach(el => el.remove());
+    // 隱藏 bonus bar
+    const bonusBar = document.getElementById('game-bonus-bar');
+    if (bonusBar) bonusBar.style.display = 'none';
+
     this._mode = q.mode;
     this._lives = 3;
     this._eatenCorrect = 0;
@@ -473,9 +479,10 @@ export class WordsGame extends GameEngine {
         word: item.word,
         isCorrect: item.isCorrect,
         x: xPos,
-        y: -12,
+        y: 0,        // 從跑道頂部開始，搭配淡入動畫
         eaten: false,
         lane: item.lane,
+        entering: true, // 剛進入，播放滑入動畫
       });
     }
   }
@@ -489,7 +496,7 @@ export class WordsGame extends GameEngine {
     layer.innerHTML = this._wordCards
       .filter(c => !c.eaten)
       .map(c => `
-        <div class="wd-card wd-card--neutral"
+        <div class="wd-card wd-card--neutral${c.entering ? ' wd-card--entering' : ''}"
              id="wd-card-${c.id}"
              style="left:${c.x}%;top:${c.y}%">
           ${c.word}
@@ -539,6 +546,13 @@ export class WordsGame extends GameEngine {
     for (const card of this._wordCards) {
       if (card.eaten) continue;
       card.y += fallSpeed * delta;
+
+      // 進入動畫：移動超過 8% 後移除 entering（動畫已完成）
+      if (card.entering && card.y > 8) {
+        card.entering = false;
+        const el = document.getElementById(`wd-card-${card.id}`);
+        if (el) el.classList.remove('wd-card--entering');
+      }
 
       // 碰撞偵測：卡片 Y 接近賽車（82~95%），且 X 與賽車同車道（±6%）
       // ±6% 確保兩條車道（28% 和 72%，間距 44%）不會互相誤判
@@ -1246,6 +1260,14 @@ export class WordsGame extends GameEngine {
       white-space: nowrap;
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    /* 卡片從頂部滑入動畫 */
+    .wd-card--entering {
+      animation: wd-card-slidein 0.5s ease forwards;
+    }
+    @keyframes wd-card-slidein {
+      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
     .wd-card--neutral {
       background: rgba(52,73,94,0.92);
