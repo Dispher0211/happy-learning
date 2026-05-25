@@ -554,11 +554,12 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   async judgeAnswer(answer) {
     if (this._mode === 1) {
-      if (answer === '__all_correct__') return true;
-      if (answer === '__lives_out__')  return false;
-      return false;
+      if (answer === '__all_correct__') return { correct: true };
+      if (answer === '__lives_out__')  return { correct: false };
+      return { correct: false };
     } else {
-      return answer === this._mode2Correct;
+      const isCorrect = answer === this._mode2Correct;
+      return { correct: isCorrect };
     }
   }
 
