@@ -54,12 +54,12 @@ const CARD_FALL_DURATION = {
 const TOTAL_CARDS = 10;
 // 相鄰卡片出現間隔（ms）
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
-// SPAWN_INTERVAL ≈ CARD_FALL_DURATION × 65%（確保前一張落到 65% 後再出現下一張）
+// SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       1900,
-  medium:     2300,
-  easy:       2700,
-  easy_plus:  3100,
+  hard:       3000,
+  medium:     3600,
+  easy:       4200,
+  easy_plus:  4800,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -98,6 +98,7 @@ export class WordsGame extends GameEngine {
     this._carFlashing = false; // 正確閃光中
     this._carSpinning = false; // 錯誤旋轉中
     this._carBusy = false;     // 爆炸/終點動畫中（不再接受碰撞）
+    this._isDestroyed = false;  // 已銷毀旗標，防止 async 繼續執行
 
     // ── 輸入監聽器 ──
     this._onKeyDown = null;
@@ -441,6 +442,7 @@ export class WordsGame extends GameEngine {
   }
 
   _resumeCarSfx() {
+    if (this._isDestroyed) return;
     if (this._sfxCar && this._sfxCar.paused) {
       this._sfxCar.play().catch(() => {});
     }
@@ -460,39 +462,41 @@ export class WordsGame extends GameEngine {
   //   左右車道交替出現
   // ════════════════════════════════════════════
   _buildCardQueue(q) {
-    // 確保正確詞語全部出現
-    const correctWords = q.words.map(w => ({ word: w, isCorrect: true }));
     const correctSet = new Set(q.words);
 
-    // 錯誤詞語：去重、排除與正確詞語相同的詞
+    // 錯誤詞語池：去重、排除正確詞語
     const wrongPool = [...new Set(
       q.wrongWords.map(w => typeof w === 'string' ? w : (w.word || '？'))
     )].filter(w => !correctSet.has(w)).sort(() => Math.random() - 0.5);
 
-    const wrongNeeded = Math.max(0, TOTAL_CARDS - correctWords.length);
-    const wrong = [];
+    // ── 建立兩道各 5 張（共 10 張）──
+    // 正確詞語（最多3個）打散到兩道，其餘補錯誤詞
+    const correctItems = q.words.slice(0, 3).map(w => ({ word: w, isCorrect: true }));
+    let wrongIdx = 0;
 
-    // 不循環重複：最多取 wrongPool 現有數量，不足就用較少的錯誤詞
-    const limit = Math.min(wrongNeeded, wrongPool.length);
-    for (let i = 0; i < limit; i++) {
-      wrong.push({ word: wrongPool[i], isCorrect: false });
+    const lanes = [[], []]; // lanes[0]=左道5張, lanes[1]=右道5張
+
+    // 先把正確詞語依序放入：第1個→左道、第2個→右道、第3個→左道
+    correctItems.forEach((item, i) => lanes[i % 2].push(item));
+
+    // 補足每道到5張
+    for (let lane = 0; lane < 2; lane++) {
+      while (lanes[lane].length < 5 && wrongIdx < wrongPool.length) {
+        lanes[lane].push({ word: wrongPool[wrongIdx++], isCorrect: false });
+      }
     }
 
-    // 混合後洗牌，確保正確詞語不集中
-    const allRaw = [...correctWords, ...wrong].sort(() => Math.random() - 0.5);
-    // 最終去重：同一詞語只保留第一次出現
-    const seenWords = new Set();
-    const all = allRaw.filter(item => {
-      if (seenWords.has(item.word)) return false;
-      seenWords.add(item.word);
-      return true;
-    });
-    // 左右車道交替分配
-    this._cardQueue = all.map((item, i) => ({
-      ...item,
-      lane: i % 2,
-    }));
+    // 每道內部洗牌
+    lanes[0].sort(() => Math.random() - 0.5);
+    lanes[1].sort(() => Math.random() - 0.5);
+
+    // 轉為 _cardQueue（帶 lane 標記）
+    this._cardQueue = [
+      ...lanes[0].map(item => ({ ...item, lane: 0 })),
+      ...lanes[1].map(item => ({ ...item, lane: 1 })),
+    ];
     this._spawnIndex = 0;
+    this._spawnQueues = null; // 強制重建分道佇列
   }
 
   // ════════════════════════════════════════════
@@ -779,6 +783,7 @@ export class WordsGame extends GameEngine {
       track.appendChild(bomb);
     }
     await this._delay(1800);
+    if (this._isDestroyed) return; // 已離開遊戲，不繼續
     // 直接跳題（記錄錯誤到 ForgettingCurve / WrongQueue 由 skipQuestion 處理）
     const q = this.currentQuestion;
     if (q) {
@@ -823,6 +828,7 @@ export class WordsGame extends GameEngine {
       }
     }
     await this._delay(1800);
+    if (this._isDestroyed) return; // 已離開遊戲，不繼續
     if (allCorrect) {
       this._allCorrectEaten = true;
       this.submitAnswer('__all_correct__');
@@ -1157,9 +1163,15 @@ export class WordsGame extends GameEngine {
   // destroy
   // ════════════════════════════════════════════
   destroy() {
+    this._isDestroyed = true;
     this._stopAllAnimations();
     this._removeInputListeners();
     this._stopAllSfx();
+    this._carBusy = false;
+    // 清除 onended 回調，防止 destroy 後繼續觸發
+    if (this._sfxCar)     { this._sfxCar.onended = null;     }
+    if (this._sfxCorrect) { this._sfxCorrect.onended = null; }
+    if (this._sfxError)   { this._sfxError.onended = null;   }
     delete window.__wdHint;
     delete window.__wdSelectOption;
     delete window.__wdSwitchLane;
