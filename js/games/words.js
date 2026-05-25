@@ -241,10 +241,10 @@ export class WordsGame extends GameEngine {
       <div class="wd-game" id="wd-game-root">
         <!-- 頂部 -->
         <div class="wd-header">
-          <div class="wd-char">${q.char}</div>
+          <div class="wd-char" style="${q.mode === 2 ? 'visibility:hidden' : ''}">${q.char}</div>
           <div class="wd-meta">
             <div class="wd-title">
-              ${q.mode === 1 ? `賽車吃到含「${q.char}」的詞語！` : `選出含「${q.char}」的正確詞語`}
+              ${q.mode === 1 ? `賽車吃到含「${q.char}」的詞語！` : `選出正確的字填入空格`}
             </div>
             <div class="wd-badges">
               <span class="wd-badge wd-badge--mode">${modeLabel}</span>
@@ -477,6 +477,7 @@ export class WordsGame extends GameEngine {
                        AppState.settings?.showZhuyin !== false;
 
     area.innerHTML = `
+      <div class="wd-blank-hint">請選出正確的字填入空格</div>
       <div class="wd-blank-word">
         ${this._renderWordWithZhuyin(word, q.char, blank, showZhuyin)}
       </div>
@@ -963,6 +964,11 @@ export class WordsGame extends GameEngine {
       gap: 16px;
     }
 
+    .wd-blank-hint {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 4px;
+    }
     .wd-blank-word {
       font-size: 2rem;
       font-weight: bold;
