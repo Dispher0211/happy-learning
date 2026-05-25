@@ -53,11 +53,14 @@ const WORD_FALL_SPEEDS = {
 const TOTAL_CARDS = 10;
 // 相鄰卡片出現間隔（ms）
 const SPAWN_INTERVAL = {
-  hard:       2200,
-  medium:     2600,
-  easy:       3000,
-  easy_plus:  3400,
+  hard:       3200,
+  medium:     3800,
+  easy:       4400,
+  easy_plus:  5000,
 };
+
+// 第一張卡片出現前的準備時間（ms）
+const FIRST_CARD_DELAY = 1500;
 
 export class WordsGame extends GameEngine {
   constructor() {
@@ -75,6 +78,7 @@ export class WordsGame extends GameEngine {
     this._carTargetX = LANES[0];  // 賽車目標 X（平滑移動）
     this._cardIdCounter = 0;
     this._lastSpawnTs = 0;        // 上次出現卡片的時間戳
+    this._gameStartTs = 0;        // 遊戲啟動時間戳
     this._spawnIndex = 0;         // 已出現的卡片數
     this._eatenCorrect = 0;       // 已吃到的正確詞語數
     this._allCorrectEaten = false;// 是否吃完所有正確詞語
@@ -265,6 +269,7 @@ export class WordsGame extends GameEngine {
     this._wordCards = [];
     this._cardQueue = [];
     this._lastSpawnTs = 0;
+    this._gameStartTs = 0;
     this._spawnIndex = 0;
     this._currentQuestion = q;
 
@@ -395,6 +400,14 @@ export class WordsGame extends GameEngine {
     // 模式二答錯音效
     this._sfxWrong2 = new Audio('audio/effects/wrong.ogg');
     this._sfxWrong2.volume = 0.85;
+
+    // 終點音效
+    this._sfxFinish = new Audio('audio/effects/correctendcar.mp3');
+    this._sfxFinish.volume = 0.9;
+
+    // 爆炸音效
+    this._sfxBomb = new Audio('audio/effects/bompend.mp3');
+    this._sfxBomb.volume = 0.9;
   }
 
   _pauseCarSfx() {
@@ -408,7 +421,7 @@ export class WordsGame extends GameEngine {
   }
 
   _stopAllSfx() {
-    [this._sfxCar, this._sfxCorrect, this._sfxError, this._sfxCorrect2, this._sfxWrong2].forEach(sfx => {
+    [this._sfxCar, this._sfxCorrect, this._sfxError, this._sfxCorrect2, this._sfxWrong2, this._sfxFinish, this._sfxBomb].forEach(sfx => {
       if (!sfx) return;
       sfx.pause();
       sfx.currentTime = 0;
@@ -447,7 +460,11 @@ export class WordsGame extends GameEngine {
   _trySpawnCard(timestamp, q) {
     if (this._spawnIndex >= this._cardQueue.length) return;
     const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
-    if (this._lastSpawnTs === 0 || timestamp - this._lastSpawnTs >= interval) {
+
+    // 第一張卡片：等待 FIRST_CARD_DELAY 後才出現（給玩家準備時間）
+    // 後續卡片：每隔 interval ms 出現一張
+    const waitTime = this._spawnIndex === 0 ? FIRST_CARD_DELAY : interval;
+    if (this._lastSpawnTs === 0 || timestamp - this._lastSpawnTs >= waitTime) {
       const item = this._cardQueue[this._spawnIndex++];
       this._lastSpawnTs = timestamp;
       const xPos = LANES[item.lane];
@@ -488,6 +505,7 @@ export class WordsGame extends GameEngine {
     if (!this._animRunning) return;
 
     if (this._lastTs === null) this._lastTs = timestamp;
+    if (this._gameStartTs === 0) this._gameStartTs = timestamp;
     const delta = Math.min(timestamp - this._lastTs, 50);
     this._lastTs = timestamp;
 
@@ -510,8 +528,9 @@ export class WordsGame extends GameEngine {
     const carEl = document.getElementById('wd-car');
     if (carEl) carEl.style.left = this._carX + '%';
 
-    // ── 依間隔出現新卡片 ──
-    this._trySpawnCard(timestamp, q);
+    // ── 依間隔出現新卡片（使用從遊戲啟動的相對時間）──
+    const relTs = timestamp - this._gameStartTs;
+    this._trySpawnCard(relTs, q);
 
     // ── 更新卡片位置並偵測碰撞 ──
     const fallSpeed = WORD_FALL_SPEEDS[q.level] || WORD_FALL_SPEEDS.medium;
@@ -679,6 +698,12 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   async _playBombAndEnd() {
     this._stopAllSfx();
+    // 播放爆炸音效
+    if (!this._sfxBomb) this._initAudio();
+    if (this._sfxBomb) {
+      this._sfxBomb.currentTime = 0;
+      this._sfxBomb.play().catch(() => {});
+    }
     const track = document.getElementById('wd-track');
     const carEl = document.getElementById('wd-car');
     if (track) {
@@ -690,7 +715,23 @@ export class WordsGame extends GameEngine {
       track.appendChild(bomb);
     }
     await this._delay(1800);
-    this.submitAnswer('__lives_out__');
+    // 直接跳題（記錄錯誤到 ForgettingCurve / WrongQueue 由 skipQuestion 處理）
+    const q = this.currentQuestion;
+    if (q) {
+      const char = q.character || q.char || '';
+      const pron = q.pronunciation || null;
+      if (char) {
+        try {
+          const { ForgettingCurve } = await import('../forgetting.js');
+          const { WrongQueue } = await import('../wrong_queue.js');
+          ForgettingCurve.recordResult(char, false, pron).catch(() => {});
+          WrongQueue.add(char).catch(() => {});
+        } catch(e) {}
+      }
+    }
+    this.isAnswering = false;
+    this._carBusy = false;
+    this.skipQuestion();
   }
 
   // ════════════════════════════════════════════
@@ -698,6 +739,12 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   async _playFinishAndEnd(allCorrect = true) {
     this._stopAllSfx();
+    // 播放終點音效
+    if (!this._sfxFinish) this._initAudio();
+    if (this._sfxFinish) {
+      this._sfxFinish.currentTime = 0;
+      this._sfxFinish.play().catch(() => {});
+    }
     const track = document.getElementById('wd-track');
     const carEl = document.getElementById('wd-car');
     if (track) {
