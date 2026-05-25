@@ -29,21 +29,34 @@ import { AppState } from '../state.js'
 import { JSONLoader } from '../json_loader.js';
 
 // ─────────────────────────────────────────────
-// 賽車移動速度（px/ms）
+// 2車道固定 X 位置（%）
 // ─────────────────────────────────────────────
+const LANES = [28, 72];  // 左車道 28%、右車道 72%
+
+// 賽車切換車道速度（px/ms）
 const CAR_SPEEDS = {
-  hard:       0.22,
-  medium:     0.30,
-  easy:       0.38,
-  easy_plus:  0.48,
+  hard:       0.40,
+  medium:     0.55,
+  easy:       0.70,
+  easy_plus:  0.85,
 };
 
 // 詞語卡片在跑道上的下落速度（%/ms）
 const WORD_FALL_SPEEDS = {
-  hard:       0.010,
-  medium:     0.014,
-  easy:       0.018,
-  easy_plus:  0.024,
+  hard:       0.012,
+  medium:     0.016,
+  easy:       0.022,
+  easy_plus:  0.028,
+};
+
+// 每題總卡片數（正確+錯誤合計）
+const TOTAL_CARDS = 10;
+// 相鄰卡片出現間隔（ms）
+const SPAWN_INTERVAL = {
+  hard:       2200,
+  medium:     2600,
+  easy:       3000,
+  easy_plus:  3400,
 };
 
 export class WordsGame extends GameEngine {
@@ -56,8 +69,13 @@ export class WordsGame extends GameEngine {
     this._correctWords = [];      // 本題正確詞語列表
     this._wrongWords = [];        // 本題錯誤詞語列表
     this._wordCards = [];         // 跑道上的詞語卡片 { id, word, isCorrect, x, y, eaten }
-    this._carX = 50;              // 賽車 X 位置（%）
+    this._cardQueue = [];         // 待出現的卡片佇列
+    this._carLane = 0;            // 賽車目前車道索引（0=左, 1=右）
+    this._carX = LANES[0];        // 賽車 X 位置（%）
+    this._carTargetX = LANES[0];  // 賽車目標 X（平滑移動）
     this._cardIdCounter = 0;
+    this._lastSpawnTs = 0;        // 上次出現卡片的時間戳
+    this._spawnIndex = 0;         // 已出現的卡片數
     this._eatenCorrect = 0;       // 已吃到的正確詞語數
     this._allCorrectEaten = false;// 是否吃完所有正確詞語
 
@@ -213,8 +231,13 @@ export class WordsGame extends GameEngine {
     this._allCorrectEaten = false;
     this._correctWords = [...q.words];
     this._wrongWords = [...q.wrongWords];
-    this._carX = 50;
+    this._carLane = 0;
+    this._carX = LANES[0];
+    this._carTargetX = LANES[0];
     this._wordCards = [];
+    this._cardQueue = [];
+    this._lastSpawnTs = 0;
+    this._spawnIndex = 0;
     this._currentQuestion = q;
 
     const appEl = this._getContainer();
@@ -227,9 +250,10 @@ export class WordsGame extends GameEngine {
 
     if (q.mode === 1) {
       // 初始化詞語卡片並啟動動畫
-      this._spawnWordCards(q);
+      this._buildCardQueue(q);
       this._animRunning = true;
       this._lastTs = null;
+      this._lastSpawnTs = 0;
       requestAnimationFrame(ts => this._gameLoop(ts));
       this._bindInputEvents();
     } else {
@@ -269,20 +293,22 @@ export class WordsGame extends GameEngine {
         </div>
 
         ${q.mode === 1 ? `
-        <!-- 模式一：賽車跑道 -->
+        <!-- 模式一：2車道賽車跑道 -->
         <div class="wd-track" id="wd-track">
-          <!-- 跑道線條 -->
-          <div class="wd-lane-lines">
-            <div class="wd-line wd-line--1"></div>
-            <div class="wd-line wd-line--2"></div>
-          </div>
+          <!-- 車道分隔線 -->
+          <div class="wd-lane-divider"></div>
           <!-- 詞語卡片（動態產生） -->
           <div id="wd-cards-layer"></div>
           <!-- 賽車 -->
-          <div class="wd-car" id="wd-car" style="left:${this._carX}%">🏎️</div>
+          <div class="wd-car" id="wd-car" style="left:${LANES[0]}%">🏎️</div>
+        </div>
+        <!-- 車道切換按鈕 -->
+        <div class="wd-lane-btns">
+          <button class="wd-lane-btn wd-lane-btn--active" onclick="window.__wdSwitchLane(0)">◀ 左道</button>
+          <button class="wd-lane-btn" onclick="window.__wdSwitchLane(1)">右道 ▶</button>
         </div>
         <div class="wd-track-controls">
-          <span class="wd-tip">📱 左右滑動 ｜ ⌨️ ←→ 鍵移動</span>
+          <span class="wd-tip">📱 點左/右半畫面 ｜ ⌨️ ←→ 切換車道</span>
         </div>
         ` : `
         <!-- 模式二：選擇題 -->
@@ -315,29 +341,51 @@ export class WordsGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _spawnWordCards — 在跑道上產生詞語卡片
+  // _buildCardQueue — 建立10張卡片的有序佇列
+  //   正確詞語 + 補足至 TOTAL_CARDS 張的錯誤詞語
+  //   左右車道交替出現
   // ════════════════════════════════════════════
-  _spawnWordCards(q) {
-    const allWords = [
-      ...q.words.map(w => ({ word: w, isCorrect: true })),
-      ...q.wrongWords.map(w => ({ word: w, isCorrect: false })),
-    ].sort(() => Math.random() - 0.5);
+  _buildCardQueue(q) {
+    // 確保正確詞語全部出現
+    const correct = q.words.map(w => ({ word: w, isCorrect: true }));
+    // 錯誤詞語補足至 TOTAL_CARDS
+    const wrongPool = [...q.wrongWords].sort(() => Math.random() - 0.5);
+    const wrongNeeded = TOTAL_CARDS - correct.length;
+    const wrong = [];
+    for (let i = 0; i < wrongNeeded; i++) {
+      wrong.push({ word: wrongPool[i % wrongPool.length].word || wrongPool[i % wrongPool.length], isCorrect: false });
+    }
 
-    // 每張卡片水平錯開
-    const laneCount = allWords.length;
-    allWords.forEach((item, i) => {
-      const xPos = (100 / (laneCount + 1)) * (i + 1);
+    // 混合後洗牌，確保正確詞語不集中
+    const all = [...correct, ...wrong].sort(() => Math.random() - 0.5);
+    // 左右車道交替分配
+    this._cardQueue = all.map((item, i) => ({
+      ...item,
+      lane: i % 2,   // 0=左, 1=右
+    }));
+    this._spawnIndex = 0;
+  }
+
+  // ════════════════════════════════════════════
+  // _trySpawnCard — 依間隔時間從佇列出現下一張卡片
+  // ════════════════════════════════════════════
+  _trySpawnCard(timestamp, q) {
+    if (this._spawnIndex >= this._cardQueue.length) return;
+    const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
+    if (this._lastSpawnTs === 0 || timestamp - this._lastSpawnTs >= interval) {
+      const item = this._cardQueue[this._spawnIndex++];
+      this._lastSpawnTs = timestamp;
+      const xPos = LANES[item.lane];
       this._wordCards.push({
         id: ++this._cardIdCounter,
         word: item.word,
         isCorrect: item.isCorrect,
         x: xPos,
-        y: -10 - i * 20, // 錯開起始位置
+        y: -12,
         eaten: false,
+        lane: item.lane,
       });
-    });
-
-    this._renderCards();
+    }
   }
 
   // ════════════════════════════════════════════
@@ -358,7 +406,8 @@ export class WordsGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _gameLoop — 模式一主動畫迴圈
+  // _gameLoop — 模式一主動畫迴圈（2車道版）
+  //   賽車左右切換車道，卡片依序從佇列落下
   // ════════════════════════════════════════════
   _gameLoop(timestamp) {
     if (!this._animRunning) return;
@@ -375,16 +424,21 @@ export class WordsGame extends GameEngine {
       return;
     }
 
-    // 更新賽車位置
+    // ── 賽車平滑移動至目標車道 ──
     const speed = CAR_SPEEDS[q.level] || CAR_SPEEDS.medium;
-    if (this._keysDown['ArrowLeft']) this._carX -= speed * delta;
-    if (this._keysDown['ArrowRight']) this._carX += speed * delta;
-    this._carX = Math.max(3, Math.min(94, this._carX));
-
+    const diff = this._carTargetX - this._carX;
+    if (Math.abs(diff) > 0.5) {
+      this._carX += Math.sign(diff) * Math.min(speed * delta, Math.abs(diff));
+    } else {
+      this._carX = this._carTargetX;
+    }
     const carEl = document.getElementById('wd-car');
     if (carEl) carEl.style.left = this._carX + '%';
 
-    // 更新卡片位置並偵測碰撞
+    // ── 依間隔出現新卡片 ──
+    this._trySpawnCard(timestamp, q);
+
+    // ── 更新卡片位置並偵測碰撞 ──
     const fallSpeed = WORD_FALL_SPEEDS[q.level] || WORD_FALL_SPEEDS.medium;
     let cardsUpdated = false;
 
@@ -392,35 +446,28 @@ export class WordsGame extends GameEngine {
       if (card.eaten) continue;
       card.y += fallSpeed * delta;
 
-      // 碰撞偵測：卡片 Y 接近賽車 Y（88%），且 X 在賽車範圍內（±8%）
-      if (card.y >= 80 && card.y <= 95 && Math.abs(card.x - this._carX) < 8) {
-        // 吃到卡片
+      // 碰撞偵測：卡片 Y 接近賽車底部（84~96%），且 X 與賽車同車道（±12%）
+      if (card.y >= 84 && card.y <= 97 && Math.abs(card.x - this._carX) < 12) {
         card.eaten = true;
         cardsUpdated = true;
 
         if (card.isCorrect) {
           this._eatenCorrect++;
           this._showCardFeedback(card.x, '✅');
-          // 更新吃到計數
           const numEl = document.getElementById('wd-eaten-num');
           if (numEl) numEl.textContent = this._eatenCorrect;
 
-          // 全部正確詞語都吃完？
           if (this._eatenCorrect >= this._correctWords.length) {
             this._allCorrectEaten = true;
             this._stopAllAnimations();
-            // 給予額外 ★+0.5（由 GameEngine onCorrect 處理 bonus）
             this.submitAnswer('__all_correct__');
             return;
           }
         } else {
-          // 吃到錯誤詞語
           this._lives--;
           this._renderLives();
           this._showCardFeedback(card.x, '❌');
-
           if (this._lives <= 0) {
-            // 機會用完 → 該題失敗
             this._stopAllAnimations();
             this.submitAnswer('__lives_out__');
             return;
@@ -428,15 +475,29 @@ export class WordsGame extends GameEngine {
         }
       }
 
-      // 卡片超出下方邊界 → 循環回頂部
-      if (card.y > 105) {
-        card.y = -15;
+      // 卡片離開畫面底部 → 移除（不循環，依佇列補充）
+      if (card.y > 108) {
+        card.eaten = true;
+        cardsUpdated = true;
       }
+    }
+
+    // 所有卡片已出現且全部離開畫面 → 強制結算（正確詞語未全吃完 = 失敗）
+    const allGone = this._spawnIndex >= this._cardQueue.length &&
+                    this._wordCards.every(c => c.eaten);
+    if (allGone && !this.isAnswering) {
+      this._stopAllAnimations();
+      if (this._eatenCorrect >= this._correctWords.length) {
+        this._allCorrectEaten = true;
+        this.submitAnswer('__all_correct__');
+      } else {
+        this.submitAnswer('__lives_out__');
+      }
+      return;
     }
 
     if (cardsUpdated) this._renderCards();
     else {
-      // 只更新卡片位置（不重建 DOM，提升效能）
       for (const card of this._wordCards) {
         if (card.eaten) continue;
         const el = document.getElementById(`wd-card-${card.id}`);
@@ -515,35 +576,46 @@ export class WordsGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
+  // _switchLane — 切換到指定車道（0=左, 1=右）
+  // ════════════════════════════════════════════
+  _switchLane(laneIdx) {
+    this._carLane = laneIdx;
+    this._carTargetX = LANES[laneIdx];
+    // 視覺指示：更新車道指示燈
+    document.querySelectorAll('.wd-lane-btn').forEach((btn, i) => {
+      btn.classList.toggle('wd-lane-btn--active', i === laneIdx);
+    });
+  }
+
+  // ════════════════════════════════════════════
   // _bindInputEvents — 模式一鍵盤/觸控
   // ════════════════════════════════════════════
   _bindInputEvents() {
+    // 切換車道（按鍵）
     this._onKeyDown = (e) => {
-      this._keysDown[e.key] = true;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
+      if (e.key === 'ArrowLeft') {
+        this._switchLane(0);
+        e.preventDefault();
+      } else if (e.key === 'ArrowRight') {
+        this._switchLane(1);
+        e.preventDefault();
+      }
     };
-    this._onKeyUp = (e) => { delete this._keysDown[e.key]; };
     window.addEventListener('keydown', this._onKeyDown);
-    window.addEventListener('keyup', this._onKeyUp);
 
-    // 觸控
+    // 觸控：點擊左半/右半切換車道
     const track = document.getElementById('wd-track');
     if (track) {
-      this._onTouchStart = (e) => { this._lastTouchX = e.touches[0].clientX; };
-      this._onTouchMove = (e) => {
-        if (this._lastTouchX === null) return;
-        const dx = e.touches[0].clientX - this._lastTouchX;
-        this._lastTouchX = e.touches[0].clientX;
-        const trackW = track.clientWidth || 400;
-        this._carX += (dx / trackW) * 100;
-        this._carX = Math.max(3, Math.min(94, this._carX));
-        e.preventDefault();
+      this._onTouchStart = (e) => {
+        const rect = track.getBoundingClientRect();
+        const touchX = e.touches[0].clientX - rect.left;
+        this._switchLane(touchX < rect.width / 2 ? 0 : 1);
       };
       track.addEventListener('touchstart', this._onTouchStart, { passive: true });
-      track.addEventListener('touchmove', this._onTouchMove, { passive: false });
     }
 
     window.__wdHint = () => this.useHint();
+    window.__wdSwitchLane = (lane) => this._switchLane(lane);
   }
 
   // ════════════════════════════════════════════
@@ -551,9 +623,7 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   _removeInputListeners() {
     if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
-    if (this._onKeyUp)   window.removeEventListener('keyup', this._onKeyUp);
     this._onKeyDown = null;
-    this._onKeyUp = null;
     this._keysDown = {};
   }
 
@@ -789,6 +859,7 @@ export class WordsGame extends GameEngine {
     this._removeInputListeners();
     delete window.__wdHint;
     delete window.__wdSelectOption;
+    delete window.__wdSwitchLane;
     super.destroy();
   }
 
@@ -866,37 +937,62 @@ export class WordsGame extends GameEngine {
       border-radius: 3px; transition: width 0.4s ease;
     }
 
-    /* ── 賽車跑道 ── */
+    /* ── 賽車跑道（2車道）── */
     .wd-track {
       position: relative;
-      width: 95%; height: 300px;
-      background: linear-gradient(180deg, #1a1a2e 0%, #2c3e50 100%);
+      width: 95%; height: 320px;
+      background: linear-gradient(180deg, #0d1b2a 0%, #1b2838 60%, #2c3e50 100%);
       border-radius: 12px;
       border: 2px solid rgba(241,196,15,0.3);
       overflow: hidden;
-      margin: 8px 0;
+      margin: 6px 0;
     }
 
-    /* 跑道線條 */
-    .wd-lane-lines {
+    /* 車道分隔線（中央虛線） */
+    .wd-lane-divider {
       position: absolute; top: 0; bottom: 0;
-      left: 0; right: 0; pointer-events: none;
-    }
-    .wd-line {
-      position: absolute; top: 0; bottom: 0;
-      width: 3px;
+      left: 50%; width: 4px; transform: translateX(-50%);
       background: repeating-linear-gradient(
         to bottom,
-        rgba(255,255,255,0.3) 0px, rgba(255,255,255,0.3) 20px,
-        transparent 20px, transparent 40px
+        rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 24px,
+        transparent 24px, transparent 48px
       );
-      animation: wd-lane-scroll 1s linear infinite;
+      animation: wd-lane-scroll 0.8s linear infinite;
+      pointer-events: none;
     }
-    .wd-line--1 { left: 33%; }
-    .wd-line--2 { left: 66%; }
+    /* 左右車道背景條紋 */
+    .wd-track::before, .wd-track::after {
+      content: '';
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: rgba(255,255,255,0.08);
+      pointer-events: none;
+    }
+    .wd-track::before { left: 5%; }
+    .wd-track::after  { right: 5%; }
     @keyframes wd-lane-scroll {
       from { background-position: 0 0; }
-      to   { background-position: 0 40px; }
+      to   { background-position: 0 48px; }
+    }
+
+    /* ── 車道切換按鈕 ── */
+    .wd-lane-btns {
+      display: flex; gap: 10px; margin: 6px 0; width: 95%;
+    }
+    .wd-lane-btn {
+      flex: 1; padding: 12px 0;
+      border: 2px solid rgba(241,196,15,0.4);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6);
+      font-size: 1rem; font-weight: bold;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .wd-lane-btn--active {
+      border-color: #f1c40f;
+      background: rgba(241,196,15,0.18);
+      color: #f1c40f;
+      box-shadow: 0 0 10px rgba(241,196,15,0.3);
     }
 
     /* ── 詞語卡片 ── */
