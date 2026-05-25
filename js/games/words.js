@@ -56,10 +56,10 @@ const TOTAL_CARDS = 10;
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       3000,
-  medium:     3600,
-  easy:       4200,
-  easy_plus:  4800,
+  hard:       4000,
+  medium:     4600,
+  easy:       5200,
+  easy_plus:  5800,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -387,15 +387,8 @@ export class WordsGame extends GameEngine {
         </div>` : ''}
 
         <!-- 提示區 -->
-        <div class="wd-hint-area" id="wd-hint-area"></div>
-
         <!-- 按鈕 -->
-        <div class="wd-controls">
-          <button class="wd-btn wd-btn--hint" id="wd-hint-btn"
-                  onclick="window.__wdHint()">
-            💡 提示（剩 ${2 - (this.usedHints || 0)} 次）
-          </button>
-        </div>
+        <div class="wd-controls"></div>
 
         <!-- 回饋 -->
         <div class="wd-feedback" id="wd-feedback"></div>
@@ -923,9 +916,14 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   async judgeAnswer(answer) {
     if (this._mode === 1) {
-      if (answer === '__all_correct__') return { correct: true };
-      if (answer === '__lives_out__')  return { correct: false };
-      return { correct: false };
+      if (answer === '__all_correct__') {
+        return { correct: true, eatenCorrect: this._eatenCorrect, allEaten: true };
+      }
+      if (answer === '__lives_out__') {
+        // 即使失敗，若有吃到正確詞語仍給部分星星
+        return { correct: this._eatenCorrect > 0, eatenCorrect: this._eatenCorrect, allEaten: false };
+      }
+      return { correct: false, eatenCorrect: 0, allEaten: false };
     } else {
       const isCorrect = answer === this._mode2Correct;
       return { correct: isCorrect };
@@ -933,14 +931,41 @@ export class WordsGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
+  // calculateStars — 覆寫 GameEngine 的計算方式
+  //   模式一：每吃到1個正確詞語 0.5顆星，3個共1.5顆
+  //   模式二：固定1顆星
+  // ════════════════════════════════════════════
+  calculateStars(attempt, consecutive) {
+    if (this._mode === 2) {
+      // 模式二：第一次答對 1 顆，第二次才答對 0.5 顆
+      return attempt === 1 ? 1 : 0.5;
+    }
+    // 模式一：依吃到的正確詞語數計算（0.5 × eatenCorrect）
+    const eaten = this._eatenCorrect || 0;
+    const total = this._correctWords ? this._correctWords.length : 3;
+    const base = eaten * 0.5; // 1個=0.5, 2個=1, 3個=1.5
+    // allEaten（全吃完）bonus 0.5 由 GameEngine consecutiveCorrect 連續bonus 處理
+    // 這裡只回傳基本分，確保最少 0.5
+    return Math.max(0.5, base);
+  }
+
+  // ════════════════════════════════════════════
   // playCorrectAnimation
   // ════════════════════════════════════════════
   async playCorrectAnimation() {
     const q = this._currentQuestion;
-    const extra = (this._mode === 1 && this._allCorrectEaten) ? ' 🌟全吃完！+0.5' : '';
+    let msg = '答對了！';
+    if (this._mode === 1) {
+      const eaten = this._eatenCorrect || 0;
+      const stars = eaten * 0.5;
+      const allBonus = this._allCorrectEaten ? '＋bonus 0.5⭐' : '';
+      msg = `🏁 吃到 ${eaten} 個詞語 ＋${stars}⭐ ${allBonus}`.trim();
+    } else {
+      msg = '答對了！＋1⭐';
+    }
     const feedback = document.getElementById('wd-feedback');
     if (feedback) {
-      feedback.innerHTML = `<div class="wd-correct-text">🏁 答對了！${extra}</div>`;
+      feedback.innerHTML = `<div class="wd-correct-text">${msg}</div>`;
       feedback.classList.add('wd-feedback--show');
     }
     // 模式二：播放 correct.ogg 音效
@@ -1012,6 +1037,8 @@ export class WordsGame extends GameEngine {
   //   提示二：呼叫萌典 API 查詢詞語意思
   // ════════════════════════════════════════════
   getHint() {
+    // 詞語填空不提供提示
+    return;
     const q = this._currentQuestion;
     if (!q) return;
     const hintArea = document.getElementById('wd-hint-area');
@@ -1133,11 +1160,7 @@ export class WordsGame extends GameEngine {
   // _updateHintButton
   // ════════════════════════════════════════════
   _updateHintButton() {
-    const btn = document.getElementById('wd-hint-btn');
-    if (!btn) return;
-    const remaining = 2 - (this.usedHints || 0);
-    btn.textContent = `💡 提示（剩 ${remaining} 次）`;
-    btn.disabled = remaining <= 0;
+    // 詞語填空不顯示提示按鈕
   }
 
   // ════════════════════════════════════════════
@@ -1502,7 +1525,6 @@ export class WordsGame extends GameEngine {
     }
 
     /* ── 提示區 ── */
-    .wd-hint-area { width: 90%; min-height: 40px; margin: 6px 0; }
     .wd-hint {
       padding: 10px 14px; border-radius: 8px;
       font-size: 0.92rem; animation: wd-appear 0.3s ease;
