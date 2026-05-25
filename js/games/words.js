@@ -80,7 +80,7 @@ export class WordsGame extends GameEngine {
     this._carX = LANES[0];        // 賽車 X 位置（%）
     this._carTargetX = LANES[0];  // 賽車目標 X（平滑移動）
     this._cardIdCounter = 0;
-    this._lastSpawnTs = 0;        // 上次出現卡片的時間戳
+    this._lastSpawnTs = [0, 0];   // 兩條車道各自的上次出現時間戳 [左道, 右道]
     this._gameStartTs = 0;        // 遊戲啟動時間戳
     this._spawnIndex = 0;         // 已出現的卡片數
     this._eatenCorrect = 0;       // 已吃到的正確詞語數
@@ -293,7 +293,7 @@ export class WordsGame extends GameEngine {
     this._carBusy = false;
     this._wordCards = [];
     this._cardQueue = [];
-    this._lastSpawnTs = 0;
+    this._lastSpawnTs = [0, 0];
     this._gameStartTs = 0;
     this._spawnIndex = 0;
     this._currentQuestion = q;
@@ -311,7 +311,7 @@ export class WordsGame extends GameEngine {
       this._buildCardQueue(q);
       this._animRunning = true;
       this._lastTs = null;
-      this._lastSpawnTs = 0;
+      this._lastSpawnTs = [0, 0];
       // 初始化並播放引擎音效
       this._initAudio();
       this._sfxCar.play().catch(() => {});
@@ -500,33 +500,35 @@ export class WordsGame extends GameEngine {
   _trySpawnCard(timestamp, q) {
     if (this._spawnIndex >= this._cardQueue.length) return;
     const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
+    const layer = document.getElementById('wd-cards-layer');
+    if (!layer) return;
 
-    // 第一張：FIRST_CARD_DELAY 後出現
-    // 第二張：再等 interval*0.7（讓玩家看清第一張再出現第二張）
-    // 後續：正常 interval
-    const waitTime = this._spawnIndex === 0
-      ? FIRST_CARD_DELAY
+    // 檢查佇列中下一張卡片應在哪條車道
+    const nextItem = this._cardQueue[this._spawnIndex];
+    const lane = nextItem.lane; // 0=左, 1=右
+
+    // 該車道的等待時間（第一張各自等 FIRST_CARD_DELAY，右道再錯開 interval/2）
+    const laneOffset = lane === 1 ? Math.round(interval * 0.5) : 0;
+    const lastTs = this._lastSpawnTs[lane];
+    const waitTime = lastTs === 0
+      ? FIRST_CARD_DELAY + laneOffset
       : interval;
-    // 第一張生成後，_lastSpawnTs 設為當時 relTs（可能是 0）
-    // 確保第二張至少等足 interval
-    if (this._lastSpawnTs === 0 || timestamp - this._lastSpawnTs >= waitTime) {
+
+    if (lastTs === 0 || timestamp - lastTs >= waitTime) {
       const item = this._cardQueue[this._spawnIndex++];
-      this._lastSpawnTs = timestamp;
+      this._lastSpawnTs[lane] = timestamp;
       const xPos = LANES[item.lane];
       const card = {
         id: ++this._cardIdCounter,
         word: item.word,
         isCorrect: item.isCorrect,
         x: xPos,
-        y: 2,        // 從跑道頂部可見處開始落下
+        y: 2,
         eaten: false,
         lane: item.lane,
       };
       this._wordCards.push(card);
 
-      // 立即插入 DOM，JS 每幀更新 top 控制位置
-      const layer = document.getElementById('wd-cards-layer');
-      if (!layer) return;
       const div = document.createElement('div');
       div.className = 'wd-card wd-card--neutral wd-card--falling';
       div.id = `wd-card-${card.id}`;
