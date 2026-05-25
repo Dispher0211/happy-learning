@@ -498,8 +498,8 @@ export class WordsGame extends GameEngine {
         div.style.animationDuration = dur + 'ms';
         div.textContent = card.word;
         layer.appendChild(div);
-        // 記錄開始時間，供碰撞偵測計算目前 y
-        card.startTs = timestamp;
+        // 記錄絕對開始時間（performance.now），供碰撞偵測計算目前 y
+        card.startTs = performance.now();
         card.fallDur = dur;
       }
     }
@@ -560,7 +560,7 @@ export class WordsGame extends GameEngine {
       if (card.eaten) continue;
 
       // 計算卡片目前 y（%）：依動畫進度線性估算（0% → 110%）
-      const elapsed = timestamp - (card.startTs || timestamp);
+      const elapsed = performance.now() - (card.startTs || performance.now());
       card.y = (elapsed / card.fallDur) * 110;
 
       // 碰撞偵測：卡片 Y 接近賽車（82~95%），且 X 與賽車同車道（±6%）
@@ -1273,9 +1273,9 @@ export class WordsGame extends GameEngine {
       animation-fill-mode: forwards;
     }
     @keyframes wd-card-fall {
-      0%   { top: -8%; opacity: 0; transform: translateX(-50%) scale(0.7); }
-      8%   { opacity: 1; transform: translateX(-50%) scale(1); }
-      95%  { opacity: 1; }
+      0%   { top: -8%;  opacity: 0; transform: translateX(-50%) scale(0.75); }
+      10%  { top: 5%;   opacity: 1; transform: translateX(-50%) scale(1); }
+      90%  { top: 92%;  opacity: 1; transform: translateX(-50%) scale(1); }
       100% { top: 110%; opacity: 0; transform: translateX(-50%) scale(1); }
     }
     .wd-card--neutral {
