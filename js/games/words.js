@@ -57,7 +57,7 @@ const TOTAL_CARDS = 10;
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
   hard:       3500,
-  medium:     4200,
+  medium:     4000,
   easy:       4800,
   easy_plus:  5200,
 };
@@ -999,9 +999,9 @@ export class WordsGame extends GameEngine {
     //   第2局全對：1.5顆
     //   第3局全對：0.5顆
     //   未全對（部分/失敗）：0顆，進下一局
-    const attempt = this._mode1Attempt || 1;
+    const mode1Attempt = this._mode1Attempt || 1;
     if (!this._allCorrectEaten) return 0; // 未全對不給星星
-    return attempt === 1 ? 2 : attempt === 2 ? 1.5 : 0.5;
+    return mode1Attempt === 1 ? 2 : mode1Attempt === 2 ? 1.5 : 0.5;
   }
 
   // ════════════════════════════════════════════
