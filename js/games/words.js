@@ -84,6 +84,13 @@ export class WordsGame extends GameEngine {
     this._lastTs = null;
     this._keysDown = {};
 
+    // ── 音效 ──
+    this._sfxCar     = null;   // 引擎聲（循環）
+    this._sfxCorrect = null;   // 吃到正確詞語
+    this._sfxError   = null;   // 吃到錯誤詞語
+    this._carFlashing = false; // 正確閃光中
+    this._carSpinning = false; // 錯誤旋轉中
+
     // ── 輸入監聽器 ──
     this._onKeyDown = null;
     this._onKeyUp = null;
@@ -180,39 +187,61 @@ export class WordsGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // _buildWrongWords — 產生錯誤詞語
+  // _buildWrongWords — 產生干擾詞語
+  //   策略：「目標字 + 隨機字」拼湊（2-3字），確保不是真實詞語
+  //   所有干擾詞皆含目標字，讓學生分辨哪些才是真正的詞語
+  //   需要 realWordSet（Set）避免碰巧拼出真實詞
   // ════════════════════════════════════════════
   _buildWrongWords(char, correctWords, confusables, allChars) {
+    // 建立全部真實詞語集合（用於排除碰巧成詞的干擾詞）
+    const realWordSet = this._getRealWordSet(allChars);
     const result = [];
     const used = new Set(correctWords);
 
-    // 用 confusables 替換詞語中的字
-    for (const conf of confusables) {
-      if (result.length >= 4) break;
-      const base = correctWords[0] || char + '字';
-      const wrongWord = base.replace(char, conf);
-      if (!used.has(wrongWord)) {
-        result.push(wrongWord);
-        used.add(wrongWord);
-      }
-    }
-
-    // 補充：用隨機字取代
-    const pool = allChars
-      .filter(c => c['字'] !== char)
+    // 從 allChars 取所有字，隨機拼「目標字＋隨機字」或「隨機字＋目標字」
+    const charPool = allChars
+      .map(c => c['字'])
+      .filter(c => c && c !== char)
       .sort(() => Math.random() - 0.5);
 
-    for (const c of pool) {
-      if (result.length >= 4) break;
-      const base = correctWords[0] || char + '字';
-      const wrongWord = base.replace(char, c['字']);
-      if (!used.has(wrongWord)) {
-        result.push(wrongWord);
-        used.add(wrongWord);
+    for (const other of charPool) {
+      if (result.length >= 8) break;
+      // 交替：前綴 or 後綴（不限字數，2-3字皆可）
+      const candidates = [char + other, other + char];
+      // 也嘗試3字組合（目標字＋兩個隨機字）
+      const other2 = charPool[Math.floor(Math.random() * charPool.length)];
+      if (other2 && other2 !== other) {
+        candidates.push(char + other + other2, other + char + other2, other + other2 + char);
+      }
+      for (const fake of candidates) {
+        if (result.length >= 8) break;
+        // 必須含目標字、不是真實詞語、不重複
+        if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)) {
+          result.push(fake);
+          used.add(fake);
+        }
       }
     }
 
     return result;
+  }
+
+  // ════════════════════════════════════════════
+  // _getRealWordSet — 建立（或快取）全字典真實詞語集合
+  // ════════════════════════════════════════════
+  _getRealWordSet(allChars) {
+    if (this._realWordSetCache) return this._realWordSetCache;
+    const set = new Set();
+    for (const entry of allChars) {
+      for (const pron of (entry.pronunciations || [])) {
+        for (const w of (pron.words || [])) { if (w) set.add(w); }
+        for (const def of (pron.definitions || [])) {
+          for (const ex of (def.ex || [])) { if (ex.w) set.add(ex.w); }
+        }
+      }
+    }
+    this._realWordSetCache = set;
+    return set;
   }
 
   // ════════════════════════════════════════════
@@ -254,6 +283,9 @@ export class WordsGame extends GameEngine {
       this._animRunning = true;
       this._lastTs = null;
       this._lastSpawnTs = 0;
+      // 初始化並播放引擎音效
+      this._initAudio();
+      this._sfxCar.play().catch(() => {});
       requestAnimationFrame(ts => this._gameLoop(ts));
       this._bindInputEvents();
     } else {
@@ -276,7 +308,7 @@ export class WordsGame extends GameEngine {
           <div class="wd-char" style="${q.mode === 2 ? 'visibility:hidden' : ''}">${q.char}</div>
           <div class="wd-meta">
             <div class="wd-title">
-              ${q.mode === 1 ? `賽車吃到含「${q.char}」的詞語！` : `選出正確的字填入空格`}
+              ${q.mode === 1 ? `吃到正確的詞語！避開錯誤的詞語！` : `選出正確的字填入空格`}
             </div>
             <div class="wd-badges">
               <span class="wd-badge wd-badge--mode">${modeLabel}</span>
@@ -338,6 +370,42 @@ export class WordsGame extends GameEngine {
         <div class="wd-feedback" id="wd-feedback"></div>
       </div>
     `;
+  }
+
+  // ════════════════════════════════════════════
+  // _initAudio — 初始化三個音效
+  // ════════════════════════════════════════════
+  _initAudio() {
+    // 引擎聲（loop）
+    this._sfxCar = new Audio('audio/effects/car.mp3');
+    this._sfxCar.loop = true;
+    this._sfxCar.volume = 0.55;
+
+    // 正確音效
+    this._sfxCorrect = new Audio('audio/effects/correctcar.mp3');
+    this._sfxCorrect.volume = 0.85;
+
+    // 錯誤音效
+    this._sfxError = new Audio('audio/effects/errorcar.mp3');
+    this._sfxError.volume = 0.85;
+  }
+
+  _pauseCarSfx() {
+    if (this._sfxCar && !this._sfxCar.paused) this._sfxCar.pause();
+  }
+
+  _resumeCarSfx() {
+    if (this._sfxCar && this._sfxCar.paused) {
+      this._sfxCar.play().catch(() => {});
+    }
+  }
+
+  _stopAllSfx() {
+    [this._sfxCar, this._sfxCorrect, this._sfxError].forEach(sfx => {
+      if (!sfx) return;
+      sfx.pause();
+      sfx.currentTime = 0;
+    });
   }
 
   // ════════════════════════════════════════════
@@ -457,6 +525,15 @@ export class WordsGame extends GameEngine {
           const numEl = document.getElementById('wd-eaten-num');
           if (numEl) numEl.textContent = this._eatenCorrect;
 
+          // 音效：暫停引擎聲 → 播放正確音效 → 車子閃光
+          this._pauseCarSfx();
+          if (this._sfxCorrect) {
+            this._sfxCorrect.currentTime = 0;
+            this._sfxCorrect.play().catch(() => {});
+            this._sfxCorrect.onended = () => this._resumeCarSfx();
+          }
+          this._playCarFlash();
+
           if (this._eatenCorrect >= this._correctWords.length) {
             this._allCorrectEaten = true;
             this._stopAllAnimations();
@@ -467,6 +544,16 @@ export class WordsGame extends GameEngine {
           this._lives--;
           this._renderLives();
           this._showCardFeedback(card.x, '❌');
+
+          // 音效：暫停引擎聲 → 播放錯誤音效 → 車子旋轉一圈
+          this._pauseCarSfx();
+          if (this._sfxError) {
+            this._sfxError.currentTime = 0;
+            this._sfxError.play().catch(() => {});
+            this._sfxError.onended = () => this._resumeCarSfx();
+          }
+          this._playCarSpin();
+
           if (this._lives <= 0) {
             this._stopAllAnimations();
             this.submitAnswer('__lives_out__');
@@ -573,6 +660,35 @@ export class WordsGame extends GameEngine {
   _renderWordWithZhuyin(word, targetChar, blank, showZhuyin) {
     // 生字簿字永遠純文字，非生字簿字依注音開關顯示
     return `<span class="wd-blank-display">${blank}</span>`;
+  }
+
+  // ════════════════════════════════════════════
+  // _playCarFlash — 車子閃光效果（吃到正確詞語）
+  // ════════════════════════════════════════════
+  _playCarFlash() {
+    const carEl = document.getElementById('wd-car');
+    if (!carEl || this._carFlashing) return;
+    this._carFlashing = true;
+    carEl.classList.add('wd-car--flash');
+    setTimeout(() => {
+      carEl.classList.remove('wd-car--flash');
+      this._carFlashing = false;
+    }, 600);
+  }
+
+  // ════════════════════════════════════════════
+  // _playCarSpin — 車子旋轉一圈（吃到錯誤詞語）
+  // ════════════════════════════════════════════
+  _playCarSpin() {
+    const carEl = document.getElementById('wd-car');
+    if (!carEl || this._carSpinning) return;
+    this._carSpinning = true;
+    carEl.classList.remove('wd-car--crash');
+    carEl.classList.add('wd-car--spin');
+    setTimeout(() => {
+      carEl.classList.remove('wd-car--spin');
+      this._carSpinning = false;
+    }, 600);
   }
 
   // ════════════════════════════════════════════
@@ -849,6 +965,7 @@ export class WordsGame extends GameEngine {
   _stopAllAnimations() {
     this._animRunning = false;
     this._lastTs = null;
+    this._pauseCarSfx();
   }
 
   // ════════════════════════════════════════════
@@ -857,6 +974,7 @@ export class WordsGame extends GameEngine {
   destroy() {
     this._stopAllAnimations();
     this._removeInputListeners();
+    this._stopAllSfx();
     delete window.__wdHint;
     delete window.__wdSelectOption;
     delete window.__wdSwitchLane;
@@ -1042,6 +1160,30 @@ export class WordsGame extends GameEngine {
       0%, 100% { transform: translateX(-50%) rotate(0); }
       25%       { transform: translateX(calc(-50% - 10px)) rotate(-10deg); }
       75%       { transform: translateX(calc(-50% + 10px)) rotate(10deg); }
+    }
+
+    /* 吃到正確詞語：閃光 */
+    .wd-car--flash {
+      animation: wd-flash 0.6s ease;
+    }
+    @keyframes wd-flash {
+      0%   { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+      20%  { filter: drop-shadow(0 0 24px #f1c40f) brightness(2); }
+      40%  { filter: drop-shadow(0 0 8px #2ecc71) brightness(1.5); }
+      60%  { filter: drop-shadow(0 0 24px #f1c40f) brightness(2); }
+      80%  { filter: drop-shadow(0 0 8px #2ecc71) brightness(1.5); }
+      100% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+    }
+
+    /* 吃到錯誤詞語：旋轉一圈 */
+    .wd-car--spin {
+      animation: wd-spin 0.6s ease;
+    }
+    @keyframes wd-spin {
+      0%   { transform: translateX(-50%) rotate(0deg) scale(1); }
+      30%  { transform: translateX(-50%) rotate(180deg) scale(0.8); }
+      70%  { transform: translateX(-50%) rotate(320deg) scale(0.9); }
+      100% { transform: translateX(-50%) rotate(360deg) scale(1); }
     }
 
     /* ── 吃到提示 ── */
