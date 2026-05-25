@@ -56,10 +56,10 @@ const TOTAL_CARDS = 10;
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       3000,
-  medium:     3800,
-  easy:       4500,
-  easy_plus:  5000,
+  hard:       3100,
+  medium:     3700,
+  easy:       4300,
+  easy_plus:  4900,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -71,9 +71,8 @@ export class WordsGame extends GameEngine {
 
     // ── 模式一狀態 ──
     this._mode = 1;
-    this._lives = 3;
-    this._mode1Attempt = 1;       // 重置局數              // 剩餘機會
-    this._mode1Attempt = 1;       // 模式一目前第幾局（1~3）
+    this._lives = 3;              // 剩餘機會
+    this._mode1Attempt = 1;       // 模式一目前第幾局（1~3，每大題重置）
     this._correctWords = [];      // 本題正確詞語列表
     this._wrongWords = [];        // 本題錯誤詞語列表
     this._wordCards = [];         // 跑道上的詞語卡片 { id, word, isCorrect, x, y, eaten }
@@ -286,6 +285,7 @@ export class WordsGame extends GameEngine {
 
     this._mode = q.mode;
     this._lives = 3;
+    this._mode1Attempt = 1;       // 每大題重置為第1局
     this._eatenCorrect = 0;
     this._allCorrectEaten = false;
     this._correctWords = [...q.words];
@@ -1006,8 +1006,8 @@ export class WordsGame extends GameEngine {
 
   // ════════════════════════════════════════════
   // calculateStars — 覆寫 GameEngine 的計算方式
-  //   模式一：每吃到1個正確詞語 0.5顆星，3個共1.5顆
-  //   模式二：固定1顆星
+  //   模式一：全對才給星（第1局2顆、第2局1.5顆、第3局0.5顆）
+  //   模式二：第一次答對1顆、第二次0.5顆
   // ════════════════════════════════════════════
   calculateStars(attempt, consecutive) {
     if (this._mode === 2) {
@@ -1015,10 +1015,10 @@ export class WordsGame extends GameEngine {
       return attempt === 1 ? 1 : 0.5;
     }
     // 模式一：只有全對（allEaten）才給星星
-    //   第1局全對：2顆（+ GameEngine bonus 0.5 = 共2.5，連續再+0.5=3）
+    //   第1局全對：2顆
     //   第2局全對：1.5顆
     //   第3局全對：0.5顆
-    //   未全對（部分/失敗）：0顆，進下一局
+    //   未全對（部分/失敗）：0顆，進下一局或跳題
     const mode1Attempt = this._mode1Attempt || 1;
     if (!this._allCorrectEaten) return 0; // 未全對不給星星
     return mode1Attempt === 1 ? 2 : mode1Attempt === 2 ? 1.5 : 0.5;
@@ -1031,12 +1031,16 @@ export class WordsGame extends GameEngine {
     const q = this._currentQuestion;
     let msg = '答對了！';
     if (this._mode === 1) {
-      const eaten = this._eatenCorrect || 0;
-      const stars = eaten * 0.5;
-      const allBonus = this._allCorrectEaten ? '＋bonus 0.5⭐' : '';
-      msg = `🏁 吃到 ${eaten} 個詞語 ＋${stars}⭐ ${allBonus}`.trim();
+      // 模式一：全對才會呼叫，依局數顯示星星
+      const mode1Attempt = this._mode1Attempt || 1;
+      const starsMap = { 1: 2, 2: 1.5, 3: 0.5 };
+      const stars = starsMap[mode1Attempt] || 0.5;
+      const attemptLabel = ['', '第1局', '第2局', '第3局'];
+      msg = `🏁 ${attemptLabel[mode1Attempt]}全對！＋${stars}⭐`;
     } else {
-      msg = '答對了！＋1⭐';
+      // 模式二：依 attemptCount 顯示
+      const stars = this.attemptCount === 1 ? 1 : 0.5;
+      msg = `答對了！＋${stars}⭐`;
     }
     const feedback = document.getElementById('wd-feedback');
     if (feedback) {
