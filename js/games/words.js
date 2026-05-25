@@ -55,14 +55,14 @@ const TOTAL_CARDS = 10;
 // 相鄰卡片出現間隔（ms）
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 const SPAWN_INTERVAL = {
-  hard:       2000,
-  medium:     2400,
-  easy:       2800,
-  easy_plus:  3200,
+  hard:       2800,
+  medium:     3200,
+  easy:       3800,
+  easy_plus:  4400,
 };
 
 // 第一張卡片出現前的準備時間（ms）
-const FIRST_CARD_DELAY = 800;
+const FIRST_CARD_DELAY = 1200;
 
 export class WordsGame extends GameEngine {
   constructor() {
@@ -203,7 +203,8 @@ export class WordsGame extends GameEngine {
     // 建立全部真實詞語集合（用於排除碰巧成詞的干擾詞）
     const realWordSet = this._getRealWordSet(allChars);
     const result = [];
-    const used = new Set(correctWords);
+    // used 包含所有正確詞語（字串），確保干擾詞不與正確詞語相同
+    const used = new Set(Array.isArray(correctWords) ? correctWords.map(String) : []);
 
     // 從 allChars 取所有字，每個字只貢獻一個干擾詞（確保每個干擾詞用字不重複）
     const charPool = allChars
@@ -211,14 +212,26 @@ export class WordsGame extends GameEngine {
       .filter(c => c && c !== char)
       .sort(() => Math.random() - 0.5);
 
-    const usedOtherChars = new Set(); // 記錄已用的隨機字，確保每個干擾詞字組唯一
+    const usedOtherChars = new Set(); // 避免相同字重複出現
 
-    for (const other of charPool) {
-      if (result.length >= 8) break;
+    for (let i = 0; i < charPool.length && result.length < 8; i++) {
+      const other = charPool[i];
       if (usedOtherChars.has(other)) continue;
 
-      // 每個 other 只嘗試一種排列（交替前綴/後綴，由 result.length 奇偶決定）
-      const fake = result.length % 2 === 0 ? char + other : other + char;
+      // 依序輪替：2字前綴、2字後綴、3字（目標字在中間）
+      const pattern = result.length % 3;
+      let fake;
+      if (pattern === 0) {
+        // 目標字 + 隨機字（2字）
+        fake = char + other;
+      } else if (pattern === 1) {
+        // 隨機字 + 目標字（2字）
+        fake = other + char;
+      } else {
+        // 隨機字 + 目標字 + 另一個隨機字（3字）
+        const other2 = charPool[(i + 1) % charPool.length];
+        fake = other2 && other2 !== other ? other + char + other2 : char + other;
+      }
 
       if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)) {
         result.push(fake);
@@ -443,24 +456,36 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   _buildCardQueue(q) {
     // 確保正確詞語全部出現
-    const correct = q.words.map(w => ({ word: w, isCorrect: true }));
-    // 錯誤詞語補足至 TOTAL_CARDS（wrongWords 為字串陣列）
-    const wrongPool = [...q.wrongWords].sort(() => Math.random() - 0.5);
-    const wrongNeeded = Math.max(0, TOTAL_CARDS - correct.length);
+    const correctWords = q.words.map(w => ({ word: w, isCorrect: true }));
+    const correctSet = new Set(q.words);
+
+    // 錯誤詞語：去重、排除與正確詞語相同的詞
+    const wrongPool = [...new Set(
+      q.wrongWords.map(w => typeof w === 'string' ? w : (w.word || '？'))
+    )].filter(w => !correctSet.has(w)).sort(() => Math.random() - 0.5);
+
+    const wrongNeeded = Math.max(0, TOTAL_CARDS - correctWords.length);
     const wrong = [];
-    if (wrongPool.length > 0) {
-      for (let i = 0; i < wrongNeeded; i++) {
-        const w = wrongPool[i % wrongPool.length];
-        wrong.push({ word: (typeof w === 'string' ? w : w.word) || '？', isCorrect: false });
-      }
+
+    // 不循環重複：最多取 wrongPool 現有數量，不足就用較少的錯誤詞
+    const limit = Math.min(wrongNeeded, wrongPool.length);
+    for (let i = 0; i < limit; i++) {
+      wrong.push({ word: wrongPool[i], isCorrect: false });
     }
 
     // 混合後洗牌，確保正確詞語不集中
-    const all = [...correct, ...wrong].sort(() => Math.random() - 0.5);
+    const allRaw = [...correctWords, ...wrong].sort(() => Math.random() - 0.5);
+    // 最終去重：同一詞語只保留第一次出現
+    const seenWords = new Set();
+    const all = allRaw.filter(item => {
+      if (seenWords.has(item.word)) return false;
+      seenWords.add(item.word);
+      return true;
+    });
     // 左右車道交替分配
     this._cardQueue = all.map((item, i) => ({
       ...item,
-      lane: i % 2,   // 0=左, 1=右
+      lane: i % 2,
     }));
     this._spawnIndex = 0;
   }
@@ -472,9 +497,14 @@ export class WordsGame extends GameEngine {
     if (this._spawnIndex >= this._cardQueue.length) return;
     const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
 
-    // 第一張卡片：等待 FIRST_CARD_DELAY 後才出現（給玩家準備時間）
-    // 後續卡片：每隔 interval ms 出現一張
-    const waitTime = this._spawnIndex === 0 ? FIRST_CARD_DELAY : interval;
+    // 第一張：FIRST_CARD_DELAY 後出現
+    // 第二張：再等 interval*0.7（讓玩家看清第一張再出現第二張）
+    // 後續：正常 interval
+    const waitTime = this._spawnIndex === 0
+      ? FIRST_CARD_DELAY
+      : interval;
+    // 第一張生成後，_lastSpawnTs 設為當時 relTs（可能是 0）
+    // 確保第二張至少等足 interval
     if (this._lastSpawnTs === 0 || timestamp - this._lastSpawnTs >= waitTime) {
       const item = this._cardQueue[this._spawnIndex++];
       this._lastSpawnTs = timestamp;
