@@ -490,20 +490,17 @@ export class WordsGame extends GameEngine {
       };
       this._wordCards.push(card);
 
-      // 立即插入 DOM，CSS animation 控制從頂部落下
+      // 立即插入 DOM，JS 每幀更新 top 控制位置
       const layer = document.getElementById('wd-cards-layer');
-      if (!layer) { console.warn('[words] wd-cards-layer 找不到'); return; }
-      if (layer) {
-        const div = document.createElement('div');
-        div.className = 'wd-card wd-card--neutral wd-card--falling';
-        div.id = `wd-card-${card.id}`;
-        div.style.left = card.x + '%';
-        div.style.top = card.y + '%';   // 初始位置，JS 每幀更新
-        div.textContent = card.word;
-        layer.appendChild(div);
-        // 記錄生成時間（用 relTs，與 gameLoop 一致）
-        card.startTs = relTs;
-      }
+      if (!layer) return;
+      const div = document.createElement('div');
+      div.className = 'wd-card wd-card--neutral wd-card--falling';
+      div.id = `wd-card-${card.id}`;
+      div.style.left = card.x + '%';
+      div.style.top = card.y + '%';
+      div.textContent = card.word;
+      layer.appendChild(div);
+      card.startTs = timestamp;
     }
   }
 
