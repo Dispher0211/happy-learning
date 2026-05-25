@@ -674,12 +674,14 @@ export class WordsGame extends GameEngine {
     }
 
     // 所有卡片已出現且全部離開畫面 → 強制結算（正確詞語未全吃完 = 失敗）
-    // allGone：所有卡片佇列已清空 AND 已出現的卡片全部處理完（含至少發過1張）
+    // allGone：所有卡片佇列已清空 AND 已出現過至少1張卡片 AND 全部處理完
+    // 必須確認 _cardQueue 有卡片（防止空佇列誤觸發）
     const queuesEmpty = this._spawnQueues !== null &&
                         this._spawnQueues[0].length === 0 &&
                         this._spawnQueues[1].length === 0;
-    const allGone = queuesEmpty &&
-                    this._wordCards.length > 0 &&
+    const hasCards = this._cardQueue && this._cardQueue.length > 0;
+    const hasSpawnedAny = this._wordCards.length > 0;
+    const allGone = hasCards && queuesEmpty && hasSpawnedAny &&
                     this._wordCards.every(c => c.eaten);
     if (allGone && !this.isAnswering && !this._carBusy) {
       this._carBusy = true;
