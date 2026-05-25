@@ -173,7 +173,7 @@ export class WordsGame extends GameEngine {
   // renderQuestion
   // ════════════════════════════════════════════
   renderQuestion() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     this._stopAllAnimations();
