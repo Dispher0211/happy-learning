@@ -90,6 +90,7 @@ export class WordsGame extends GameEngine {
     this._sfxError   = null;   // 吃到錯誤詞語
     this._carFlashing = false; // 正確閃光中
     this._carSpinning = false; // 錯誤旋轉中
+    this._carBusy = false;     // 爆炸/終點動畫中（不再接受碰撞）
 
     // ── 輸入監聽器 ──
     this._onKeyDown = null;
@@ -263,6 +264,7 @@ export class WordsGame extends GameEngine {
     this._carLane = 0;
     this._carX = LANES[0];
     this._carTargetX = LANES[0];
+    this._carBusy = false;
     this._wordCards = [];
     this._cardQueue = [];
     this._lastSpawnTs = 0;
@@ -486,8 +488,8 @@ export class WordsGame extends GameEngine {
 
     const q = this._currentQuestion;
     if (!q) return;
-    // isAnswering 期間停止碰撞判斷，避免重複觸發 submitAnswer
-    if (this.isAnswering) {
+    // isAnswering 或動畫中：繼續跑 loop（讓賽車移動），但不處理碰撞
+    if (this.isAnswering || this._carBusy) {
       requestAnimationFrame(ts => this._gameLoop(ts));
       return;
     }
@@ -536,8 +538,9 @@ export class WordsGame extends GameEngine {
 
           if (this._eatenCorrect >= this._correctWords.length) {
             this._allCorrectEaten = true;
+            this._carBusy = true;
             this._stopAllAnimations();
-            this.submitAnswer('__all_correct__');
+            this._playFinishAndEnd(true);
             return;
           }
         } else {
@@ -555,8 +558,9 @@ export class WordsGame extends GameEngine {
           this._playCarSpin();
 
           if (this._lives <= 0) {
+            this._carBusy = true;
             this._stopAllAnimations();
-            this.submitAnswer('__lives_out__');
+            this._playBombAndEnd();
             return;
           }
         }
@@ -572,13 +576,15 @@ export class WordsGame extends GameEngine {
     // 所有卡片已出現且全部離開畫面 → 強制結算（正確詞語未全吃完 = 失敗）
     const allGone = this._spawnIndex >= this._cardQueue.length &&
                     this._wordCards.every(c => c.eaten);
-    if (allGone && !this.isAnswering) {
+    if (allGone && !this.isAnswering && !this._carBusy) {
+      this._carBusy = true;
       this._stopAllAnimations();
       if (this._eatenCorrect >= this._correctWords.length) {
         this._allCorrectEaten = true;
-        this.submitAnswer('__all_correct__');
+        this._playFinishAndEnd();
       } else {
-        this.submitAnswer('__lives_out__');
+        // 卡片用完但未吃完所有正確詞語 → 顯示終點旗（結算已得星星）
+        this._playFinishAndEnd(false);
       }
       return;
     }
@@ -660,6 +666,52 @@ export class WordsGame extends GameEngine {
   _renderWordWithZhuyin(word, targetChar, blank, showZhuyin) {
     // 生字簿字永遠純文字，非生字簿字依注音開關顯示
     return `<span class="wd-blank-display">${blank}</span>`;
+  }
+
+  // ════════════════════════════════════════════
+  // _playBombAndEnd — 爆炸動畫後結束（失敗）
+  // ════════════════════════════════════════════
+  async _playBombAndEnd() {
+    this._stopAllSfx();
+    const track = document.getElementById('wd-track');
+    const carEl = document.getElementById('wd-car');
+    if (track) {
+      // 隱藏賽車、顯示爆炸圖
+      if (carEl) carEl.style.visibility = 'hidden';
+      const bomb = document.createElement('div');
+      bomb.className = 'wd-bomb-overlay';
+      bomb.innerHTML = `<img src="images/bomp.png" class="wd-bomb-img" alt="爆炸">`;
+      track.appendChild(bomb);
+    }
+    await this._delay(1800);
+    this.submitAnswer('__lives_out__');
+  }
+
+  // ════════════════════════════════════════════
+  // _playFinishAndEnd — 終點旗動畫後結束
+  // ════════════════════════════════════════════
+  async _playFinishAndEnd(allCorrect = true) {
+    this._stopAllSfx();
+    const track = document.getElementById('wd-track');
+    const carEl = document.getElementById('wd-car');
+    if (track) {
+      const finish = document.createElement('div');
+      finish.className = 'wd-finish-overlay';
+      finish.innerHTML = `<img src="images/carend.png" class="wd-finish-img" alt="終點">`;
+      track.appendChild(finish);
+      // 賽車衝向終點
+      if (carEl) {
+        carEl.style.transition = 'bottom 0.8s ease';
+        carEl.style.bottom = '85%';
+      }
+    }
+    await this._delay(1800);
+    if (allCorrect) {
+      this._allCorrectEaten = true;
+      this.submitAnswer('__all_correct__');
+    } else {
+      this.submitAnswer('__all_correct__'); // 結算已得星星（用 correct 讓 GameEngine 給星）
+    }
   }
 
   // ════════════════════════════════════════════
@@ -767,6 +819,14 @@ export class WordsGame extends GameEngine {
     if (feedback) {
       feedback.innerHTML = `<div class="wd-correct-text">🏁 答對了！${extra}</div>`;
       feedback.classList.add('wd-feedback--show');
+    }
+    // 模式二：播放 correctcar 音效
+    if (this._mode === 2) {
+      if (!this._sfxCorrect) this._initAudio();
+      if (this._sfxCorrect) {
+        this._sfxCorrect.currentTime = 0;
+        this._sfxCorrect.play().catch(() => {});
+      }
     }
     await this._delay(900);
     if (feedback) feedback.classList.remove('wd-feedback--show');
@@ -1184,6 +1244,39 @@ export class WordsGame extends GameEngine {
       30%  { transform: translateX(-50%) rotate(180deg) scale(0.8); }
       70%  { transform: translateX(-50%) rotate(320deg) scale(0.9); }
       100% { transform: translateX(-50%) rotate(360deg) scale(1); }
+    }
+
+    /* ── 爆炸 overlay ── */
+    .wd-bomb-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; background: rgba(0,0,0,0.5);
+      animation: wd-appear 0.2s ease;
+    }
+    .wd-bomb-img {
+      width: 55%; max-width: 220px;
+      animation: wd-bomb-pop 0.4s ease forwards;
+    }
+    @keyframes wd-bomb-pop {
+      0%   { transform: scale(0.2); opacity: 0.5; }
+      60%  { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── 終點 overlay ── */
+    .wd-finish-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-start; justify-content: center;
+      z-index: 50; pointer-events: none;
+      animation: wd-finish-drop 0.6s ease forwards;
+    }
+    .wd-finish-img {
+      width: 80%; max-width: 300px;
+      margin-top: 0;
+    }
+    @keyframes wd-finish-drop {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
     }
 
     /* ── 吃到提示 ── */
