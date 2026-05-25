@@ -56,10 +56,10 @@ const TOTAL_CARDS = 10;
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       3100,
-  medium:     3700,
-  easy:       4300,
-  easy_plus:  4900,
+  hard:       3000,
+  medium:     3600,
+  easy:       4200,
+  easy_plus:  4800,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -681,11 +681,12 @@ export class WordsGame extends GameEngine {
       this._carBusy = true;
       this._stopAllAnimations();
       if (this._eatenCorrect >= this._correctWords.length) {
+        // 全吃完 → 終點旗，給星星
         this._allCorrectEaten = true;
-        this._playFinishAndEnd();
+        this._playFinishAndEnd(true);
       } else {
-        // 卡片用完但未吃完所有正確詞語 → 顯示終點旗（結算已得星星）
-        this._playFinishAndEnd(false);
+        // 卡片用完但未全對 → 視同失敗，爆炸動畫，進下一局或跳題
+        this._playBombAndEnd();
       }
       return;
     }
@@ -839,12 +840,9 @@ export class WordsGame extends GameEngine {
     }
     await this._delay(1800);
     if (this._isDestroyed) return; // 已離開遊戲，不繼續
-    if (allCorrect) {
-      this._allCorrectEaten = true;
-      this.submitAnswer('__all_correct__');
-    } else {
-      this.submitAnswer('__all_correct__'); // 結算已得星星（用 correct 讓 GameEngine 給星）
-    }
+    // allCorrect 一定是 true（未全對已走 _playBombAndEnd，不會到這裡）
+    this._allCorrectEaten = true;
+    this.submitAnswer('__all_correct__');
   }
 
   // ════════════════════════════════════════════
