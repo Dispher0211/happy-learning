@@ -56,10 +56,10 @@ const TOTAL_CARDS = 10;
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       3500,
-  medium:     4000,
-  easy:       4800,
-  easy_plus:  5200,
+  hard:       3000,
+  medium:     3800,
+  easy:       4500,
+  easy_plus:  5000,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -343,6 +343,13 @@ export class WordsGame extends GameEngine {
             <div class="wd-title">
               ${q.mode === 1 ? `吃到正確的詞語！避開錯誤的詞語！` : `選出正確的字填入空格`}
             </div>
+            ${q.mode === 1 ? `
+            <div class="wd-attempt-indicator" id="wd-attempt-indicator">
+              <span class="wd-attempt-dot ${1 >= 1 ? 'active' : ''}"></span>
+              <span class="wd-attempt-dot"></span>
+              <span class="wd-attempt-dot"></span>
+              <span class="wd-attempt-label">第1局</span>
+            </div>` : ''}
             <div class="wd-badges">
               <span class="wd-badge wd-badge--mode">${modeLabel}</span>
               <span class="wd-badge wd-badge--${q.level}">${levelLabel}</span>
@@ -866,12 +873,8 @@ export class WordsGame extends GameEngine {
     this._updateHintButton();
     this._renderLives();
 
-    // 顯示第幾局提示
-    const header = appEl.querySelector('.wd-title');
-    if (header) {
-      const attemptLabel = ['', '第1局', '第2局', '第3局'];
-      header.textContent = `吃到正確的詞語！避開錯誤的詞語！（${attemptLabel[this._mode1Attempt]}）`;
-    }
+    // 更新局數指示器
+    this._updateAttemptIndicator();
 
     // 重啟動畫
     this._buildCardQueue(q);
@@ -882,6 +885,23 @@ export class WordsGame extends GameEngine {
     this._sfxCar.play().catch(() => {});
     requestAnimationFrame(ts => this._gameLoop(ts));
     this._bindInputEvents();
+  }
+
+  // ════════════════════════════════════════════
+  // _updateAttemptIndicator — 更新局數指示器
+  // ════════════════════════════════════════════
+  _updateAttemptIndicator() {
+    const ind = document.getElementById('wd-attempt-indicator');
+    if (!ind) return;
+    const a = this._mode1Attempt || 1;
+    const labels = ['', '第1局', '第2局', '第3局'];
+    const dots = ind.querySelectorAll('.wd-attempt-dot');
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i < a);
+      dot.classList.toggle('current', i === a - 1);
+    });
+    const label = ind.querySelector('.wd-attempt-label');
+    if (label) label.textContent = labels[a];
   }
 
   // ════════════════════════════════════════════
@@ -1299,7 +1319,33 @@ export class WordsGame extends GameEngine {
       min-width: 3.5rem;
     }
     .wd-meta { flex: 1; }
-    .wd-title { font-size: 0.95rem; margin-bottom: 4px; color: #bde0fe; }
+    .wd-title { font-size: 0.95rem; margin-bottom: 2px; color: #bde0fe; }
+
+    /* ── 局數指示器 ── */
+    .wd-attempt-indicator {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .wd-attempt-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.3);
+      transition: all 0.3s;
+    }
+    .wd-attempt-dot.active {
+      background: rgba(241,196,15,0.5);
+      border-color: #f1c40f;
+    }
+    .wd-attempt-dot.current {
+      background: #f1c40f;
+      border-color: #f39c12;
+      box-shadow: 0 0 8px rgba(241,196,15,0.8);
+      transform: scale(1.2);
+    }
+    .wd-attempt-label {
+      font-size: 0.8rem; font-weight: bold;
+      color: #f1c40f; letter-spacing: 1px;
+    }
     .wd-badges { display: flex; gap: 6px; flex-wrap: wrap; }
     .wd-badge {
       padding: 3px 10px; border-radius: 16px;
