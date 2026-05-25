@@ -296,6 +296,7 @@ export class WordsGame extends GameEngine {
     this._lastSpawnTs = [0, 0];
     this._gameStartTs = 0;
     this._spawnIndex = 0;
+    this._spawnQueues = null;  // 重置分道佇列
     this._currentQuestion = q;
 
     const appEl = this._getContainer();
@@ -498,45 +499,50 @@ export class WordsGame extends GameEngine {
   // _trySpawnCard — 依間隔時間從佇列出現下一張卡片
   // ════════════════════════════════════════════
   _trySpawnCard(timestamp, q) {
-    if (this._spawnIndex >= this._cardQueue.length) return;
-    const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
     const layer = document.getElementById('wd-cards-layer');
     if (!layer) return;
 
-    // 檢查佇列中下一張卡片應在哪條車道
-    const nextItem = this._cardQueue[this._spawnIndex];
-    const lane = nextItem.lane; // 0=左, 1=右
+    const interval = SPAWN_INTERVAL[q.level] || SPAWN_INTERVAL.medium;
 
-    // 該車道的等待時間（第一張各自等 FIRST_CARD_DELAY，右道再錯開 interval/2）
-    const laneOffset = lane === 1 ? Math.round(interval * 0.5) : 0;
-    const lastTs = this._lastSpawnTs[lane];
-    const waitTime = lastTs === 0
-      ? FIRST_CARD_DELAY + laneOffset
-      : interval;
+    // 首次呼叫：將 _cardQueue 依車道拆成兩個獨立佇列
+    if (!this._spawnQueues) {
+      this._spawnQueues = [[], []];
+      for (const item of this._cardQueue) {
+        this._spawnQueues[item.lane].push(item);
+      }
+    }
 
-    if (lastTs === 0 || timestamp - lastTs >= waitTime) {
-      const item = this._cardQueue[this._spawnIndex++];
-      this._lastSpawnTs[lane] = timestamp;
-      const xPos = LANES[item.lane];
-      const card = {
-        id: ++this._cardIdCounter,
-        word: item.word,
-        isCorrect: item.isCorrect,
-        x: xPos,
-        y: 2,
-        eaten: false,
-        lane: item.lane,
-      };
-      this._wordCards.push(card);
+    // 兩條車道各自獨立檢查是否可出現下一張
+    for (let lane = 0; lane < 2; lane++) {
+      if (this._spawnQueues[lane].length === 0) continue;
+      const lastTs = this._lastSpawnTs[lane];
+      // 左道：FIRST_CARD_DELAY；右道：FIRST_CARD_DELAY + interval/2（強制錯開）
+      const waitTime = lastTs === 0
+        ? FIRST_CARD_DELAY + (lane === 1 ? Math.round(interval * 0.5) : 0)
+        : interval;
 
-      const div = document.createElement('div');
-      div.className = 'wd-card wd-card--neutral wd-card--falling';
-      div.id = `wd-card-${card.id}`;
-      div.style.left = card.x + '%';
-      div.style.top = card.y + '%';
-      div.textContent = card.word;
-      layer.appendChild(div);
-      card.startTs = timestamp;
+      if (timestamp - lastTs >= waitTime) {
+        const item = this._spawnQueues[lane].shift();
+        this._lastSpawnTs[lane] = timestamp;
+        const card = {
+          id: ++this._cardIdCounter,
+          word: item.word,
+          isCorrect: item.isCorrect,
+          x: LANES[lane],
+          y: 2,
+          eaten: false,
+          lane,
+        };
+        this._wordCards.push(card);
+        const div = document.createElement('div');
+        div.className = 'wd-card wd-card--neutral wd-card--falling';
+        div.id = `wd-card-${card.id}`;
+        div.style.left = card.x + '%';
+        div.style.top = card.y + '%';
+        div.textContent = card.word;
+        layer.appendChild(div);
+        card.startTs = timestamp;
+      }
     }
   }
 
@@ -662,7 +668,8 @@ export class WordsGame extends GameEngine {
     }
 
     // 所有卡片已出現且全部離開畫面 → 強制結算（正確詞語未全吃完 = 失敗）
-    const allGone = this._spawnIndex >= this._cardQueue.length &&
+    const allGone = (!this._spawnQueues ||
+                    (this._spawnQueues[0].length === 0 && this._spawnQueues[1].length === 0)) &&
                     this._wordCards.every(c => c.eaten);
     if (allGone && !this.isAnswering && !this._carBusy) {
       this._carBusy = true;
