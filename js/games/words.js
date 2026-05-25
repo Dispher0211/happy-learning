@@ -56,10 +56,10 @@ const TOTAL_CARDS = 10;
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 // SPAWN_INTERVAL：每道各自的出牌間隔（比落下時長稍長，讓畫面不擁擠）
 const SPAWN_INTERVAL = {
-  hard:       4000,
-  medium:     4600,
-  easy:       5200,
-  easy_plus:  5800,
+  hard:       3500,
+  medium:     4200,
+  easy:       4800,
+  easy_plus:  5200,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -71,7 +71,9 @@ export class WordsGame extends GameEngine {
 
     // ── 模式一狀態 ──
     this._mode = 1;
-    this._lives = 3;              // 剩餘機會
+    this._lives = 3;
+    this._mode1Attempt = 1;       // 重置局數              // 剩餘機會
+    this._mode1Attempt = 1;       // 模式一目前第幾局（1~3）
     this._correctWords = [];      // 本題正確詞語列表
     this._wrongWords = [];        // 本題錯誤詞語列表
     this._wordCards = [];         // 跑道上的詞語卡片 { id, word, isCorrect, x, y, eaten }
@@ -793,7 +795,15 @@ export class WordsGame extends GameEngine {
     }
     this.isAnswering = false;
     this._carBusy = false;
-    this.skipQuestion();
+
+    // 模式一：最多3局，還有局數則重玩同題（resetMode1）
+    if (this._mode === 1 && this._mode1Attempt < 3) {
+      this._mode1Attempt++;
+      this._resetMode1Track();
+    } else {
+      // 3局都用完或非模式一 → 跳題
+      this.skipQuestion();
+    }
   }
 
   // ════════════════════════════════════════════
@@ -828,6 +838,50 @@ export class WordsGame extends GameEngine {
     } else {
       this.submitAnswer('__all_correct__'); // 結算已得星星（用 correct 讓 GameEngine 給星）
     }
+  }
+
+  // ════════════════════════════════════════════
+  // _resetMode1Track — 重置賽車跑道（不換題，重玩同題）
+  // ════════════════════════════════════════════
+  _resetMode1Track() {
+    // 重置跑道狀態
+    this._lives = 3;
+    this._eatenCorrect = 0;
+    this._allCorrectEaten = false;
+    this._carLane = 0;
+    this._carX = LANES[0];
+    this._carTargetX = LANES[0];
+    this._wordCards = [];
+    this._lastSpawnTs = [0, 0];
+    this._gameStartTs = 0;
+    this._spawnQueues = null;
+    this._carBusy = false;
+
+    // 重建 HTML 跑道
+    const appEl = this._getContainer();
+    if (!appEl) return;
+    const q = this._currentQuestion;
+    appEl.innerHTML = this._buildHTML(q);
+    this._renderProgressBar();
+    this._updateHintButton();
+    this._renderLives();
+
+    // 顯示第幾局提示
+    const header = appEl.querySelector('.wd-title');
+    if (header) {
+      const attemptLabel = ['', '第1局', '第2局', '第3局'];
+      header.textContent = `吃到正確的詞語！避開錯誤的詞語！（${attemptLabel[this._mode1Attempt]}）`;
+    }
+
+    // 重啟動畫
+    this._buildCardQueue(q);
+    this._animRunning = true;
+    this._lastTs = null;
+    this._lastSpawnTs = [0, 0];
+    this._initAudio();
+    this._sfxCar.play().catch(() => {});
+    requestAnimationFrame(ts => this._gameLoop(ts));
+    this._bindInputEvents();
   }
 
   // ════════════════════════════════════════════
@@ -920,8 +974,8 @@ export class WordsGame extends GameEngine {
         return { correct: true, eatenCorrect: this._eatenCorrect, allEaten: true };
       }
       if (answer === '__lives_out__') {
-        // 即使失敗，若有吃到正確詞語仍給部分星星
-        return { correct: this._eatenCorrect > 0, eatenCorrect: this._eatenCorrect, allEaten: false };
+        // 未全部吃完 → 失敗，進下一局，不給星星
+        return { correct: false, eatenCorrect: this._eatenCorrect, allEaten: false };
       }
       return { correct: false, eatenCorrect: 0, allEaten: false };
     } else {
@@ -940,13 +994,14 @@ export class WordsGame extends GameEngine {
       // 模式二：第一次答對 1 顆，第二次才答對 0.5 顆
       return attempt === 1 ? 1 : 0.5;
     }
-    // 模式一：依吃到的正確詞語數計算（0.5 × eatenCorrect）
-    const eaten = this._eatenCorrect || 0;
-    const total = this._correctWords ? this._correctWords.length : 3;
-    const base = eaten * 0.5; // 1個=0.5, 2個=1, 3個=1.5
-    // allEaten（全吃完）bonus 0.5 由 GameEngine consecutiveCorrect 連續bonus 處理
-    // 這裡只回傳基本分，確保最少 0.5
-    return Math.max(0.5, base);
+    // 模式一：只有全對（allEaten）才給星星
+    //   第1局全對：2顆（+ GameEngine bonus 0.5 = 共2.5，連續再+0.5=3）
+    //   第2局全對：1.5顆
+    //   第3局全對：0.5顆
+    //   未全對（部分/失敗）：0顆，進下一局
+    const attempt = this._mode1Attempt || 1;
+    if (!this._allCorrectEaten) return 0; // 未全對不給星星
+    return attempt === 1 ? 2 : attempt === 2 ? 1.5 : 0.5;
   }
 
   // ════════════════════════════════════════════
