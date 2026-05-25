@@ -444,12 +444,15 @@ export class WordsGame extends GameEngine {
   _buildCardQueue(q) {
     // 確保正確詞語全部出現
     const correct = q.words.map(w => ({ word: w, isCorrect: true }));
-    // 錯誤詞語補足至 TOTAL_CARDS
+    // 錯誤詞語補足至 TOTAL_CARDS（wrongWords 為字串陣列）
     const wrongPool = [...q.wrongWords].sort(() => Math.random() - 0.5);
-    const wrongNeeded = TOTAL_CARDS - correct.length;
+    const wrongNeeded = Math.max(0, TOTAL_CARDS - correct.length);
     const wrong = [];
-    for (let i = 0; i < wrongNeeded; i++) {
-      wrong.push({ word: wrongPool[i % wrongPool.length].word || wrongPool[i % wrongPool.length], isCorrect: false });
+    if (wrongPool.length > 0) {
+      for (let i = 0; i < wrongNeeded; i++) {
+        const w = wrongPool[i % wrongPool.length];
+        wrong.push({ word: (typeof w === 'string' ? w : w.word) || '？', isCorrect: false });
+      }
     }
 
     // 混合後洗牌，確保正確詞語不集中
@@ -489,6 +492,7 @@ export class WordsGame extends GameEngine {
 
       // 立即插入 DOM，CSS animation 控制從頂部落下
       const layer = document.getElementById('wd-cards-layer');
+      if (!layer) { console.warn('[words] wd-cards-layer 找不到'); return; }
       if (layer) {
         const dur = CARD_FALL_DURATION[q.level] || CARD_FALL_DURATION.medium;
         const div = document.createElement('div');
@@ -1267,10 +1271,10 @@ export class WordsGame extends GameEngine {
     }
     /* 卡片從跑道頂部落到底部（duration 由 JS 動態設定）*/
     .wd-card--falling {
-      top: 0%;
       animation-name: wd-card-fall;
       animation-timing-function: linear;
       animation-fill-mode: forwards;
+      /* top 由 keyframe 控制，不在此設定 */
     }
     @keyframes wd-card-fall {
       0%   { top: -8%;  opacity: 0; transform: translateX(-50%) scale(0.75); }
