@@ -98,13 +98,33 @@ export class WordsGame extends GameEngine {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      // 取得詞語：優先 my_words，其次 characters.json 的 words
+      // 取得詞語：
+      //   優先順序：① my_words（家長自訂）
+      //             ② definitions[].ex[].w（字義解釋例詞，最貼近課程）
+      //             ③ pronunciations[0].words（全詞語備援）
+      //             ④ char+'字' 最終備援
       let words = myWords.filter(w => w.includes(char));
       if (words.length === 0) {
-        words = (charData.pronunciations?.[0]?.words || charData.words || []).slice(0, 4); // 最多4個
+        // 從每個字義解釋的例詞（ex）蒐集詞語
+        const exWords = [];
+        const prons = charData.pronunciations || [];
+        for (const pron of prons) {
+          for (const def of (pron.definitions || [])) {
+            for (const ex of (def.ex || [])) {
+              if (ex.w && ex.w.includes(char) && !exWords.includes(ex.w)) {
+                exWords.push(ex.w);
+              }
+            }
+          }
+        }
+        words = exWords.slice(0, 4);
       }
       if (words.length === 0) {
-        words = [char + '字']; // 備用詞語
+        // 備援：pronunciations[0].words
+        words = (charData.pronunciations?.[0]?.words || []).slice(0, 4);
+      }
+      if (words.length === 0) {
+        words = [char + '字']; // 最終備援
       }
 
       // 取得干擾詞語：來自 confusables.json（related_characters）或形近字
@@ -321,7 +341,7 @@ export class WordsGame extends GameEngine {
     layer.innerHTML = this._wordCards
       .filter(c => !c.eaten)
       .map(c => `
-        <div class="wd-card ${c.isCorrect ? 'wd-card--correct' : 'wd-card--wrong'}"
+        <div class="wd-card wd-card--neutral"
              id="wd-card-${c.id}"
              style="left:${c.x}%;top:${c.y}%">
           ${c.word}
@@ -341,6 +361,11 @@ export class WordsGame extends GameEngine {
 
     const q = this._currentQuestion;
     if (!q) return;
+    // isAnswering 期間停止碰撞判斷，避免重複觸發 submitAnswer
+    if (this.isAnswering) {
+      requestAnimationFrame(ts => this._gameLoop(ts));
+      return;
+    }
 
     // 更新賽車位置
     const speed = CAR_SPEEDS[q.level] || CAR_SPEEDS.medium;
@@ -877,14 +902,20 @@ export class WordsGame extends GameEngine {
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
+    .wd-card--neutral {
+      background: rgba(52,73,94,0.92);
+      border-color: rgba(241,196,15,0.6);
+      color: #fff;
+    }
+    /* 保留備用（showCorrectAnswer 時不使用） */
     .wd-card--correct {
-      background: rgba(39,174,96,0.85);
-      border-color: #2ecc71;
+      background: rgba(52,73,94,0.92);
+      border-color: rgba(241,196,15,0.6);
       color: #fff;
     }
     .wd-card--wrong {
-      background: rgba(192,57,43,0.85);
-      border-color: #e74c3c;
+      background: rgba(52,73,94,0.92);
+      border-color: rgba(241,196,15,0.6);
       color: #fff;
     }
 
