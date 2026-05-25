@@ -42,23 +42,24 @@ const CAR_SPEEDS = {
 };
 
 // 詞語卡片在跑道上的下落速度（%/ms）
-// 卡片落下總時長（ms）：100% 高度 / 時長 = 每ms落多少%
+// 卡片落下總時長（ms）
 const CARD_FALL_DURATION = {
-  hard:       3800,
-  medium:     4800,
-  easy:       5800,
-  easy_plus:  6800,
+  hard:       2800,
+  medium:     3400,
+  easy:       4000,
+  easy_plus:  4600,
 };
 
 // 每題總卡片數（正確+錯誤合計）
 const TOTAL_CARDS = 10;
 // 相鄰卡片出現間隔（ms）
 // 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
+// SPAWN_INTERVAL ≈ CARD_FALL_DURATION × 65%（確保前一張落到 65% 後再出現下一張）
 const SPAWN_INTERVAL = {
-  hard:       2800,
-  medium:     3200,
-  easy:       3800,
-  easy_plus:  4400,
+  hard:       1900,
+  medium:     2300,
+  easy:       2700,
+  easy_plus:  3100,
 };
 
 // 第一張卡片出現前的準備時間（ms）
@@ -109,6 +110,7 @@ export class WordsGame extends GameEngine {
     this._currentQuestion = null;
     this._mode2Options = [];      // 模式二的4個選項
     this._mode2Correct = '';      // 模式二正確答案（生字）
+    this._usedWrongWords = new Set(); // 跨題追蹤已用過的干擾詞，避免重複
   }
 
   // ════════════════════════════════════════════
@@ -233,10 +235,12 @@ export class WordsGame extends GameEngine {
         fake = other2 && other2 !== other ? other + char + other2 : char + other;
       }
 
-      if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)) {
+      if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)
+          && !this._usedWrongWords.has(fake)) {
         result.push(fake);
         used.add(fake);
         usedOtherChars.add(other);
+        this._usedWrongWords.add(fake); // 跨題記錄
       }
     }
 
