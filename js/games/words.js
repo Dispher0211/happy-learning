@@ -42,7 +42,7 @@ const CAR_SPEEDS = {
 };
 
 // 詞語卡片在跑道上的下落速度（%/ms）
-// 卡片落下的 CSS animation 總時長（ms）
+// 卡片落下總時長（ms）：100% 高度 / 時長 = 每ms落多少%
 const CARD_FALL_DURATION = {
   hard:       3800,
   medium:     4800,
@@ -494,17 +494,15 @@ export class WordsGame extends GameEngine {
       const layer = document.getElementById('wd-cards-layer');
       if (!layer) { console.warn('[words] wd-cards-layer 找不到'); return; }
       if (layer) {
-        const dur = CARD_FALL_DURATION[q.level] || CARD_FALL_DURATION.medium;
         const div = document.createElement('div');
         div.className = 'wd-card wd-card--neutral wd-card--falling';
         div.id = `wd-card-${card.id}`;
         div.style.left = card.x + '%';
-        div.style.animationDuration = dur + 'ms';
+        div.style.top = card.y + '%';   // 初始位置，JS 每幀更新
         div.textContent = card.word;
         layer.appendChild(div);
-        // 記錄絕對開始時間（performance.now），供碰撞偵測計算目前 y
-        card.startTs = performance.now();
-        card.fallDur = dur;
+        // 記錄生成時間（用 relTs，與 gameLoop 一致）
+        card.startTs = relTs;
       }
     }
   }
@@ -557,15 +555,19 @@ export class WordsGame extends GameEngine {
     const relTs = timestamp - this._gameStartTs;
     this._trySpawnCard(relTs, q);
 
-    // ── 碰撞偵測（卡片位置由 CSS animation 控制，JS 從 startTs 計算 y）──
+    // ── 更新卡片位置並偵測碰撞（JS 控制 top）──
+    const fallSpeed = CARD_FALL_DURATION[q.level]
+      ? 100 / CARD_FALL_DURATION[q.level]   // %/ms，從總時長換算
+      : 100 / 4800;
     let cardsUpdated = false;
 
     for (const card of this._wordCards) {
       if (card.eaten) continue;
 
-      // 計算卡片目前 y（%）：依動畫進度線性估算（0% → 110%）
-      const elapsed = performance.now() - (card.startTs || performance.now());
-      card.y = (elapsed / card.fallDur) * 110;
+      // JS 每幀累加 y，更新 DOM top
+      card.y += fallSpeed * delta;
+      const el = document.getElementById(`wd-card-${card.id}`);
+      if (el) el.style.top = card.y + '%';
 
       // 碰撞偵測：卡片 Y 接近賽車（82~95%），且 X 與賽車同車道（±6%）
       if (card.y >= 82 && card.y <= 95 && Math.abs(card.x - this._carX) < 6) {
@@ -617,7 +619,7 @@ export class WordsGame extends GameEngine {
         }
       }
 
-      // 卡片落出底部（animation 完成）→ 標記已離開
+      // 卡片落出底部 → 標記已離開
       if (card.y >= 110) {
         card.eaten = true;
         cardsUpdated = true;
@@ -1269,18 +1271,14 @@ export class WordsGame extends GameEngine {
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    /* 卡片從跑道頂部落到底部（duration 由 JS 動態設定）*/
+    /* 卡片淡入動畫（位置由 JS 控制）*/
     .wd-card--falling {
-      animation-name: wd-card-fall;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
-      /* top 由 keyframe 控制，不在此設定 */
+      opacity: 0;
+      animation: wd-card-fadein 0.3s ease forwards;
     }
-    @keyframes wd-card-fall {
-      0%   { top: -8%;  opacity: 0; transform: translateX(-50%) scale(0.75); }
-      10%  { top: 5%;   opacity: 1; transform: translateX(-50%) scale(1); }
-      90%  { top: 92%;  opacity: 1; transform: translateX(-50%) scale(1); }
-      100% { top: 110%; opacity: 0; transform: translateX(-50%) scale(1); }
+    @keyframes wd-card-fadein {
+      from { opacity: 0; transform: translateX(-50%) scale(0.8); }
+      to   { opacity: 1; transform: translateX(-50%) scale(1); }
     }
     .wd-card--neutral {
       background: rgba(52,73,94,0.92);
