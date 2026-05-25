@@ -43,24 +43,25 @@ const CAR_SPEEDS = {
 
 // 詞語卡片在跑道上的下落速度（%/ms）
 const WORD_FALL_SPEEDS = {
-  hard:       0.012,
-  medium:     0.016,
-  easy:       0.022,
-  easy_plus:  0.028,
+  hard:       0.018,
+  medium:     0.022,
+  easy:       0.026,
+  easy_plus:  0.030,
 };
 
 // 每題總卡片數（正確+錯誤合計）
 const TOTAL_CARDS = 10;
 // 相鄰卡片出現間隔（ms）
+// 落完整個跑道約 100/speed ms，間隔設為約 45%，讓畫面保持 2~3 張同時流動
 const SPAWN_INTERVAL = {
-  hard:       3200,
-  medium:     3800,
-  easy:       4400,
-  easy_plus:  5000,
+  hard:       2000,
+  medium:     2400,
+  easy:       2800,
+  easy_plus:  3200,
 };
 
 // 第一張卡片出現前的準備時間（ms）
-const FIRST_CARD_DELAY = 1500;
+const FIRST_CARD_DELAY = 800;
 
 export class WordsGame extends GameEngine {
   constructor() {
@@ -479,7 +480,7 @@ export class WordsGame extends GameEngine {
         word: item.word,
         isCorrect: item.isCorrect,
         x: xPos,
-        y: 0,        // 從跑道頂部開始，搭配淡入動畫
+        y: -12,      // 從跑道上方外側開始落下（clip-path 允許顯示）
         eaten: false,
         lane: item.lane,
         entering: true, // 剛進入，播放滑入動畫
@@ -548,7 +549,7 @@ export class WordsGame extends GameEngine {
       card.y += fallSpeed * delta;
 
       // 進入動畫：移動超過 8% 後移除 entering（動畫已完成）
-      if (card.entering && card.y > 8) {
+      if (card.entering && card.y > 5) {
         card.entering = false;
         const el = document.getElementById(`wd-card-${card.id}`);
         if (el) el.classList.remove('wd-card--entering');
@@ -1197,7 +1198,9 @@ export class WordsGame extends GameEngine {
       background: linear-gradient(180deg, #0d1b2a 0%, #1b2838 60%, #2c3e50 100%);
       border-radius: 12px;
       border: 2px solid rgba(241,196,15,0.3);
-      overflow: hidden;
+      /* overflow: visible 讓卡片可從頂部外進入；用 clip-path 遮左右但不遮頂部 */
+      overflow: visible;
+      clip-path: inset(-15% 0 0 0 round 12px);
       margin: 6px 0;
     }
 
@@ -1261,13 +1264,13 @@ export class WordsGame extends GameEngine {
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    /* 卡片從頂部滑入動畫 */
+    /* 卡片從頂部滑入動畫（只做 opacity，位置由 JS 的 y 座標控制）*/
     .wd-card--entering {
-      animation: wd-card-slidein 0.5s ease forwards;
+      animation: wd-card-fadein 0.4s ease forwards;
     }
-    @keyframes wd-card-slidein {
-      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @keyframes wd-card-fadein {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
     .wd-card--neutral {
       background: rgba(52,73,94,0.92);
