@@ -480,7 +480,7 @@ export class WordsGame extends GameEngine {
         word: item.word,
         isCorrect: item.isCorrect,
         x: xPos,
-        y: -12,      // 從跑道上方外側開始落下（clip-path 允許顯示）
+        y: 2,        // 從跑道頂部可見處開始落下
         eaten: false,
         lane: item.lane,
         entering: true, // 剛進入，播放滑入動畫
@@ -549,7 +549,7 @@ export class WordsGame extends GameEngine {
       card.y += fallSpeed * delta;
 
       // 進入動畫：移動超過 8% 後移除 entering（動畫已完成）
-      if (card.entering && card.y > 5) {
+      if (card.entering && card.y > 10) {
         card.entering = false;
         const el = document.getElementById(`wd-card-${card.id}`);
         if (el) el.classList.remove('wd-card--entering');
@@ -1198,9 +1198,7 @@ export class WordsGame extends GameEngine {
       background: linear-gradient(180deg, #0d1b2a 0%, #1b2838 60%, #2c3e50 100%);
       border-radius: 12px;
       border: 2px solid rgba(241,196,15,0.3);
-      /* overflow: visible 讓卡片可從頂部外進入；用 clip-path 遮左右但不遮頂部 */
-      overflow: visible;
-      clip-path: inset(-15% 0 0 0 round 12px);
+      overflow: hidden;
       margin: 6px 0;
     }
 
@@ -1264,13 +1262,14 @@ export class WordsGame extends GameEngine {
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    /* 卡片從頂部滑入動畫（只做 opacity，位置由 JS 的 y 座標控制）*/
+    /* 卡片從頂部進入動畫：從小變大＋淡入，視覺清楚 */
     .wd-card--entering {
-      animation: wd-card-fadein 0.4s ease forwards;
+      animation: wd-card-dropin 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
-    @keyframes wd-card-fadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+    @keyframes wd-card-dropin {
+      0%   { opacity: 0; transform: translateX(-50%) scaleY(0.1) scaleX(0.6); }
+      60%  { opacity: 1; transform: translateX(-50%) scaleY(1.1) scaleX(1.0); }
+      100% { opacity: 1; transform: translateX(-50%) scale(1); }
     }
     .wd-card--neutral {
       background: rgba(52,73,94,0.92);
