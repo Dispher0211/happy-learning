@@ -475,7 +475,7 @@ export class WordsGame extends GameEngine {
       const item = this._cardQueue[this._spawnIndex++];
       this._lastSpawnTs = timestamp;
       const xPos = LANES[item.lane];
-      this._wordCards.push({
+      const card = {
         id: ++this._cardIdCounter,
         word: item.word,
         isCorrect: item.isCorrect,
@@ -483,8 +483,21 @@ export class WordsGame extends GameEngine {
         y: 2,        // 從跑道頂部可見處開始落下
         eaten: false,
         lane: item.lane,
-        entering: true, // 剛進入，播放滑入動畫
-      });
+        entering: true,
+      };
+      this._wordCards.push(card);
+
+      // 立即插入 DOM（不等批次 _renderCards），確保第一幀 y=2 就渲染
+      const layer = document.getElementById('wd-cards-layer');
+      if (layer) {
+        const div = document.createElement('div');
+        div.className = 'wd-card wd-card--neutral wd-card--entering';
+        div.id = `wd-card-${card.id}`;
+        div.style.left = card.x + '%';
+        div.style.top  = card.y + '%';
+        div.textContent = card.word;
+        layer.appendChild(div);
+      }
     }
   }
 
