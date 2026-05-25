@@ -99,29 +99,37 @@ export class WordsGame extends GameEngine {
       if (!charData) continue;
 
       // 取得詞語：
-      //   優先順序：① my_words（家長自訂）
-      //             ② definitions[].ex[].w（字義解釋例詞，最貼近課程）
-      //             ③ pronunciations[0].words（全詞語備援）
-      //             ④ char+'字' 最終備援
+      //   優先順序：① my_words（家長自訂詞語，含當字的）
+      //             ② definitions[].ex[].w 中的 2字詞語（最適合小學生）
+      //             ③ definitions[].ex[].w 中的 3字以上詞語（備援）
+      //             ④ pronunciations[].words 中的詞語（備援）
+      //             ⑤ char+'字' 最終備援
       let words = myWords.filter(w => w.includes(char));
       if (words.length === 0) {
-        // 從每個字義解釋的例詞（ex）蒐集詞語
-        const exWords = [];
+        // 從所有讀音的字義例詞蒐集
+        const exAll = [];
         const prons = charData.pronunciations || [];
         for (const pron of prons) {
           for (const def of (pron.definitions || [])) {
             for (const ex of (def.ex || [])) {
-              if (ex.w && ex.w.includes(char) && !exWords.includes(ex.w)) {
-                exWords.push(ex.w);
+              if (ex.w && ex.w.includes(char) && !exAll.includes(ex.w)) {
+                exAll.push(ex.w);
               }
             }
           }
         }
-        words = exWords.slice(0, 4);
+        // 優先2字詞（最貼近小學生字簿）
+        const twoChar = exAll.filter(w => w.length === 2);
+        const longer  = exAll.filter(w => w.length >= 3 && w.length <= 4);
+        words = twoChar.length > 0
+          ? twoChar.slice(0, 4)
+          : longer.slice(0, 4);
       }
       if (words.length === 0) {
-        // 備援：pronunciations[0].words
-        words = (charData.pronunciations?.[0]?.words || []).slice(0, 4);
+        // 備援：所有讀音的 words 陣列，同樣優先2字詞
+        const allW = (charData.pronunciations || []).flatMap(p => p.words || []).filter(w => w.includes(char));
+        const tw2 = allW.filter(w => w.length === 2);
+        words = (tw2.length > 0 ? tw2 : allW).slice(0, 4);
       }
       if (words.length === 0) {
         words = [char + '字']; // 最終備援
