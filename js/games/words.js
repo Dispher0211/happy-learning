@@ -199,28 +199,25 @@ export class WordsGame extends GameEngine {
     const result = [];
     const used = new Set(correctWords);
 
-    // 從 allChars 取所有字，隨機拼「目標字＋隨機字」或「隨機字＋目標字」
+    // 從 allChars 取所有字，每個字只貢獻一個干擾詞（確保每個干擾詞用字不重複）
     const charPool = allChars
       .map(c => c['字'])
       .filter(c => c && c !== char)
       .sort(() => Math.random() - 0.5);
 
+    const usedOtherChars = new Set(); // 記錄已用的隨機字，確保每個干擾詞字組唯一
+
     for (const other of charPool) {
       if (result.length >= 8) break;
-      // 交替：前綴 or 後綴（不限字數，2-3字皆可）
-      const candidates = [char + other, other + char];
-      // 也嘗試3字組合（目標字＋兩個隨機字）
-      const other2 = charPool[Math.floor(Math.random() * charPool.length)];
-      if (other2 && other2 !== other) {
-        candidates.push(char + other + other2, other + char + other2, other + other2 + char);
-      }
-      for (const fake of candidates) {
-        if (result.length >= 8) break;
-        // 必須含目標字、不是真實詞語、不重複
-        if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)) {
-          result.push(fake);
-          used.add(fake);
-        }
+      if (usedOtherChars.has(other)) continue;
+
+      // 每個 other 只嘗試一種排列（交替前綴/後綴，由 result.length 奇偶決定）
+      const fake = result.length % 2 === 0 ? char + other : other + char;
+
+      if (!realWordSet.has(fake) && !used.has(fake) && fake.includes(char)) {
+        result.push(fake);
+        used.add(fake);
+        usedOtherChars.add(other);
       }
     }
 
@@ -383,13 +380,21 @@ export class WordsGame extends GameEngine {
     this._sfxCar.loop = true;
     this._sfxCar.volume = 0.55;
 
-    // 正確音效
+    // 正確音效（賽車模式）
     this._sfxCorrect = new Audio('audio/effects/correctcar.mp3');
     this._sfxCorrect.volume = 0.85;
 
-    // 錯誤音效
+    // 錯誤音效（賽車模式）
     this._sfxError = new Audio('audio/effects/errorcar.mp3');
     this._sfxError.volume = 0.85;
+
+    // 模式二答對音效
+    this._sfxCorrect2 = new Audio('audio/effects/correct.ogg');
+    this._sfxCorrect2.volume = 0.85;
+
+    // 模式二答錯音效
+    this._sfxWrong2 = new Audio('audio/effects/wrong.ogg');
+    this._sfxWrong2.volume = 0.85;
   }
 
   _pauseCarSfx() {
@@ -403,7 +408,7 @@ export class WordsGame extends GameEngine {
   }
 
   _stopAllSfx() {
-    [this._sfxCar, this._sfxCorrect, this._sfxError].forEach(sfx => {
+    [this._sfxCar, this._sfxCorrect, this._sfxError, this._sfxCorrect2, this._sfxWrong2].forEach(sfx => {
       if (!sfx) return;
       sfx.pause();
       sfx.currentTime = 0;
@@ -516,8 +521,9 @@ export class WordsGame extends GameEngine {
       if (card.eaten) continue;
       card.y += fallSpeed * delta;
 
-      // 碰撞偵測：卡片 Y 接近賽車底部（84~96%），且 X 與賽車同車道（±12%）
-      if (card.y >= 84 && card.y <= 97 && Math.abs(card.x - this._carX) < 12) {
+      // 碰撞偵測：卡片 Y 接近賽車（82~95%），且 X 與賽車同車道（±6%）
+      // ±6% 確保兩條車道（28% 和 72%，間距 44%）不會互相誤判
+      if (card.y >= 82 && card.y <= 95 && Math.abs(card.x - this._carX) < 6) {
         card.eaten = true;
         cardsUpdated = true;
 
@@ -820,12 +826,12 @@ export class WordsGame extends GameEngine {
       feedback.innerHTML = `<div class="wd-correct-text">🏁 答對了！${extra}</div>`;
       feedback.classList.add('wd-feedback--show');
     }
-    // 模式二：播放 correctcar 音效
+    // 模式二：播放 correct.ogg 音效
     if (this._mode === 2) {
-      if (!this._sfxCorrect) this._initAudio();
-      if (this._sfxCorrect) {
-        this._sfxCorrect.currentTime = 0;
-        this._sfxCorrect.play().catch(() => {});
+      if (!this._sfxCorrect2) this._initAudio();
+      if (this._sfxCorrect2) {
+        this._sfxCorrect2.currentTime = 0;
+        this._sfxCorrect2.play().catch(() => {});
       }
     }
     await this._delay(900);
@@ -836,6 +842,14 @@ export class WordsGame extends GameEngine {
   // playWrongAnimation
   // ════════════════════════════════════════════
   async playWrongAnimation() {
+    // 模式二：播放 wrong.ogg 音效
+    if (this._mode === 2) {
+      if (!this._sfxWrong2) this._initAudio();
+      if (this._sfxWrong2) {
+        this._sfxWrong2.currentTime = 0;
+        this._sfxWrong2.play().catch(() => {});
+      }
+    }
     const carEl = document.getElementById('wd-car');
     if (carEl) {
       carEl.classList.add('wd-car--crash');
