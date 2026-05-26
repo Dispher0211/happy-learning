@@ -796,14 +796,21 @@ export class ListenGame extends GameEngine {
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
     .ls-fish-label {
-      font-size: 1.05rem; font-weight: bold;
+      font-weight: bold;
       background: rgba(0,20,50,0.75);
       color: #e0f7ff;
-      padding: 2px 8px; border-radius: 12px;
+      padding: 4px 10px; border-radius: 12px;
       border: 1px solid rgba(0,229,255,0.5);
       white-space: nowrap;
       backdrop-filter: blur(2px);
       display: inline-flex; align-items: center;
+    }
+
+    /* 漢字選項：大字不加注音 */
+    .ls-fish-label-text {
+      font-size: 1.8rem;
+      line-height: 1;
+      letter-spacing: 0.05em;
     }
 
     /* 直式注音 */
@@ -892,7 +899,7 @@ export class ListenGame extends GameEngine {
       .ls-aquarium  { height: 260px; }
       .ls-rod-img   { width: 120px; }
       .ls-fish-emoji { font-size: 1.6rem; }
-      .ls-fish-label { font-size: .9rem; }
+      .ls-fish-label-text { font-size: 1.5rem; }
     }
     @media (min-width: 600px) {
       .ls-aquarium  { height: 360px; }
