@@ -58,6 +58,7 @@ export class ListenGame extends GameEngine {
     this._correctFishIndex = -1; // 正確魚的索引
     this._currentAudioZhuyin = '';// 當前題目的注音（供播放用）
     this._currentWord = '';      // 模式二：詞語
+    this._waterAudio = null;     // 水聲循環音效實例
   }
 
   // ════════════════════════════════════════════
@@ -110,27 +111,17 @@ export class ListenGame extends GameEngine {
     const used = new Set([char]);
 
     if (mode === 1) {
-      // 模式一：優先找同音字，補充形近/隨機
+      // 模式一：干擾字必須與正確答案「發音不同」（避免同音字混入）
       const correctPronM1 = charData.pronunciations?.[0]?.zhuyin || '';
-      const sameSound = allChars.filter(c =>
-        (c['字'] || c.char) !== char &&
-        (c.pronunciations?.[0]?.zhuyin || '') === correctPronM1 &&
-        correctPronM1 !== ''
-      );
-      for (const c of sameSound) {
-        if (result.length >= 3) break;
-        if (!used.has(c['字'] || c.char)) {
-          result.push(c['字'] || c.char);
-          used.add(c['字'] || c.char);
-        }
-      }
-      // 補充隨機字
+      // 排除正確字 + 排除同音字
       const shuffled = [...allChars].sort(() => Math.random() - 0.5);
       for (const c of shuffled) {
         if (result.length >= 3) break;
-        if (!used.has(c['字'] || c.char)) {
-          result.push(c['字'] || c.char);
-          used.add(c['字'] || c.char);
+        const cChar = c['字'] || c.char;
+        const cPron = c.pronunciations?.[0]?.zhuyin || '';
+        if (!used.has(cChar) && cPron !== correctPronM1) {
+          result.push(cChar);
+          used.add(cChar);
         }
       }
     } else {
@@ -206,8 +197,8 @@ export class ListenGame extends GameEngine {
     this._updateHintButton();
     this._renderProgressBar();
 
-    // 遊戲開始播放水聲音效
-    this._playMp3('water');
+    // 遊戲開始循環播放水聲（直到點魚或遊戲結束）
+    this._startWaterLoop();
 
     // 自動播放發音（soundOn=true 時）
     this._playCurrentAudio(q);
@@ -450,18 +441,23 @@ export class ListenGame extends GameEngine {
 
       const idx = i;
       document.getElementById(`ls-fish-${i}`)?.addEventListener('click', () => {
-        // 播放釣魚音效
+        if (this.isAnswering) return;
+        // 停止水聲，播放釣魚音效
+        this._stopWaterLoop();
         this._playMp3('fishing');
         // 魚放大動畫
         const clickedFish = document.getElementById(`ls-fish-${idx}`);
         if (clickedFish) {
           clickedFish.classList.add('ls-fish--zoom');
+          setTimeout(() => this._playMp3('waterup'), 200);
+          // 等動畫完成後再提交答案
           setTimeout(() => {
-            this._playMp3('waterup');
-          }, 200);
-          setTimeout(() => clickedFish.classList.remove('ls-fish--zoom'), 600);
+            clickedFish.classList.remove('ls-fish--zoom');
+            window.__lsSelectFish(idx);
+          }, 600);
+        } else {
+          window.__lsSelectFish(idx);
         }
-        window.__lsSelectFish(idx);
       });
       document.getElementById(`ls-fish-${i}`)?.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') window.__lsSelectFish(idx);
@@ -515,6 +511,7 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   async playCorrectAnimation() {
     this._stopFishAnimation();
+    this._stopWaterLoop();
 
     // 播放答對音效
     AudioManager.playEffect('correct').catch(() => {});
@@ -539,6 +536,8 @@ export class ListenGame extends GameEngine {
   // playWrongAnimation
   // ════════════════════════════════════════════
   async playWrongAnimation() {
+    this._stopWaterLoop();
+
     // 播放答錯音效
     AudioManager.playEffect('wrong').catch(() => {});
 
@@ -661,6 +660,7 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   destroy() {
     this._stopFishAnimation();
+    this._stopWaterLoop();
     delete window.__lsSelectFish;
     delete window.__lsPlay;
     delete window.__lsHint;
@@ -668,6 +668,30 @@ export class ListenGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
+  // _startWaterLoop — 循環播放水聲
+  // ════════════════════════════════════════════
+  _startWaterLoop() {
+    this._stopWaterLoop(); // 確保不重複
+    if (AppState.settings?.soundOn === false) return;
+    const prefix = location.pathname.startsWith('/happy-learning')
+      ? '/happy-learning' : '';
+    const audio = new Audio(`${prefix}/audio/effects/water.mp3`);
+    audio.loop = true;
+    audio.volume = 0.4;
+    audio.play().catch(() => {});
+    this._waterAudio = audio;
+  }
+
+  // _stopWaterLoop — 停止水聲
+  // ════════════════════════════════════════════
+  _stopWaterLoop() {
+    if (this._waterAudio) {
+      this._waterAudio.pause();
+      this._waterAudio.currentTime = 0;
+      this._waterAudio = null;
+    }
+  }
+
   // _delay — Promise 延遲
   // ════════════════════════════════════════════
   _delay(ms) {
