@@ -14,7 +14,7 @@ import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
-const FISH_SPEEDS = { hard: 5000, medium: 3500, easy: 2500, easy_plus: 1800 };
+const FISH_SPEEDS = { hard: 5000, medium: 3500, easy: 3000, easy_plus: 2500 };
 const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9];
 const FISH_EMOJIS = ['🐠','🐟','🐡','🦈'];
 const OPTION_COUNT = 4;
@@ -244,8 +244,71 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   _renderZhuyinLabel(text) {
     return /[ㄅ-ㄩˊˇˋ˙]/.test(text)
-      ? `<span class="ls-fish-zhuyin" lang="zh-TW">${text}</span>`
-      : `<span class="ls-fish-label-text">${text}</span>`;
+      ? `<span class="ls-fish-pv2">${this._renderZhuyinPv2(text)}</span>`
+      : `<span class="ls-fish-label-text">${this._escapeHtml(text)}</span>`;
+  }
+
+  // pv2 方格注音系統（從 CardPage._renderZhuyinVerticalInline 移植）
+  _renderZhuyinPv2(pron) {
+    if (!pron) return '';
+    const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ');
+    const MEDIALS  = new Set('ㄧㄨㄩ');
+    const TONES    = new Set(['ˊ','ˇ','ˋ','˙']);
+
+    let src = pron, tone = '';
+    if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1); }
+    else if (src.length > 0 && TONES.has(src[src.length - 1])) {
+      tone = src[src.length - 1]; src = src.slice(0, -1);
+    }
+
+    let initial = '', medial = '', final = '';
+    for (const c of src) {
+      if (INITIALS.has(c))     initial = c;
+      else if (MEDIALS.has(c)) medial  = c;
+      else                     final  += c;
+    }
+
+    const count   = [initial, medial, final].filter(Boolean).length;
+    const hasDot  = tone === '˙';
+    const dotCls  = hasDot ? ' pv2--dot' : '';
+    const dotHtml = hasDot ? `<span class="pv2-dot">${this._escapeHtml(tone)}</span>` : '';
+    const toneHtml = (tone && tone !== '˙')
+      ? `<span class="pv2-tone">${this._escapeHtml(tone)}</span>`
+      : `<span class="pv2-tone pv2-empty"></span>`;
+    const toneCol = `<span class="pv2-tone-col">` +
+      `<span class="pv2-empty pv2-tone-spacer"></span>` +
+      toneHtml +
+      `<span class="pv2-empty pv2-tone-spacer"></span>` +
+      `</span>`;
+
+    if (count === 1) {
+      const sym = initial || medial || final;
+      return `<span class="pv2 pv2-a${dotCls}">${dotHtml}` +
+        `<span class="pv2-col">` +
+        `<span class="pv2-r1 pv2-empty"></span>` +
+        `<span class="pv2-r2">${this._escapeHtml(sym)}</span>` +
+        `<span class="pv2-r3 pv2-empty"></span>` +
+        `</span>${toneCol}</span>`;
+    }
+    if (count === 2) {
+      const slots = [initial, medial, final].filter(Boolean);
+      return `<span class="pv2 pv2-b${dotCls}">${dotHtml}` +
+        `<span class="pv2-col">` +
+        `<span class="pv2-r1">${this._escapeHtml(slots[0])}</span>` +
+        `<span class="pv2-r2 pv2-empty"></span>` +
+        `<span class="pv2-r3">${this._escapeHtml(slots[1])}</span>` +
+        `</span>${toneCol}</span>`;
+    }
+    return `<span class="pv2 pv2-c${dotCls}">${dotHtml}` +
+      `<span class="pv2-col">` +
+      `<span class="pv2-r1">${this._escapeHtml(initial)}</span>` +
+      `<span class="pv2-r2">${this._escapeHtml(medial)}</span>` +
+      `<span class="pv2-r3">${this._escapeHtml(final)}</span>` +
+      `</span>${toneCol}</span>`;
+  }
+
+  _escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   _buildFishHTML(options) {
@@ -814,16 +877,52 @@ export class ListenGame extends GameEngine {
     }
 
     /* 直式注音 */
-    .ls-fish-zhuyin {
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-      font-family: 'BpmfIVS', sans-serif;
-      font-size: 1rem; font-weight: bold;
-      color: #e0f7ff;
-      letter-spacing: .05em;
-      min-height: 3em;
-      display: flex; align-items: center; justify-content: center;
+    /* pv2 注音包裝容器 */
+    .ls-fish-pv2 {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    /* pv2 方格注音系統（移植自 card.css） */
+    .ls-fish-pv2 .pv2 {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: flex-end;
+      vertical-align: bottom;
+      white-space: nowrap;
+      line-height: 1;
+      position: relative;
+      color: #e0f7ff;
+    }
+    .ls-fish-pv2 .pv2--dot { padding-top: 0.15em; }
+    .ls-fish-pv2 .pv2-col {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      height: 2.4rem;
+    }
+    .ls-fish-pv2 .pv2-tone-col {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 2.4rem;
+    }
+    .ls-fish-pv2 .pv2-r1, .ls-fish-pv2 .pv2-r2, .ls-fish-pv2 .pv2-r3,
+    .ls-fish-pv2 .pv2-tone, .ls-fish-pv2 .pv2-tone-spacer {
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.78rem; font-weight: 700; line-height: 1;
+      min-width: 0.85em; color: #e0f7ff;
+    }
+    .ls-fish-pv2 .pv2-tone-spacer { flex: 1; visibility: hidden; }
+    .ls-fish-pv2 .pv2-dot {
+      position: absolute; top: 0; left: 0; right: 0;
+      text-align: center;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.78rem; font-weight: 900; line-height: 1;
+      color: #e0f7ff; pointer-events: none;
+    }
+    .ls-fish-pv2 .pv2-b .pv2-r2 { visibility: hidden; }
+    .ls-fish-pv2 .pv2-empty { visibility: hidden; }
 
     /* 魚被鉤中 */
     @keyframes ls-fish-hooked {
