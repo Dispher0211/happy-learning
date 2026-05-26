@@ -176,7 +176,7 @@ export class ListenGame extends GameEngine {
   // renderQuestion
   // ════════════════════════════════════════════
   renderQuestion() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     this._mode = q.mode;
@@ -403,7 +403,7 @@ export class ListenGame extends GameEngine {
   // _bindEvents — 綁定魚的點擊事件
   // ════════════════════════════════════════════
   _bindEvents() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
 
     window.__lsSelectFish = (index) => {
       if (this.isAnswering) return;
@@ -441,7 +441,7 @@ export class ListenGame extends GameEngine {
   // judgeAnswer — 判斷答案是否正確
   // ════════════════════════════════════════════
   async judgeAnswer(selected) {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) throw new Error('judgeAnswer: 無當前題目');
 
     const correctAnswer = q.mode === 1 ? q.char : q.pronunciation;
@@ -469,7 +469,7 @@ export class ListenGame extends GameEngine {
       correctFish?.classList.add('ls-fish--glow');
 
       // 再播一次音效（soundOn=true 時）
-      const q = this.getCurrentQuestion();
+      const q = this.currentQuestion;
       if (AppState.settings?.soundOn !== false && q) {
         await this._playCurrentAudio(q);
       }
@@ -518,7 +518,7 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
     this._stopFishAnimation();
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     // 正確魚持續發光
@@ -543,7 +543,7 @@ export class ListenGame extends GameEngine {
   //   提示二：「聲母是ㄉ」或「無聲母」
   // ════════════════════════════════════════════
   getHint() {
-    const q = this.getCurrentQuestion();
+    const q = this.currentQuestion;
     if (!q) return;
 
     const hintArea = document.getElementById('ls-hint-area');
