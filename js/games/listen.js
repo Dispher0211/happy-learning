@@ -29,8 +29,8 @@ import { AudioManager } from '../audio.js';
 const FISH_SPEEDS = {
   hard:       4500,
   medium:     3500,
-  easy:       3000,
-  easy_plus:  2500,
+  easy:       2500,
+  easy_plus:  2000,
 };
 
 // 固定4條魚，各有不同基礎速度倍率（增加趣味性）
@@ -207,7 +207,7 @@ export class ListenGame extends GameEngine {
     this._renderProgressBar();
 
     // 遊戲開始播放水聲音效
-    AudioManager.playEffect('water').catch(() => {});
+    this._playMp3('water');
 
     // 自動播放發音（soundOn=true 時）
     this._playCurrentAudio(q);
@@ -271,6 +271,11 @@ export class ListenGame extends GameEngine {
         <!-- 提示區 -->
         <div class="ls-hint-area" id="ls-hint-area"></div>
 
+        <!-- 釣竿裝飾 -->
+        <div class="ls-rod-area">
+          <img src="./images/fish_rod.png" class="ls-rod-img" alt="釣竿" />
+        </div>
+
         <!-- 提示按鈕 -->
         <div class="ls-controls">
           <button class="ls-btn ls-btn--hint" id="ls-hint-btn"
@@ -281,11 +286,6 @@ export class ListenGame extends GameEngine {
 
         <!-- 回饋遮罩 -->
         <div class="ls-feedback" id="ls-feedback"></div>
-
-        <!-- 釣竿裝飾 -->
-        <div class="ls-rod-area">
-          <img src="./images/fish_rod.png" class="ls-rod-img" alt="釣竿" />
-        </div>
       </div>
     `;
   }
@@ -438,13 +438,13 @@ export class ListenGame extends GameEngine {
       const idx = i;
       document.getElementById(`ls-fish-${i}`)?.addEventListener('click', () => {
         // 播放釣魚音效
-        AudioManager.playEffect('fishing').catch(() => {});
+        this._playMp3('fishing');
         // 魚放大動畫
         const clickedFish = document.getElementById(`ls-fish-${idx}`);
         if (clickedFish) {
           clickedFish.classList.add('ls-fish--zoom');
           setTimeout(() => {
-            AudioManager.playEffect('waterup').catch(() => {});
+            this._playMp3('waterup');
           }, 200);
           setTimeout(() => clickedFish.classList.remove('ls-fish--zoom'), 600);
         }
@@ -659,6 +659,16 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   _delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // _playMp3 — 播放 mp3 音效（不走 AudioManager 的 ogg 路徑）
+  // ════════════════════════════════════════════
+  _playMp3(name) {
+    if (AppState.settings?.soundOn === false) return;
+    const prefix = location.pathname.startsWith('/happy-learning')
+      ? '/happy-learning' : '';
+    const audio = new Audio(`${prefix}/audio/effects/${name}.mp3`);
+    audio.play().catch(() => {});
   }
 }
 
