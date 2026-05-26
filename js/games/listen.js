@@ -27,10 +27,10 @@ import { AudioManager } from '../audio.js';
 // hard 最慢（魚游慢，難以點選），easy_plus 最快
 // ─────────────────────────────────────────────
 const FISH_SPEEDS = {
-  hard:       4500,
+  hard:       4000,
   medium:     3500,
-  easy:       2500,
-  easy_plus:  2000,
+  easy:       3000,
+  easy_plus:  2500,
 };
 
 // 固定4條魚，各有不同基礎速度倍率（增加趣味性）
@@ -291,6 +291,18 @@ export class ListenGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
+  // _renderZhuyinLabel — 注音直式 pv2 格式
+  // ════════════════════════════════════════════
+  _renderZhuyinLabel(text) {
+    // 判斷是否為注音字串（含注音符號）
+    const isZhuyin = /[ㄅ-ㄩˊˇˋ˙]/.test(text);
+    if (!isZhuyin) return `<span class="ls-fish-label-text">${text}</span>`;
+
+    // 直式注音：用 pv2 格式（vertical-rl）
+    return `<span class="ls-fish-zhuyin" lang="zh-TW">${text}</span>`;
+  }
+
+  // ════════════════════════════════════════════
   // _buildFishHTML — 組建4條魚的 HTML
   // ════════════════════════════════════════════
   _buildFishHTML(options) {
@@ -299,6 +311,7 @@ export class ListenGame extends GameEngine {
     const depths = [15, 35, 55, 75]; // top % in aquarium
 
     for (let i = 0; i < OPTION_COUNT; i++) {
+      const labelHTML = this._renderZhuyinLabel(options[i]);
       html += `
         <div class="ls-fish-row" style="top: ${depths[i]}%;">
           <div class="ls-fish" id="ls-fish-${i}"
@@ -307,7 +320,7 @@ export class ListenGame extends GameEngine {
                role="button" tabindex="0"
                aria-label="選項 ${options[i]}">
             <span class="ls-fish-emoji">${FISH_EMOJIS[i]}</span>
-            <span class="ls-fish-label" id="ls-fish-label-${i}">${options[i]}</span>
+            <span class="ls-fish-label" id="ls-fish-label-${i}">${labelHTML}</span>
           </div>
         </div>
       `;
@@ -857,6 +870,24 @@ export class ListenGame extends GameEngine {
       white-space: nowrap;
       backdrop-filter: blur(2px);
       transition: background 0.2s, box-shadow 0.2s;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* 直式注音 pv2 格式 */
+    .ls-fish-zhuyin {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-family: 'BpmfIVS', sans-serif;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #e0f7ff;
+      letter-spacing: 0.05em;
+      line-height: 1.2;
+      min-height: 3em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .ls-fish:hover .ls-fish-label,
