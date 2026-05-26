@@ -27,10 +27,10 @@ import { AudioManager } from '../audio.js';
 // hard 最慢（魚游慢，難以點選），easy_plus 最快
 // ─────────────────────────────────────────────
 const FISH_SPEEDS = {
-  hard:       4000,
-  medium:     3000,
-  easy:       2000,
-  easy_plus:  1500,
+  hard:       4500,
+  medium:     3500,
+  easy:       3000,
+  easy_plus:  2500,
 };
 
 // 固定4條魚，各有不同基礎速度倍率（增加趣味性）
@@ -206,6 +206,9 @@ export class ListenGame extends GameEngine {
     this._updateHintButton();
     this._renderProgressBar();
 
+    // 遊戲開始播放水聲音效
+    AudioManager.playEffect('water').catch(() => {});
+
     // 自動播放發音（soundOn=true 時）
     this._playCurrentAudio(q);
   }
@@ -278,6 +281,11 @@ export class ListenGame extends GameEngine {
 
         <!-- 回饋遮罩 -->
         <div class="ls-feedback" id="ls-feedback"></div>
+
+        <!-- 釣竿裝飾 -->
+        <div class="ls-rod-area">
+          <img src="./images/fish_rod.png" class="ls-rod-img" alt="釣竿" />
+        </div>
       </div>
     `;
   }
@@ -429,6 +437,17 @@ export class ListenGame extends GameEngine {
 
       const idx = i;
       document.getElementById(`ls-fish-${i}`)?.addEventListener('click', () => {
+        // 播放釣魚音效
+        AudioManager.playEffect('fishing').catch(() => {});
+        // 魚放大動畫
+        const clickedFish = document.getElementById(`ls-fish-${idx}`);
+        if (clickedFish) {
+          clickedFish.classList.add('ls-fish--zoom');
+          setTimeout(() => {
+            AudioManager.playEffect('waterup').catch(() => {});
+          }, 200);
+          setTimeout(() => clickedFish.classList.remove('ls-fish--zoom'), 600);
+        }
         window.__lsSelectFish(idx);
       });
       document.getElementById(`ls-fish-${i}`)?.addEventListener('keydown', e => {
@@ -484,6 +503,9 @@ export class ListenGame extends GameEngine {
   async playCorrectAnimation() {
     this._stopFishAnimation();
 
+    // 播放答對音效
+    AudioManager.playEffect('correct').catch(() => {});
+
     const correctFish = document.getElementById(`ls-fish-${this._correctFishIndex}`);
     if (correctFish) {
       correctFish.classList.add('ls-fish--jump');
@@ -504,6 +526,9 @@ export class ListenGame extends GameEngine {
   // playWrongAnimation
   // ════════════════════════════════════════════
   async playWrongAnimation() {
+    // 播放答錯音效
+    AudioManager.playEffect('wrong').catch(() => {});
+
     const feedback = document.getElementById('ls-feedback');
     if (feedback) {
       feedback.innerHTML = '<div class="ls-wrong-text">❌ 答錯了</div>';
@@ -750,7 +775,7 @@ export class ListenGame extends GameEngine {
     .ls-aquarium {
       position: relative;
       width: 95%;
-      height: 280px;
+      height: 360px;
       margin: 8px 0;
       background: linear-gradient(180deg,
         rgba(0,119,182,0.5) 0%,
@@ -937,17 +962,45 @@ export class ListenGame extends GameEngine {
     .ls-correct-text { color: #ffd700; }
     .ls-wrong-text   { color: #ff6b6b; }
 
+    /* ── 釣竿裝飾 ── */
+    .ls-rod-area {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: 8px;
+      margin-top: 4px;
+      pointer-events: none;
+    }
+    .ls-rod-img {
+      width: 140px;
+      height: auto;
+      opacity: 0.9;
+      filter: drop-shadow(0 2px 8px rgba(0,150,255,0.4));
+    }
+
+    /* ── 魚放大動畫 ── */
+    @keyframes ls-fish-zoom {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.6); }
+      70%  { transform: scale(1.35); }
+      100% { transform: scale(1); }
+    }
+    .ls-fish--zoom {
+      animation: ls-fish-zoom 0.6s ease forwards;
+      z-index: 10;
+    }
+
     /* ── RWD ── */
     @media (max-width: 480px) {
-      .ls-aquarium { height: 220px; }
+      .ls-aquarium { height: 300px; }
       .ls-fish-emoji { font-size: 1.6rem; }
       .ls-fish-label { font-size: 0.95rem; }
       .ls-question-text { font-size: 0.92rem; }
+      .ls-rod-img { width: 100px; }
     }
     
       /* ── RWD 平板（≥600px）── */
       @media (min-width: 600px) {
-        .ls-aquarium      { height: 300px; }
+        .ls-aquarium      { height: 380px; }
         .ls-fish-emoji    { font-size: 2.2rem; }
         .ls-fish-label    { font-size: 1.15rem; }
         .ls-question-text { font-size: 1.15rem; }
