@@ -56,9 +56,24 @@ export class ListenGame extends GameEngine {
     if (!chars || chars.length === 0) throw new Error('listen: 題目字元為空');
 
     const allChars = JSONLoader.get('characters') || [];
-    const questions = [];
+    const target   = this.totalQuestions || 10;
 
-    for (const char of chars) {
+    // 將 chars 循環擴充至 target 題數
+    const expandedChars = [];
+    while (expandedChars.length < target) {
+      for (const c of chars) {
+        if (expandedChars.length >= target) break;
+        expandedChars.push(c);
+      }
+    }
+    // Fisher-Yates 打亂順序
+    for (let i = expandedChars.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [expandedChars[i], expandedChars[j]] = [expandedChars[j], expandedChars[i]];
+    }
+
+    const questions = [];
+    for (const char of expandedChars) {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
@@ -182,14 +197,6 @@ export class ListenGame extends GameEngine {
 
     return `
       <div class="ls-game" id="ls-game-root">
-        <div class="ls-header">
-          <div class="ls-question-text">${questionText}</div>
-          <div class="ls-badge ls-badge--${level}">${levelLabel}</div>
-        </div>
-
-        <div class="ls-progress-bar">
-          <div class="ls-progress-fill" id="ls-progress-fill"></div>
-        </div>
 
         <div class="ls-play-area">
           <button class="ls-play-btn ${!soundOn ? 'ls-play-btn--muted' : ''}"
@@ -203,9 +210,10 @@ export class ListenGame extends GameEngine {
         <!-- 釣魚場景 -->
         <div class="ls-scene" id="ls-scene">
 
-          <!-- 釣竿 + 魚線 + 鉤子 -->
+          <!-- 釣竿整體（跟著滑鼠移動） -->
           <div class="ls-rod-wrap" id="ls-rod-wrap">
             <img src="./images/fish_rod.png" class="ls-rod-img" alt="釣竿" />
+            <!-- 魚線從竿尖垂下 -->
             <div class="ls-line-wrap" id="ls-line-wrap">
               <div class="ls-line" id="ls-hook-line"></div>
               <div class="ls-hook" id="ls-hook">🪝</div>
@@ -363,11 +371,18 @@ export class ListenGame extends GameEngine {
       if (this._fishPositions[i] >= 82) {
         this._fishPositions[i] = 82;
         this._fishDirections[i] = -1;
-        fishEl.style.transform = 'scaleX(-1)';
+        // 只翻魚 emoji，字卡反向抵消保持正向
+        const emojiEl = fishEl.querySelector('.ls-fish-emoji');
+        const labelEl = fishEl.querySelector('.ls-fish-label');
+        if (emojiEl) emojiEl.style.transform = 'scaleX(-1)';
+        if (labelEl) labelEl.style.transform = 'scaleX(1)';
       } else if (this._fishPositions[i] <= 3) {
         this._fishPositions[i] = 3;
         this._fishDirections[i] = 1;
-        fishEl.style.transform = 'scaleX(1)';
+        const emojiEl = fishEl.querySelector('.ls-fish-emoji');
+        const labelEl = fishEl.querySelector('.ls-fish-label');
+        if (emojiEl) emojiEl.style.transform = 'scaleX(1)';
+        if (labelEl) labelEl.style.transform = 'scaleX(1)';
       }
       fishEl.style.left = this._fishPositions[i] + '%';
     }
@@ -384,15 +399,11 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   _castHook(xPercent) {
     if (this._hookActive || this.isAnswering) return;
-    this._hookActive = true;
-    this._hookY = 0;
-    this._hookX = xPercent;
+    this._hookActive    = true;
+    this._hookY         = 0;
+    this._hookX         = xPercent;
     this._hookTimestamp = null;
-
-    // 把線起點對準 X
-    const lineWrap = document.getElementById('ls-line-wrap');
-    if (lineWrap) lineWrap.style.left = xPercent + '%';
-
+    // 釣竿已在正確位置（由 _moveRod 控制），直接開始下鉤
     this._hookAnimId = requestAnimationFrame(ts => this._animateHook(ts));
   }
 
@@ -481,17 +492,43 @@ export class ListenGame extends GameEngine {
     window.__lsPlay  = () => this._playCurrentAudio(this.currentQuestion);
     window.__lsHint  = () => this.useHint();
 
-    // 點擊場景任意位置 → 投出鉤子
     if (scene) {
+      // 滑鼠移動 → 釣竿跟著移動
+      scene._lsMouseMove = (e) => {
+        if (this._hookActive) return;
+        const rect = scene.getBoundingClientRect();
+        const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
+        this._moveRod(xPct);
+      };
+
+      // 觸控移動（手機）
+      scene._lsTouchMove = (e) => {
+        if (this._hookActive) return;
+        const touch = e.touches[0];
+        const rect  = scene.getBoundingClientRect();
+        const xPct  = Math.max(5, Math.min(95, ((touch.clientX - rect.left) / rect.width) * 100));
+        this._moveRod(xPct);
+      };
+
+      // 點擊 → 從當前釣竿位置投鉤
       scene._lsClick = (e) => {
         if (this.isAnswering || this._hookActive) return;
-        const rect = scene.getBoundingClientRect();
-        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-        this._playMp3('water');  // 投線音效
-        this._castHook(xPct);
+        this._playMp3('water');
+        this._castHook(this._hookX);  // 從當前釣竿位置投出
       };
-      scene.addEventListener('click', scene._lsClick);
+
+      scene.addEventListener('mousemove', scene._lsMouseMove);
+      scene.addEventListener('touchmove', scene._lsTouchMove, { passive: true });
+      scene.addEventListener('click',     scene._lsClick);
     }
+  }
+
+  // _moveRod — 更新釣竿位置
+  // ════════════════════════════════════════════
+  _moveRod(xPct) {
+    this._hookX = xPct;
+    const rod = document.getElementById('ls-rod-wrap');
+    if (rod) rod.style.left = xPct + '%';
   }
 
   // ════════════════════════════════════════════
@@ -559,29 +596,21 @@ export class ListenGame extends GameEngine {
   }
 
   // ════════════════════════════════════════════
-  // onWrongAnswer（答錯兩次：正確魚發光+再播音）
-  // ════════════════════════════════════════════
-  async onWrongAnswer(selected) {
-    this._wrongCount++;
-    if (this._wrongCount >= 2) {
-      const correctFish = document.getElementById(`ls-fish-${this._correctFishIndex}`);
-      correctFish?.classList.add('ls-fish--glow');
-      if (AppState.settings?.soundOn !== false && this.currentQuestion) {
-        await this._playCurrentAudio(this.currentQuestion);
-      }
-    }
-    await super.onWrongAnswer ? super.onWrongAnswer(selected) : null;
-  }
-
-  // ════════════════════════════════════════════
-  // showCorrectAnswer
+  // showCorrectAnswer（答錯兩次：正確魚發光 + 再播音 + 顯示答案）
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
     this._stopFishAnimation();
     const q = this.currentQuestion;
     if (!q) return;
+
+    // 正確魚發光浮出
     document.getElementById(`ls-fish-${this._correctFishIndex}`)
       ?.classList.add('ls-fish--glow', 'ls-fish--reveal');
+
+    // 再播一次音效
+    if (AppState.settings?.soundOn !== false) {
+      await this._playCurrentAudio(q);
+    }
     const hintArea = document.getElementById('ls-hint-area');
     if (hintArea) {
       const correctAnswer = q.mode === 1 ? q.char : q.pronunciation;
@@ -602,12 +631,12 @@ export class ListenGame extends GameEngine {
     const hintArea = document.getElementById('ls-hint-area');
     if (!hintArea) return;
     const pron = q.pronunciation || '';
-    if (this.usedHints === 0) {
-      // 提示一：聲調
+    if (this.usedHints === 1) {
+      // 提示一：聲調（usedHints 在 GameEngine.useHint() 遞增後才呼叫此方法）
       const tone = pron.match(/[ˊˇˋ˙]$/)?.[0] || '（一聲）';
       const toneNames = { 'ˊ':'二聲', 'ˇ':'三聲', 'ˋ':'四聲', '˙':'輕聲', '（一聲）':'一聲' };
       hintArea.innerHTML = `<div class="ls-hint-text">💡 提示一：聲調是「${toneNames[tone] || tone}」</div>`;
-    } else if (this.usedHints === 1) {
+    } else if (this.usedHints === 2) {
       // 提示二：聲母
       const initial = pron.match(/^[ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ]/)?.[0];
       hintArea.innerHTML = initial
@@ -641,7 +670,9 @@ export class ListenGame extends GameEngine {
   // _getContainer
   // ════════════════════════════════════════════
   _getContainer() {
-    return document.getElementById('app') || document.getElementById('game-container');
+    return document.getElementById('game-content')
+      || document.getElementById('app')
+      || document.getElementById('game-container');
   }
 
   // ════════════════════════════════════════════
@@ -682,9 +713,12 @@ export class ListenGame extends GameEngine {
     this._stopFishAnimation();
     this._retractHook();
     this._stopWaterLoop();
-    // 移除場景點擊監聽
     const scene = document.getElementById('ls-scene');
-    if (scene && scene._lsClick) scene.removeEventListener('click', scene._lsClick);
+    if (scene) {
+      if (scene._lsClick)      scene.removeEventListener('click',     scene._lsClick);
+      if (scene._lsMouseMove)  scene.removeEventListener('mousemove', scene._lsMouseMove);
+      if (scene._lsTouchMove)  scene.removeEventListener('touchmove', scene._lsTouchMove);
+    }
     delete window.__lsPlay;
     delete window.__lsHint;
     super.destroy();
@@ -710,7 +744,7 @@ export class ListenGame extends GameEngine {
       flex-direction: column;
       align-items: center;
       width: 100%;
-      min-height: 100vh;
+      min-height: 100%;
       background: linear-gradient(180deg, #1a2a4a 0%, #0d1b2e 100%);
       color: #e0f7ff;
       font-family: 'BpmfIVS', '微軟正黑體', sans-serif;
@@ -719,13 +753,12 @@ export class ListenGame extends GameEngine {
       overflow: hidden;
     }
 
-    /* ── 頂部 ── */
-    .ls-header {
+    /* ── 頂部難度標籤 ── */
+    .ls-top-bar {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: flex-end;
       width: 100%;
-      padding: 10px 16px 6px;
+      padding: 6px 12px 2px;
       box-sizing: border-box;
     }
     .ls-question-text { font-size: 1rem; font-weight: bold; color: #b0e0ff; }
@@ -759,18 +792,21 @@ export class ListenGame extends GameEngine {
     .ls-scene {
       position: relative;
       width: 95%;
+      padding-top: 95px;    /* 為釣竿留出空間 */
       cursor: crosshair;
       user-select: none;
     }
 
-    /* ── 釣竿區 ── */
+    /* ── 釣竿整體（跟著滑鼠） ── */
     .ls-rod-wrap {
-      position: relative;
-      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 50%;                    /* 預設置中，由 JS 更新 */
+      transform: translateX(-50%);
+      width: 160px;
       height: 90px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: flex-end;
+      pointer-events: none;
+      transition: left 0.05s linear;
     }
     .ls-rod-img {
       width: 160px;
@@ -778,21 +814,21 @@ export class ListenGame extends GameEngine {
       opacity: 0.92;
       filter: drop-shadow(0 2px 8px rgba(0,150,255,0.5));
       pointer-events: none;
+      display: block;
     }
 
-    /* ── 釣魚線 + 鉤子 ── */
+    /* ── 釣魚線 + 鉤子（從竿尖垂下） ── */
     .ls-line-wrap {
       position: absolute;
-      top: 10px;          /* 從竿尖出發 */
-      right: 22px;        /* 竿尖 X 對齊 */
+      top: 8px;           /* 竿尖大約位置 */
+      left: 72%;          /* 竿尖 X（竿子右端約 72%） */
       width: 2px;
       pointer-events: none;
     }
     .ls-line {
       width: 2px;
       height: 0;
-      background: linear-gradient(180deg, rgba(150,200,255,0.8), rgba(100,180,255,0.4));
-      transition: height 0s;
+      background: linear-gradient(180deg, rgba(150,200,255,0.9), rgba(100,180,255,0.4));
     }
     .ls-hook {
       position: absolute;
