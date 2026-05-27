@@ -14,7 +14,7 @@ import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
-const FISH_SPEEDS = { hard: 5000, medium: 3500, easy: 2500, easy_plus: 1800 };
+const FISH_SPEEDS = { hard: 5000, medium: 4000, easy: 3000, easy_plus: 2500 };
 const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9];
 const FISH_EMOJIS = ['🐠','🐟','🐡','🦈'];
 const OPTION_COUNT = 4;
@@ -285,8 +285,12 @@ export class ListenGame extends GameEngine {
   // _buildFishHTML
   // ════════════════════════════════════════════
   _renderZhuyinLabel(text) {
-    // 清除 BpmfIVS IVS 字元（防止自動加注音）
-    const clean = text.replace(/[\uDB40\uDC00-\uDB40\uDCFF]|\uFE00|\uFE01/g, '');
+    // 清除 IVS/variation selector 字元（使用 Unicode category 方式避免 surrogate pair regex 問題）
+    const clean = [...text].filter(c => {
+      const cp = c.codePointAt(0);
+      // 排除 Variation Selectors (U+FE00–U+FE0F) 和 IVS (U+E0100–U+E01EF)
+      return !(cp >= 0xFE00 && cp <= 0xFE0F) && !(cp >= 0xE0100 && cp <= 0xE01EF);
+    }).join('');
     return /[ㄅ-ㄩˊˇˋ˙]/.test(clean)
       ? `<span class="ls-fish-pv2">${this._renderZhuyinPv2(clean)}</span>`
       : `<span class="ls-fish-label-text">${this._escapeHtml(clean)}</span>`;
