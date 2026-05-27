@@ -56,47 +56,86 @@ export class ListenGame extends GameEngine {
     const chars = this.questionChars;
     if (!chars || chars.length === 0) throw new Error('listen: 題目字元為空');
 
-    const allChars = JSONLoader.get('characters') || [];
-    const target   = this.totalQuestions || 10;
+    const allChars  = JSONLoader.get('characters') || [];
+    const polyphones = JSONLoader.get('polyphones') || [];
+    const target    = this.totalQuestions || 10;
 
-    // 將 chars 循環擴充至 target 題數
-    const expandedChars = [];
-    while (expandedChars.length < target) {
-      for (const c of chars) {
-        if (expandedChars.length >= target) break;
-        expandedChars.push(c);
-      }
-    }
-    // Fisher-Yates 打亂順序
-    for (let i = expandedChars.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [expandedChars[i], expandedChars[j]] = [expandedChars[j], expandedChars[i]];
-    }
-
-    const questions = [];
-    for (const char of expandedChars) {
+    // ── Step 1：每個生字出一題（不重複），決定模式 ──
+    const baseQuestions = [];
+    for (const char of chars) {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      // 多音字強制使用模式二（詞語模式）；否則 60% 機率模式一
-      const polyphones = JSONLoader.get('polyphones') || [];
       const isPolyphone = polyphones.some(p => (p['字'] || p.char) === char);
-      const mode = isPolyphone ? 2 : (Math.random() < 0.6 ? 1 : 2);
-      // 模式二：取目標字的第一個詞語作為正確答案
-      const charWords = charData.pronunciations?.[0]?.words || charData.words || [];
-      const correctWord = charWords[0] || char; // 若無詞語退回單字
-      const distractors = this._buildDistractors(char, charData, allChars, mode, allChars);
+      const charWords   = charData.pronunciations?.[0]?.words || charData.words || [];
+      // 多音字或無詞語都走模式一；有詞語且 40% 機率走模式二
+      const mode = (isPolyphone || (!isPolyphone && Math.random() >= 0.6)) && charWords.length > 0
+        ? 2 : 1;
+      const correctWord = charWords[0] || char;
 
-      questions.push({
+      baseQuestions.push({
         char,
         pronunciation: charData.pronunciations?.[0]?.zhuyin || '',
         words: charWords,
-        correctWord,   // 模式二正確詞語
+        correctWord,
         level: { 1:'easy', 2:'medium' }[charData.grade] || 'medium',
         mode,
-        distractors,
+        distractors: this._buildDistractors(char, charData, allChars, mode),
       });
     }
+
+    // ── Step 2：若不夠題數，用生字的詞語補充（模式二）──
+    const extraPool = [];
+    if (baseQuestions.length < target) {
+      for (const char of chars) {
+        const charData = allChars.find(c => (c['字'] || c.char) === char);
+        if (!charData) continue;
+        const charWords = charData.pronunciations?.[0]?.words || charData.words || [];
+        // 每個額外詞語出一題（模式二）
+        for (const word of charWords) {
+          if (!word || word === char) continue;
+          extraPool.push({
+            char,
+            pronunciation: charData.pronunciations?.[0]?.zhuyin || '',
+            words: charWords,
+            correctWord: word,
+            level: { 1:'easy', 2:'medium' }[charData.grade] || 'medium',
+            mode: 2,
+            distractors: this._buildDistractors(char, charData, allChars, 2),
+          });
+        }
+      }
+    }
+
+    // ── Step 3：合併，打亂，截取 target 題 ──
+    const shuffle = arr => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+
+    shuffle(baseQuestions);
+    shuffle(extraPool);
+
+    let questions = [...baseQuestions];
+
+    // 用 extraPool 補到 target 題
+    let ei = 0;
+    while (questions.length < target && extraPool.length > 0) {
+      questions.push(extraPool[ei % extraPool.length]);
+      ei++;
+    }
+
+    // 若仍不足（詞語也沒有），循環 baseQuestions 補滿
+    let bi = 0;
+    while (questions.length < target && baseQuestions.length > 0) {
+      questions.push({ ...baseQuestions[bi % baseQuestions.length] });
+      bi++;
+    }
+
+    questions = questions.slice(0, target);
 
     if (questions.length === 0) throw new Error('listen: 無法取得題目資料');
     this.questions = questions;
