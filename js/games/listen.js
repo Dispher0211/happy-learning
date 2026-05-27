@@ -14,7 +14,7 @@ import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
-const FISH_SPEEDS = { hard: 5000, medium: 3500, easy: 3000, easy_plus: 2500 };
+const FISH_SPEEDS = { hard: 5000, medium: 3500, easy: 2500, easy_plus: 1800 };
 const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9];
 const FISH_EMOJIS = ['🐠','🐟','🐡','🦈'];
 const OPTION_COUNT = 4;
@@ -41,6 +41,7 @@ export class ListenGame extends GameEngine {
     // 魚鉤狀態
     this._hookActive     = false;  // 鉤子是否正在下降
     this._hookY          = 0;     // 鉤子當前 Y（px，相對水域頂部）
+    this._hookSplashed   = false;  // 入水音效是否已播
     this._hookX          = 50;    // 鉤子 X（%）
     this._hookSpeed      = 0.35;  // px/ms
     this._hookAnimId     = null;
@@ -78,12 +79,16 @@ export class ListenGame extends GameEngine {
       if (!charData) continue;
 
       const mode = Math.random() < 0.6 ? 1 : 2;
-      const distractors = this._buildDistractors(char, charData, allChars, mode);
+      // 模式二：取目標字的第一個詞語作為正確答案
+      const charWords = charData.pronunciations?.[0]?.words || charData.words || [];
+      const correctWord = charWords[0] || char; // 若無詞語退回單字
+      const distractors = this._buildDistractors(char, charData, allChars, mode, allChars);
 
       questions.push({
         char,
         pronunciation: charData.pronunciations?.[0]?.zhuyin || '',
-        words: charData.pronunciations?.[0]?.words || charData.words || [],
+        words: charWords,
+        correctWord,   // 模式二正確詞語
         level: { 1:'easy', 2:'medium' }[charData.grade] || 'medium',
         mode,
         distractors,
@@ -115,29 +120,16 @@ export class ListenGame extends GameEngine {
         }
       }
     } else {
-      // 模式二：找聲母相同但聲調不同的注音
-      const correctPron = charData.pronunciations?.[0]?.zhuyin || '';
-      const similar = [...allChars]
-        .filter(c => {
-          const p = c.pronunciations?.[0]?.zhuyin || '';
-          return (c['字'] || c.char) !== char && p && p !== correctPron;
-        })
-        .sort((a, b) => {
-          const ap = a.pronunciations?.[0]?.zhuyin || '';
-          const bp = b.pronunciations?.[0]?.zhuyin || '';
-          const as = correctPron && ap[0] === correctPron[0] ? 1 : 0;
-          const bs = correctPron && bp[0] === correctPron[0] ? 1 : 0;
-          return bs - as + Math.random() * 0.4 - 0.2;
-        });
-      for (const c of similar) {
+      // 模式二：干擾選項為其他字的詞語（國字詞語，不用注音）
+      const correctWord = charData.pronunciations?.[0]?.words?.[0] || charData.words?.[0] || char;
+      const shuffled = [...allChars].sort(() => Math.random() - 0.5);
+      for (const c of shuffled) {
         if (result.length >= 3) break;
-        const p = c.pronunciations?.[0]?.zhuyin || '';
-        if (!used.has(p)) { result.push(p); used.add(p); }
-      }
-      for (const c of allChars.sort(() => Math.random() - 0.5)) {
-        if (result.length >= 3) break;
-        const p = c.pronunciations?.[0]?.zhuyin || '';
-        if (p && !used.has(p) && p !== correctPron) { result.push(p); used.add(p); }
+        const cWords = c.pronunciations?.[0]?.words || c.words || [];
+        const cWord  = cWords[0] || (c['字'] || c.char);
+        if (cWord && cWord !== correctWord && !used.has(cWord)) {
+          result.push(cWord); used.add(cWord);
+        }
       }
     }
     return result.slice(0, 3);
@@ -158,12 +150,12 @@ export class ListenGame extends GameEngine {
     const appEl = this._getContainer();
     if (!appEl) return;
 
-    const correctAnswer = q.mode === 1 ? q.char : q.pronunciation;
+    const correctAnswer = q.mode === 1 ? q.char : (q.correctWord || q.words?.[0] || q.char);
     const options = this._shuffleOptions(correctAnswer, q.distractors);
     this._fishAnswers    = options;
     this._correctFishIndex = options.indexOf(correctAnswer);
     this._currentAudioZhuyin = q.pronunciation;
-    this._currentWord = (q.words && q.words.length > 0) ? q.words[0] : q.char;
+    this._currentWord = q.correctWord || (q.words && q.words.length > 0 ? q.words[0] : q.char);
 
     appEl.innerHTML = this._buildHTML(q, options);
 
@@ -403,7 +395,7 @@ export class ListenGame extends GameEngine {
     this._hookY         = 0;
     this._hookX         = xPercent;
     this._hookTimestamp = null;
-    // 釣竿已在正確位置（由 _moveRod 控制），直接開始下鉤
+    this._hookSplashed  = false;  // 重置入水音效 flag
     this._hookAnimId = requestAnimationFrame(ts => this._animateHook(ts));
   }
 
@@ -427,7 +419,13 @@ export class ListenGame extends GameEngine {
     const aqRect   = aqEl.getBoundingClientRect();
     const hookRect = hookEl.getBoundingClientRect();
 
-    // 鉤子進入水域後才偵測
+    // 鉤子入水時播放音效（只播一次）
+    if (!this._hookSplashed && hookRect.top >= aqRect.top) {
+      this._hookSplashed = true;
+      this._playMp3('fishing');
+    }
+
+    // 鉤子進入水域後才偵測碰撞
     if (hookRect.top >= aqRect.top) {
       const hookCenterX = hookRect.left + hookRect.width / 2;
       const hookCenterY = hookRect.top  + hookRect.height / 2;
@@ -456,11 +454,8 @@ export class ListenGame extends GameEngine {
   }
 
   _onFishCaught(idx, fishEl, hookEl, lineEl) {
-    // 播放音效
+    // 魚跟著鉤子浮起動畫（入水音效已在 _animateHook 播過）
     this._stopWaterLoop();
-    this._playMp3('fishing');
-
-    // 魚跟著鉤子浮起動畫
     fishEl.classList.add('ls-fish--hooked');
     setTimeout(() => this._playMp3('waterup'), 200);
 
@@ -474,7 +469,8 @@ export class ListenGame extends GameEngine {
   }
 
   _retractHook() {
-    this._hookActive = false;
+    this._hookActive    = false;
+    this._hookSplashed  = false;  // 重置入水音效，下次投鉤可再播
     if (this._hookAnimId) { cancelAnimationFrame(this._hookAnimId); this._hookAnimId = null; }
     this._hookY = 0;
     const lineEl = document.getElementById('ls-hook-line');
@@ -553,7 +549,7 @@ export class ListenGame extends GameEngine {
   async judgeAnswer(selected) {
     const q = this.currentQuestion;
     if (!q) throw new Error('judgeAnswer: 無當前題目');
-    const correctAnswer = q.mode === 1 ? q.char : q.pronunciation;
+    const correctAnswer = q.mode === 1 ? q.char : (q.correctWord || q.words?.[0] || q.char);
     return { correct: selected === correctAnswer };
   }
 
@@ -591,15 +587,17 @@ export class ListenGame extends GameEngine {
       await this._delay(600);
       feedback.classList.remove('ls-feedback--show');
     }
-    // 答錯後恢復水聲，讓玩家繼續釣
+    // 收回鉤子，恢復水聲，讓玩家繼續釣
+    this._retractHook();
     this._startWaterLoop();
   }
 
   // ════════════════════════════════════════════
-  // showCorrectAnswer（答錯兩次：正確魚發光 + 再播音 + 顯示答案）
+  // showCorrectAnswer（答錯兩次：正確魚發光 + 再播音 + 顯示答案 → 自動下一題）
   // ════════════════════════════════════════════
   async showCorrectAnswer() {
     this._stopFishAnimation();
+    this._retractHook();
     const q = this.currentQuestion;
     if (!q) return;
 
@@ -613,13 +611,17 @@ export class ListenGame extends GameEngine {
     }
     const hintArea = document.getElementById('ls-hint-area');
     if (hintArea) {
-      const correctAnswer = q.mode === 1 ? q.char : q.pronunciation;
+      const correctAnswer = q.mode === 1 ? q.char : (q.correctWord || q.words?.[0] || q.char);
       hintArea.innerHTML = `
         <div class="ls-answer-reveal">
           ✅ 正確答案：<strong>${correctAnswer}</strong>
-          ${q.mode === 2 ? `（${q.char} = ${q.pronunciation}）` : ''}
+          ${q.mode === 2 ? `（聽「${q.char}」的詞語）` : ''}
         </div>`;
     }
+
+    // 顯示 2 秒後自動進下一題
+    await this._delay(2000);
+    this.nextQuestion();
   }
 
   // ════════════════════════════════════════════
@@ -633,7 +635,8 @@ export class ListenGame extends GameEngine {
     const pron = q.pronunciation || '';
     if (this.usedHints === 1) {
       // 提示一：聲調（usedHints 在 GameEngine.useHint() 遞增後才呼叫此方法）
-      const tone = pron.match(/[ˊˇˋ˙]$/)?.[0] || '（一聲）';
+      // 輕聲˙可能在開頭或末尾
+      let tone = pron.match(/[ˊˇˋ˙]/)?.[0] || '（一聲）';
       const toneNames = { 'ˊ':'二聲', 'ˇ':'三聲', 'ˋ':'四聲', '˙':'輕聲', '（一聲）':'一聲' };
       hintArea.innerHTML = `<div class="ls-hint-text">💡 提示一：聲調是「${toneNames[tone] || tone}」</div>`;
     } else if (this.usedHints === 2) {
