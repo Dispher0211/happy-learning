@@ -78,7 +78,10 @@ export class ListenGame extends GameEngine {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
 
-      const mode = Math.random() < 0.6 ? 1 : 2;
+      // 多音字強制使用模式二（詞語模式）；否則 60% 機率模式一
+      const polyphones = JSONLoader.get('polyphones') || [];
+      const isPolyphone = polyphones.some(p => (p['字'] || p.char) === char);
+      const mode = isPolyphone ? 2 : (Math.random() < 0.6 ? 1 : 2);
       // 模式二：取目標字的第一個詞語作為正確答案
       const charWords = charData.pronunciations?.[0]?.words || charData.words || [];
       const correctWord = charWords[0] || char; // 若無詞語退回單字
@@ -243,9 +246,11 @@ export class ListenGame extends GameEngine {
   // _buildFishHTML
   // ════════════════════════════════════════════
   _renderZhuyinLabel(text) {
-    return /[ㄅ-ㄩˊˇˋ˙]/.test(text)
-      ? `<span class="ls-fish-pv2">${this._renderZhuyinPv2(text)}</span>`
-      : `<span class="ls-fish-label-text">${this._escapeHtml(text)}</span>`;
+    // 清除 BpmfIVS IVS 字元（防止自動加注音）
+    const clean = text.replace(/[\uDB40\uDC00-\uDB40\uDCFF]|\uFE00|\uFE01/g, '');
+    return /[ㄅ-ㄩˊˇˋ˙]/.test(clean)
+      ? `<span class="ls-fish-pv2">${this._renderZhuyinPv2(clean)}</span>`
+      : `<span class="ls-fish-label-text">${this._escapeHtml(clean)}</span>`;
   }
 
   // pv2 方格注音系統（從 CardPage._renderZhuyinVerticalInline 移植）
@@ -535,10 +540,14 @@ export class ListenGame extends GameEngine {
     if (this._mode === 1) {
       await AudioManager.play(q.pronunciation).catch(() => {});
     } else {
+      // 模式二：逐字播放詞語，350ms 間隔語速自然
       for (const c of this._currentWord) {
         const charData = (JSONLoader.get('characters') || []).find(ch => (ch['字'] || ch.char) === c);
         const pron = charData?.pronunciations?.[0]?.zhuyin || '';
-        if (pron) { await AudioManager.play(pron).catch(() => {}); await new Promise(r => setTimeout(r, 100)); }
+        if (pron) {
+          AudioManager.play(pron).catch(() => {});
+          await new Promise(r => setTimeout(r, 350));
+        }
       }
     }
   }
@@ -750,7 +759,7 @@ export class ListenGame extends GameEngine {
       min-height: 100%;
       background: linear-gradient(180deg, #1a2a4a 0%, #0d1b2e 100%);
       color: #e0f7ff;
-      font-family: 'BpmfIVS', '微軟正黑體', sans-serif;
+      font-family: '微軟正黑體', 'Noto Sans TC', 'PingFang TC', sans-serif;
       padding: 0 0 16px;
       box-sizing: border-box;
       overflow: hidden;
@@ -913,6 +922,7 @@ export class ListenGame extends GameEngine {
       font-size: 1.8rem;
       line-height: 1;
       letter-spacing: 0.05em;
+      font-family: 'Noto Sans TC', '微軟正黑體', 'PingFang TC', Arial, sans-serif !important;
     }
 
     /* 直式注音 */
