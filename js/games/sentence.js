@@ -421,8 +421,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="360" height="160"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:360px;">
+          <canvas id="hw-canvas" width="480" height="240"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:480px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -476,8 +476,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="360" height="160"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:360px;">
+          <canvas id="hw-canvas" width="480" height="240"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:480px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -636,15 +636,24 @@ export class SentenceGame extends GameEngine {
         return
       }
 
-      const text = typeof recognized === 'string' ? recognized : recognized?.result || ''
+      const text = typeof recognized === 'string' ? recognized : (recognized?.text || recognized?.result || '')
+      if (!text) {
+        if (resultEl) resultEl.textContent = '⚠️ 未能辨識，請再寫一次'
+        this._clearCanvas()
+        const confirmBtn = document.getElementById('confirm-btn')
+        if (confirmBtn) confirmBtn.disabled = false
+        return
+      }
       if (resultEl) resultEl.textContent = `辨識結果：${text}`
 
       // 提交答案
       await this._doSubmit(text)
     } catch (err) {
       console.warn('sentence.js 手寫辨識例外', err)
-      if (resultEl) resultEl.textContent = '請再寫一次'
+      if (resultEl) resultEl.textContent = '⚠️ 辨識異常，請再寫一次'
       this._clearCanvas()
+      const confirmBtn = document.getElementById('confirm-btn')
+      if (confirmBtn) confirmBtn.disabled = false
     }
   }
 
@@ -809,8 +818,10 @@ export class SentenceGame extends GameEngine {
     try {
       // 8秒超時保護
       const judgePromise   = this.judgeAnswer(answer, question)
+      // 手寫模式（模式3/4）需要辨識+AI判斷，給較長時間
+      const timeoutMs = (this._currentMode === 3 || this._currentMode === 4) ? 35000 : 8000
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('答題超時')), 8000)
+        setTimeout(() => reject(new Error('答題超時')), timeoutMs)
       )
       const result = await Promise.race([judgePromise, timeoutPromise])
 
@@ -853,6 +864,11 @@ export class SentenceGame extends GameEngine {
     } catch (err) {
       console.error('sentence.js submitAnswer 失敗', err)
       this.isAnswering = false
+      // 超時或辨識失敗時顯示友善提示
+      const hw = document.getElementById('hw-result')
+      if (hw) hw.textContent = '⚠️ 辨識逾時，請重新書寫後再試一次'
+      const confirmBtn = document.getElementById('confirm-btn')
+      if (confirmBtn) confirmBtn.disabled = false
     }
   }
 
@@ -979,6 +995,58 @@ export class SentenceGame extends GameEngine {
   }
 
   // ──────────────────────────────────────────────────
+
+  // ──────────────────────────────────────────────────
+  // pv2 直式注音渲染（與 typo.js 一致）
+  // ──────────────────────────────────────────────────
+  _renderZhuyinPv2(pron) {
+    if (!pron) return ''
+    const INITIALS = new Set('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ')
+    const MEDIALS  = new Set('ㄧㄨㄩ')
+    const TONES    = new Set(['ˊ','ˇ','ˋ','˙'])
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    let src = pron, tone = ''
+    if (src.startsWith('˙')) { tone = '˙'; src = src.slice(1) }
+    else if (src.length > 0 && TONES.has(src[src.length-1])) {
+      tone = src[src.length-1]; src = src.slice(0,-1)
+    }
+    let initial = '', medial = '', final = ''
+    for (const ch of src) {
+      if (INITIALS.has(ch)) initial = ch
+      else if (MEDIALS.has(ch)) medial = ch
+      else final += ch
+    }
+    const count   = [initial, medial, final].filter(Boolean).length
+    const hasDot  = tone === '˙'
+    const dotHtml = hasDot ? `<span class="pv2-dot">${esc(tone)}</span>` : ''
+    const toneHtml = (tone && !hasDot)
+      ? `<span class="pv2-tone">${esc(tone)}</span>`
+      : `<span class="pv2-tone pv2-empty"></span>`
+    const toneCol = `<span class="pv2-tone-col"><span class="pv2-empty pv2-tone-spacer"></span>${toneHtml}<span class="pv2-empty pv2-tone-spacer"></span></span>`
+    const dotCls  = hasDot ? ' pv2--dot' : ''
+    if (count <= 1) {
+      const sym = initial || medial || final || src
+      return `<span class="pv2 pv2-a${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1 pv2-empty"></span><span class="pv2-r2">${esc(sym)}</span><span class="pv2-r3 pv2-empty"></span></span>${toneCol}</span>`
+    }
+    if (count === 2) {
+      const slots = [initial, medial, final].filter(Boolean)
+      return `<span class="pv2 pv2-b${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(slots[0])}</span><span class="pv2-r2 pv2-empty"></span><span class="pv2-r3">${esc(slots[1])}</span></span>${toneCol}</span>`
+    }
+    return `<span class="pv2 pv2-c${dotCls}">${dotHtml}<span class="pv2-col"><span class="pv2-r1">${esc(initial)}</span><span class="pv2-r2">${esc(medial)}</span><span class="pv2-r3">${esc(final)}</span></span>${toneCol}</span>`
+  }
+
+  // ──────────────────────────────────────────────────
+  // 從 characters.json 快取查詢字的部首與注音
+  // ──────────────────────────────────────────────────
+  _getCharInfo(char) {
+    const allChars = JSONLoader.get('characters') || []
+    const entry = Array.isArray(allChars) ? allChars.find(c => c['字'] === char) : null
+    if (!entry) return { radical: null, zhuyin: null, _words: [] }
+    const zhuyin = entry.pronunciations?.[0]?.zhuyin || null
+    const _words = entry.pronunciations?.[0]?.words || []
+    return { radical: entry.radical || null, zhuyin, _words }
+  }
+
   // 提示（getHint）
   // 模式1/2：提示一=句型說明；提示二=範例
   // 模式3：提示一=句型參考；提示二=再看範例
@@ -988,18 +1056,40 @@ export class SentenceGame extends GameEngine {
     const mode = this._currentMode
 
     if (mode === 1 || mode === 2) {
-      if (level === 1) return `提示：這題句子的意思是「${question.sentence}」`
-      if (level === 2) return `再看一次：正確的字是 ${question.answer} 的相關字`
+      const { radical, zhuyin } = this._getCharInfo(question.answer)
+      if (level === 1) {
+        const radStr = radical ? `部首：<strong>${radical}</strong>` : `部首：-`
+        return { html: `<div class="hint-radical">🔍 ${radStr}</div>` }
+      }
+      if (level === 2) {
+        const zhuyinHtml = zhuyin
+          ? `<span class="hint-zhuyin-wrap">${this._renderZhuyinPv2(zhuyin)}</span>`
+          : question.answer
+        return { html: `<div class="hint-zhuyin">🔊 注音：${zhuyinHtml}</div>` }
+      }
     }
 
     if (mode === 3) {
       if (level === 1) return `句型是：${question.example_pattern}`
-      if (level === 2) return `範例是：${question.example_sentence}`
+      if (level === 2) return { html: `<div class="hint-content">💡 範例：<strong style="color:#333">${question.example_sentence || question.example || ''}</strong></div>` }
     }
 
     if (mode === 4) {
-      if (level === 1) return `「${question.character}」的意思是：試著在句子中使用它`
-      if (level === 2) return `參考範例：${question.example_sentence || '他每天學習'}`
+      if (level === 1) {
+        // 優先用 compose 資料的 prompt_word，再查 characters.json 詞語
+        let word = question.prompt_word && question.prompt_word !== question.character
+          ? question.prompt_word : null
+        if (!word) {
+          const charInfo = this._getCharInfo(question.character)
+          if (charInfo._words?.length) word = charInfo._words[0]
+        }
+        if (!word) word = question.character
+        return { html: `<div class="hint-content">💡 試著用詞語「<strong style="font-size:1.3em;color:#6d28d9">${word}</strong>」造句</div>` }
+      }
+      if (level === 2) {
+        const ex = question.example || question.example_sentence || ''
+        return { html: `<div class="hint-content">💡 範例：<strong style="color:#333">${ex || question.character + '的例句'}</strong></div>` }
+      }
     }
 
     return ''
@@ -1025,15 +1115,18 @@ export class SentenceGame extends GameEngine {
     if (level > this.usedHints + 1) return
 
     this.usedHints++
-    const hintText = this.getHint(level, this.currentQuestion)
+    const hintResult = this.getHint(level, this.currentQuestion)
 
     // 扣半星（只扣 yellow_total，不影響 star_pokedex_count）
     StarsManager.spend(0.5).catch(() => {})
 
-    // 顯示提示文字
+    // 顯示提示（支援純字串或 { html } 物件）
     const hintArea = document.getElementById('hint-area')
     if (hintArea) {
-      hintArea.innerHTML = `<div class="hint-content">💡 ${hintText}</div>`
+      const inner = (hintResult && typeof hintResult === 'object' && hintResult.html)
+        ? hintResult.html
+        : `<div class="hint-content">💡 ${hintResult || ''}</div>`
+      hintArea.innerHTML = inner
     }
 
     // 停用已使用的提示按鈕

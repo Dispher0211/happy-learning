@@ -98,7 +98,7 @@ export const GeminiManager = {
     const res = await fetch(API_URL(model, key), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal:  AbortSignal.timeout(10000),
+      signal:  AbortSignal.timeout(15000),
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -127,9 +127,17 @@ export const GeminiManager = {
     try {
       parsed = JSON.parse(clean)
     } catch (_e) {
-      const match = clean.match(/\{[^}]+\}/)
-      if (match) parsed = JSON.parse(match[0])
-      else throw new Error('無法解析回應: ' + clean.slice(0, 80))
+      // 嘗試更寬鬆的提取
+      const scoreMatch = clean.match(/"score"\s*:\s*([0-9.]+)/)
+      const reasonMatch = clean.match(/"reason"\s*:\s*"([^"]*)"/)
+      if (scoreMatch) {
+        parsed = {
+          score: parseFloat(scoreMatch[1]),
+          reason: reasonMatch ? reasonMatch[1] : '',
+        }
+      } else {
+        throw new Error('無法解析回應: ' + clean.slice(0, 80))
+      }
     }
 
     return {

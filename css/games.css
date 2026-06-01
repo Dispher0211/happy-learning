@@ -784,3 +784,38 @@
   padding: 8px 16px;
   color: #444;
 }
+
+/* 短句造詞 提示一（部首）/ 提示二（pv2注音）*/
+.hint-radical {
+  font-size: 1.1rem;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hint-radical strong {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #6d28d9;
+}
+.hint-zhuyin {
+  font-size: 1.1rem;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.hint-zhuyin-wrap {
+  display: inline-flex;
+  align-items: center;
+  transform: scale(2);
+  transform-origin: left center;
+  margin-left: 8px;
+  margin-right: 40px;
+}
