@@ -104,6 +104,9 @@ export class RandomGame extends GameEngine {
     this._totalBonusEarned = 0
     this._lastBonusTierIndex = -1
 
+    // 同步 GameEngine 的 totalQuestions，確保右上角 header counter 顯示正確
+    this.totalQuestions = this._totalCount
+
     // 渲染隨機挑戰外框 UI
     this._renderShell()
 
@@ -497,6 +500,19 @@ export class RandomGame extends GameEngine {
   _updateProgressUI() {
     const el = document.getElementById('random-current-q')
     if (el) el.textContent = this._questionIndex
+
+    // 同步更新 GameEngine header counter（右上角 N/10）
+    this.questionIndex = this._questionIndex
+    this.totalQuestions = this._totalCount
+    const counter = document.getElementById('game-counter')
+    if (counter) counter.textContent = `${this._questionIndex} / ${this._totalCount}`
+    const progressEl = document.getElementById('game-progress')
+    if (progressEl) {
+      const pct = this._totalCount > 0
+        ? Math.round((this._questionIndex / this._totalCount) * 100)
+        : 0
+      progressEl.style.width = `${pct}%`
+    }
   }
 
   /**
