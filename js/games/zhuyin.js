@@ -371,12 +371,28 @@ export class ZhuyinGame extends GameEngine {
       }
       if (!polyphoneWord && charProns.length > 0) {
         // 從 characters.json 依 pronunciation 匹配讀音取詞語
+        // 優先找完全匹配讀音且含目標字的詞語，找不到則 fallback 到任何讀音的詞語
         const matchPron = charProns.find(
           p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
-        ) || charProns[0]
-        const w = matchPron?.words?.find(w => w && w.includes(char))
-        if (w) polyphoneWord = w
-        else if (matchPron?.words?.[0]) polyphoneWord = matchPron.words[0]
+        )
+        if (matchPron) {
+          const w = matchPron.words?.find(w => w && w.includes(char))
+          if (w) polyphoneWord = w
+          else if (matchPron.words?.[0]) polyphoneWord = matchPron.words[0]
+        }
+        // fallback：若該讀音無詞語，從其他讀音找含目標字的詞語
+        if (!polyphoneWord) {
+          for (const p of charProns) {
+            const w = p.words?.find(w => w && w.includes(char))
+            if (w) { polyphoneWord = w; break }
+          }
+        }
+        // 最終 fallback：任意讀音的第一個詞語
+        if (!polyphoneWord) {
+          for (const p of charProns) {
+            if (p.words?.[0]) { polyphoneWord = p.words[0]; break }
+          }
+        }
       }
 
       questions.push({
@@ -424,10 +440,23 @@ export class ZhuyinGame extends GameEngine {
         if (!polyphoneWordFb && charPronsFb.length > 0) {
           const matchPronFb = charPronsFb.find(
             p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
-          ) || charPronsFb[0]
-          const wFb = matchPronFb?.words?.find(w => w && w.includes(char))
-          if (wFb) polyphoneWordFb = wFb
-          else if (matchPronFb?.words?.[0]) polyphoneWordFb = matchPronFb.words[0]
+          )
+          if (matchPronFb) {
+            const wFb = matchPronFb.words?.find(w => w && w.includes(char))
+            if (wFb) polyphoneWordFb = wFb
+            else if (matchPronFb.words?.[0]) polyphoneWordFb = matchPronFb.words[0]
+          }
+          if (!polyphoneWordFb) {
+            for (const p of charPronsFb) {
+              const wFb = p.words?.find(w => w && w.includes(char))
+              if (wFb) { polyphoneWordFb = wFb; break }
+            }
+          }
+          if (!polyphoneWordFb) {
+            for (const p of charPronsFb) {
+              if (p.words?.[0]) { polyphoneWordFb = p.words[0]; break }
+            }
+          }
         }
 
         questions.push({
