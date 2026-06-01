@@ -356,11 +356,12 @@ export class ZhuyinGame extends GameEngine {
       } else {
         allReadings = readings
       }
-      const pronunciation = isPolyphone
+      let pronunciation = isPolyphone
         ? await this._getHighestFailRateReading(char, allReadings)
         : (readings[0] || zhuyin)
 
-      // 代表詞語：多音字依讀音匹配取詞語；單音字取第一個讀音的第一個詞語
+      // 代表詞語：依 pronunciation 找對應讀音的詞語
+      // 若該讀音無詞語，fallback 到其他有詞語的讀音，並同步更新 pronunciation
       let polyphoneWord = ''
       if (isPolyphonePoly && polyEntry) {
         // 從 polyphones.json 匹配讀音取詞語
@@ -370,8 +371,7 @@ export class ZhuyinGame extends GameEngine {
         if (matchReading?.words?.length > 0) polyphoneWord = matchReading.words[0]
       }
       if (!polyphoneWord && charProns.length > 0) {
-        // 從 characters.json 依 pronunciation 匹配讀音取詞語
-        // 優先找完全匹配讀音且含目標字的詞語，找不到則 fallback 到任何讀音的詞語
+        // 先找完全匹配讀音且含目標字的詞語
         const matchPron = charProns.find(
           p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
         )
@@ -380,17 +380,25 @@ export class ZhuyinGame extends GameEngine {
           if (w) polyphoneWord = w
           else if (matchPron.words?.[0]) polyphoneWord = matchPron.words[0]
         }
-        // fallback：若該讀音無詞語，從其他讀音找含目標字的詞語
+        // fallback：若該讀音無詞語，從其他讀音找含目標字的詞語，並同步更新 pronunciation
         if (!polyphoneWord) {
           for (const p of charProns) {
             const w = p.words?.find(w => w && w.includes(char))
-            if (w) { polyphoneWord = w; break }
+            if (w) {
+              polyphoneWord = w
+              pronunciation = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
+              break
+            }
           }
         }
-        // 最終 fallback：任意讀音的第一個詞語
+        // 最終 fallback：任意讀音的第一個詞語，同步更新 pronunciation
         if (!polyphoneWord) {
           for (const p of charProns) {
-            if (p.words?.[0]) { polyphoneWord = p.words[0]; break }
+            if (p.words?.[0]) {
+              polyphoneWord = p.words[0]
+              pronunciation = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
+              break
+            }
           }
         }
       }
@@ -428,18 +436,18 @@ export class ZhuyinGame extends GameEngine {
         const isPolyphonePolyFb = !!(polyEntryFb && polyEntryFb.pronunciations?.length > 1)
         const isPolyphoneCharFb = charPronsFb.length > 1
         const isPolyphoneFb  = isPolyphonePolyFb || isPolyphoneCharFb
-        const pronunciation  = readings[0] || zhuyin
+        let pronunciationFb  = readings[0] || zhuyin
 
         let polyphoneWordFb = ''
         if (isPolyphonePolyFb && polyEntryFb) {
           const mr = polyEntryFb.pronunciations?.find(
-            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
+            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciationFb)
           )
           if (mr?.words?.length > 0) polyphoneWordFb = mr.words[0]
         }
         if (!polyphoneWordFb && charPronsFb.length > 0) {
           const matchPronFb = charPronsFb.find(
-            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciation)
+            p => normalizeZhuyin(p.zhuyin) === normalizeZhuyin(pronunciationFb)
           )
           if (matchPronFb) {
             const wFb = matchPronFb.words?.find(w => w && w.includes(char))
@@ -449,12 +457,20 @@ export class ZhuyinGame extends GameEngine {
           if (!polyphoneWordFb) {
             for (const p of charPronsFb) {
               const wFb = p.words?.find(w => w && w.includes(char))
-              if (wFb) { polyphoneWordFb = wFb; break }
+              if (wFb) {
+                polyphoneWordFb = wFb
+                pronunciationFb = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
+                break
+              }
             }
           }
           if (!polyphoneWordFb) {
             for (const p of charPronsFb) {
-              if (p.words?.[0]) { polyphoneWordFb = p.words[0]; break }
+              if (p.words?.[0]) {
+                polyphoneWordFb = p.words[0]
+                pronunciationFb = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
+                break
+              }
             }
           }
         }
@@ -462,7 +478,7 @@ export class ZhuyinGame extends GameEngine {
         questions.push({
           char,
           zhuyin,
-          pronunciation,
+          pronunciation:  pronunciationFb,
           isPolyphone:    isPolyphoneFb,
           polyphoneWord:  polyphoneWordFb,
           readings,
