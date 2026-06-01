@@ -192,7 +192,7 @@ export class SentenceGame extends GameEngine {
       <div class="game-container sentence-game sentence-mode1">
         <div class="game-header">
           <span class="mode-badge">${modeLabel}</span>
-          <span class="game-progress">第 ${this.currentIndex + 1} 題 / ${this.questions.length}</span>
+          <span class="game-progress">第 ${this.questionIndex} 題 / ${this.questions.length}</span>
         </div>
 
         <!-- 題目句子 -->
@@ -278,7 +278,7 @@ export class SentenceGame extends GameEngine {
       <div class="game-container sentence-game sentence-mode2">
         <div class="game-header">
           <span class="mode-badge">${modeLabel}</span>
-          <span class="game-progress">第 ${this.currentIndex + 1} 題 / ${this.questions.length}</span>
+          <span class="game-progress">第 ${this.questionIndex} 題 / ${this.questions.length}</span>
         </div>
 
         <p class="sentence-prompt">把字卡排列成正確的句子：</p>
@@ -403,7 +403,7 @@ export class SentenceGame extends GameEngine {
       <div class="game-container sentence-game sentence-mode3">
         <div class="game-header">
           <span class="mode-badge">${modeLabel}</span>
-          <span class="game-progress">第 ${this.currentIndex + 1} 題 / ${this.questions.length}</span>
+          <span class="game-progress">第 ${this.questionIndex} 題 / ${this.questions.length}</span>
         </div>
 
         <!-- 句型與範例 -->
@@ -460,7 +460,7 @@ export class SentenceGame extends GameEngine {
       <div class="game-container sentence-game sentence-mode4">
         <div class="game-header">
           <span class="mode-badge">${modeLabel}</span>
-          <span class="game-progress">第 ${this.currentIndex + 1} 題 / ${this.questions.length}</span>
+          <span class="game-progress">第 ${this.questionIndex} 題 / ${this.questions.length}</span>
         </div>
 
         <!-- 目標字 -->

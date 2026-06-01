@@ -1,0 +1,1480 @@
+[
+  {
+    "id": "fill_4e45_01",
+    "character": "久",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "久遠",
+    "fill_position": [
+      0
+    ],
+    "answer": "久",
+    "correct_orders": [
+      [
+        "久",
+        "遠"
+      ]
+    ]
+  },
+  {
+    "id": "fill_4ea4_01",
+    "character": "交",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "交代",
+    "fill_position": [
+      0
+    ],
+    "answer": "交",
+    "correct_orders": [
+      [
+        "交",
+        "代"
+      ]
+    ]
+  },
+  {
+    "id": "fill_4ed4_01",
+    "character": "仔",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "仔牛",
+    "fill_position": [
+      0
+    ],
+    "answer": "仔",
+    "correct_orders": [
+      [
+        "仔",
+        "牛"
+      ]
+    ]
+  },
+  {
+    "id": "fill_501f_01",
+    "character": "借",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "借錢",
+    "fill_position": [
+      0
+    ],
+    "answer": "借",
+    "correct_orders": [
+      [
+        "借",
+        "錢"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5065_01",
+    "character": "健",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "健康",
+    "fill_position": [
+      0
+    ],
+    "answer": "健",
+    "correct_orders": [
+      [
+        "健",
+        "康"
+      ]
+    ]
+  },
+  {
+    "id": "fill_50b7_01",
+    "character": "傷",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "外傷",
+    "fill_position": [
+      1
+    ],
+    "answer": "傷",
+    "correct_orders": [
+      [
+        "外",
+        "傷"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5143_01",
+    "character": "元",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "元年",
+    "fill_position": [
+      0
+    ],
+    "answer": "元",
+    "correct_orders": [
+      [
+        "元",
+        "年"
+      ]
+    ]
+  },
+  {
+    "id": "fill_523b_01",
+    "character": "刻",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "刻字",
+    "fill_position": [
+      0
+    ],
+    "answer": "刻",
+    "correct_orders": [
+      [
+        "刻",
+        "字"
+      ]
+    ]
+  },
+  {
+    "id": "fill_526a_01",
+    "character": "剪",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "剪刀",
+    "fill_position": [
+      0
+    ],
+    "answer": "剪",
+    "correct_orders": [
+      [
+        "剪",
+        "刀"
+      ]
+    ]
+  },
+  {
+    "id": "fill_53c3_01",
+    "character": "參",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "參差不齊",
+    "fill_position": [
+      0
+    ],
+    "answer": "參",
+    "correct_orders": [
+      [
+        "參",
+        "差",
+        "不",
+        "齊"
+      ]
+    ]
+  },
+  {
+    "id": "fill_54e5_01",
+    "character": "哥",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "哥哥",
+    "fill_position": [
+      0
+    ],
+    "answer": "哥",
+    "correct_orders": [
+      [
+        "哥",
+        "哥"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5805_01",
+    "character": "堅",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "堅硬",
+    "fill_position": [
+      0
+    ],
+    "answer": "堅",
+    "correct_orders": [
+      [
+        "堅",
+        "硬"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5957_01",
+    "character": "套",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "被套",
+    "fill_position": [
+      1
+    ],
+    "answer": "套",
+    "correct_orders": [
+      [
+        "被",
+        "套"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5b89_01",
+    "character": "安",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "安定",
+    "fill_position": [
+      0
+    ],
+    "answer": "安",
+    "correct_orders": [
+      [
+        "安",
+        "定"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5b9a_01",
+    "character": "定",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "定心",
+    "fill_position": [
+      0
+    ],
+    "answer": "定",
+    "correct_orders": [
+      [
+        "定",
+        "心"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5ba4_01",
+    "character": "室",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "陋室",
+    "fill_position": [
+      1
+    ],
+    "answer": "室",
+    "correct_orders": [
+      [
+        "陋",
+        "室"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5c07_01",
+    "character": "將",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "將近",
+    "fill_position": [
+      0
+    ],
+    "answer": "將",
+    "correct_orders": [
+      [
+        "將",
+        "近"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5c0d_01",
+    "character": "對",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "對錯不分",
+    "fill_position": [
+      0
+    ],
+    "answer": "對",
+    "correct_orders": [
+      [
+        "對",
+        "錯",
+        "不",
+        "分"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5c16_01",
+    "character": "尖",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "尖銳",
+    "fill_position": [
+      0
+    ],
+    "answer": "尖",
+    "correct_orders": [
+      [
+        "尖",
+        "銳"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5cf6_01",
+    "character": "島",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "海島",
+    "fill_position": [
+      1
+    ],
+    "answer": "島",
+    "correct_orders": [
+      [
+        "海",
+        "島"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5de5_01",
+    "character": "工",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "工人",
+    "fill_position": [
+      0
+    ],
+    "answer": "工",
+    "correct_orders": [
+      [
+        "工",
+        "人"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5de8_01",
+    "character": "巨",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "巨大",
+    "fill_position": [
+      0
+    ],
+    "answer": "巨",
+    "correct_orders": [
+      [
+        "巨",
+        "大"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5df4_01",
+    "character": "巴",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "巴望",
+    "fill_position": [
+      0
+    ],
+    "answer": "巴",
+    "correct_orders": [
+      [
+        "巴",
+        "望"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5e1d_01",
+    "character": "帝",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "皇帝",
+    "fill_position": [
+      1
+    ],
+    "answer": "帝",
+    "correct_orders": [
+      [
+        "皇",
+        "帝"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5e38_01",
+    "character": "常",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "常態",
+    "fill_position": [
+      0
+    ],
+    "answer": "常",
+    "correct_orders": [
+      [
+        "常",
+        "態"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5ea6_01",
+    "character": "度",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "忖度",
+    "fill_position": [
+      1
+    ],
+    "answer": "度",
+    "correct_orders": [
+      [
+        "忖",
+        "度"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5ea7_01",
+    "character": "座",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "入座",
+    "fill_position": [
+      1
+    ],
+    "answer": "座",
+    "correct_orders": [
+      [
+        "入",
+        "座"
+      ]
+    ]
+  },
+  {
+    "id": "fill_5eab_01",
+    "character": "庫",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "冰庫",
+    "fill_position": [
+      1
+    ],
+    "answer": "庫",
+    "correct_orders": [
+      [
+        "冰",
+        "庫"
+      ]
+    ]
+  },
+  {
+    "id": "fill_63a1_01",
+    "character": "採",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "採茶",
+    "fill_position": [
+      0
+    ],
+    "answer": "採",
+    "correct_orders": [
+      [
+        "採",
+        "茶"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6559_01",
+    "character": "教",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "教書",
+    "fill_position": [
+      0
+    ],
+    "answer": "教",
+    "correct_orders": [
+      [
+        "教",
+        "書"
+      ]
+    ]
+  },
+  {
+    "id": "fill_661f_01",
+    "character": "星",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "行星",
+    "fill_position": [
+      1
+    ],
+    "answer": "星",
+    "correct_orders": [
+      [
+        "行",
+        "星"
+      ]
+    ]
+  },
+  {
+    "id": "fill_666f_01",
+    "character": "景",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "景色",
+    "fill_position": [
+      0
+    ],
+    "answer": "景",
+    "correct_orders": [
+      [
+        "景",
+        "色"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6676_01",
+    "character": "晶",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "晶瑩",
+    "fill_position": [
+      0
+    ],
+    "answer": "晶",
+    "correct_orders": [
+      [
+        "晶",
+        "瑩"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6697_01",
+    "character": "暗",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "黑暗",
+    "fill_position": [
+      1
+    ],
+    "answer": "暗",
+    "correct_orders": [
+      [
+        "黑",
+        "暗"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6839_01",
+    "character": "根",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "樹根",
+    "fill_position": [
+      1
+    ],
+    "answer": "根",
+    "correct_orders": [
+      [
+        "樹",
+        "根"
+      ]
+    ]
+  },
+  {
+    "id": "fill_68f5_01",
+    "character": "棵",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "一棵樹",
+    "fill_position": [
+      1
+    ],
+    "answer": "棵",
+    "correct_orders": [
+      [
+        "一",
+        "棵",
+        "樹"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6a5f_01",
+    "character": "機",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "機會",
+    "fill_position": [
+      0
+    ],
+    "answer": "機",
+    "correct_orders": [
+      [
+        "機",
+        "會"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6b23_01",
+    "character": "欣",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "欣喜若狂",
+    "fill_position": [
+      0
+    ],
+    "answer": "欣",
+    "correct_orders": [
+      [
+        "欣",
+        "喜",
+        "若",
+        "狂"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6b64_01",
+    "character": "此",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "彼此",
+    "fill_position": [
+      1
+    ],
+    "answer": "此",
+    "correct_orders": [
+      [
+        "彼",
+        "此"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6c38_01",
+    "character": "永",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "永久",
+    "fill_position": [
+      0
+    ],
+    "answer": "永",
+    "correct_orders": [
+      [
+        "永",
+        "久"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6ce2_01",
+    "character": "波",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "波浪",
+    "fill_position": [
+      0
+    ],
+    "answer": "波",
+    "correct_orders": [
+      [
+        "波",
+        "浪"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6d1e_01",
+    "character": "洞",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "山洞",
+    "fill_position": [
+      1
+    ],
+    "answer": "洞",
+    "correct_orders": [
+      [
+        "山",
+        "洞"
+      ]
+    ]
+  },
+  {
+    "id": "fill_6f38_01",
+    "character": "漸",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "漸漸",
+    "fill_position": [
+      0
+    ],
+    "answer": "漸",
+    "correct_orders": [
+      [
+        "漸",
+        "漸"
+      ]
+    ]
+  },
+  {
+    "id": "fill_731c_01",
+    "character": "猜",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "猜想",
+    "fill_position": [
+      0
+    ],
+    "answer": "猜",
+    "correct_orders": [
+      [
+        "猜",
+        "想"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7532_01",
+    "character": "甲",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "甲等",
+    "fill_position": [
+      0
+    ],
+    "answer": "甲",
+    "correct_orders": [
+      [
+        "甲",
+        "等"
+      ]
+    ]
+  },
+  {
+    "id": "fill_754c_01",
+    "character": "界",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "國界",
+    "fill_position": [
+      1
+    ],
+    "answer": "界",
+    "correct_orders": [
+      [
+        "國",
+        "界"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7576_01",
+    "character": "當",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "銳不可當",
+    "fill_position": [
+      3
+    ],
+    "answer": "當",
+    "correct_orders": [
+      [
+        "銳",
+        "不",
+        "可",
+        "當"
+      ]
+    ]
+  },
+  {
+    "id": "fill_775b_01",
+    "character": "睛",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "眼睛",
+    "fill_position": [
+      1
+    ],
+    "answer": "睛",
+    "correct_orders": [
+      [
+        "眼",
+        "睛"
+      ]
+    ]
+  },
+  {
+    "id": "fill_775c_01",
+    "character": "睜",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "睜眼",
+    "fill_position": [
+      0
+    ],
+    "answer": "睜",
+    "correct_orders": [
+      [
+        "睜",
+        "眼"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7761_01",
+    "character": "睡",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "睡覺",
+    "fill_position": [
+      0
+    ],
+    "answer": "睡",
+    "correct_orders": [
+      [
+        "睡",
+        "覺"
+      ]
+    ]
+  },
+  {
+    "id": "fill_79d1_01",
+    "character": "科",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "科目",
+    "fill_position": [
+      0
+    ],
+    "answer": "科",
+    "correct_orders": [
+      [
+        "科",
+        "目"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7aef_01",
+    "character": "端",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "端正",
+    "fill_position": [
+      0
+    ],
+    "answer": "端",
+    "correct_orders": [
+      [
+        "端",
+        "正"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7cbe_01",
+    "character": "精",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "精細",
+    "fill_position": [
+      0
+    ],
+    "answer": "精",
+    "correct_orders": [
+      [
+        "精",
+        "細"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7d04_01",
+    "character": "約",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "約見",
+    "fill_position": [
+      0
+    ],
+    "answer": "約",
+    "correct_orders": [
+      [
+        "約",
+        "見"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7d2b_01",
+    "character": "紫",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "紫青",
+    "fill_position": [
+      0
+    ],
+    "answer": "紫",
+    "correct_orders": [
+      [
+        "紫",
+        "青"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7d93_01",
+    "character": "經",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "東經",
+    "fill_position": [
+      1
+    ],
+    "answer": "經",
+    "correct_orders": [
+      [
+        "東",
+        "經"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7fe0_01",
+    "character": "翠",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "翠綠",
+    "fill_position": [
+      0
+    ],
+    "answer": "翠",
+    "correct_orders": [
+      [
+        "翠",
+        "綠"
+      ]
+    ]
+  },
+  {
+    "id": "fill_800c_01",
+    "character": "而",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "富而有禮",
+    "fill_position": [
+      1
+    ],
+    "answer": "而",
+    "correct_orders": [
+      [
+        "富",
+        "而",
+        "有",
+        "禮"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8208_01",
+    "character": "興",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "興起",
+    "fill_position": [
+      0
+    ],
+    "answer": "興",
+    "correct_orders": [
+      [
+        "興",
+        "起"
+      ]
+    ]
+  },
+  {
+    "id": "fill_820c_01",
+    "character": "舌",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "舌頭",
+    "fill_position": [
+      0
+    ],
+    "answer": "舌",
+    "correct_orders": [
+      [
+        "舌",
+        "頭"
+      ]
+    ]
+  },
+  {
+    "id": "fill_82e6_01",
+    "character": "苦",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "苦味",
+    "fill_position": [
+      0
+    ],
+    "answer": "苦",
+    "correct_orders": [
+      [
+        "苦",
+        "味"
+      ]
+    ]
+  },
+  {
+    "id": "fill_84cb_01",
+    "character": "蓋",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "覆蓋",
+    "fill_position": [
+      1
+    ],
+    "answer": "蓋",
+    "correct_orders": [
+      [
+        "覆",
+        "蓋"
+      ]
+    ]
+  },
+  {
+    "id": "fill_89d2_01",
+    "character": "角",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "主角",
+    "fill_position": [
+      1
+    ],
+    "answer": "角",
+    "correct_orders": [
+      [
+        "主",
+        "角"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8b1b_01",
+    "character": "講",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "演講",
+    "fill_position": [
+      1
+    ],
+    "answer": "講",
+    "correct_orders": [
+      [
+        "演",
+        "講"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8cde_01",
+    "character": "賞",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "獎賞",
+    "fill_position": [
+      1
+    ],
+    "answer": "賞",
+    "correct_orders": [
+      [
+        "獎",
+        "賞"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8d95_01",
+    "character": "趕",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "追趕",
+    "fill_position": [
+      1
+    ],
+    "answer": "趕",
+    "correct_orders": [
+      [
+        "追",
+        "趕"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8eb2_01",
+    "character": "躲",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "躲藏",
+    "fill_position": [
+      0
+    ],
+    "answer": "躲",
+    "correct_orders": [
+      [
+        "躲",
+        "藏"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8ecd_01",
+    "character": "軍",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "國軍",
+    "fill_position": [
+      1
+    ],
+    "answer": "軍",
+    "correct_orders": [
+      [
+        "國",
+        "軍"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8f9b_01",
+    "character": "辛",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "辛勞",
+    "fill_position": [
+      0
+    ],
+    "answer": "辛",
+    "correct_orders": [
+      [
+        "辛",
+        "勞"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9583_01",
+    "character": "閃",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "閃躲",
+    "fill_position": [
+      0
+    ],
+    "answer": "閃",
+    "correct_orders": [
+      [
+        "閃",
+        "躲"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9593_01",
+    "character": "間",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "時間",
+    "fill_position": [
+      1
+    ],
+    "answer": "間",
+    "correct_orders": [
+      [
+        "時",
+        "間"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9846_01",
+    "character": "顆",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "一顆糖果",
+    "fill_position": [
+      1
+    ],
+    "answer": "顆",
+    "correct_orders": [
+      [
+        "一",
+        "顆",
+        "糖",
+        "果"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9913_01",
+    "character": "餓",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "肚子餓了",
+    "fill_position": [
+      2
+    ],
+    "answer": "餓",
+    "correct_orders": [
+      [
+        "肚",
+        "子",
+        "餓",
+        "了"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9928_01",
+    "character": "館",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "旅館",
+    "fill_position": [
+      1
+    ],
+    "answer": "館",
+    "correct_orders": [
+      [
+        "旅",
+        "館"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9f20_01",
+    "character": "鼠",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "老鼠",
+    "fill_position": [
+      1
+    ],
+    "answer": "鼠",
+    "correct_orders": [
+      [
+        "老",
+        "鼠"
+      ]
+    ]
+  },
+  {
+    "id": "fill_9f3b_01",
+    "character": "鼻",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "鼻祖",
+    "fill_position": [
+      0
+    ],
+    "answer": "鼻",
+    "correct_orders": [
+      [
+        "鼻",
+        "祖"
+      ]
+    ]
+  },
+  {
+    "id": "fill_4e0b_01",
+    "character": "下",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "樓下",
+    "fill_position": [
+      1
+    ],
+    "answer": "下",
+    "correct_orders": [
+      [
+        "樓",
+        "下"
+      ]
+    ]
+  },
+  {
+    "id": "fill_54ed_01",
+    "character": "哭",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "哭訴",
+    "fill_position": [
+      0
+    ],
+    "answer": "哭",
+    "correct_orders": [
+      [
+        "哭",
+        "訴"
+      ]
+    ]
+  },
+  {
+    "id": "fill_571f_01",
+    "character": "土",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "泥土",
+    "fill_position": [
+      1
+    ],
+    "answer": "土",
+    "correct_orders": [
+      [
+        "泥",
+        "土"
+      ]
+    ]
+  },
+  {
+    "id": "fill_590f_01",
+    "character": "夏",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "夏天",
+    "fill_position": [
+      0
+    ],
+    "answer": "夏",
+    "correct_orders": [
+      [
+        "夏",
+        "天"
+      ]
+    ]
+  },
+  {
+    "id": "fill_76ee_01",
+    "character": "目",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "雙目",
+    "fill_position": [
+      1
+    ],
+    "answer": "目",
+    "correct_orders": [
+      [
+        "雙",
+        "目"
+      ]
+    ]
+  },
+  {
+    "id": "fill_7c73_01",
+    "character": "米",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "白米",
+    "fill_position": [
+      1
+    ],
+    "answer": "米",
+    "correct_orders": [
+      [
+        "白",
+        "米"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8033_01",
+    "character": "耳",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "耳朵",
+    "fill_position": [
+      0
+    ],
+    "answer": "耳",
+    "correct_orders": [
+      [
+        "耳",
+        "朵"
+      ]
+    ]
+  },
+  {
+    "id": "fill_820a_01",
+    "character": "舊",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "舊式",
+    "fill_position": [
+      0
+    ],
+    "answer": "舊",
+    "correct_orders": [
+      [
+        "舊",
+        "式"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8db3_01",
+    "character": "足",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "雙足",
+    "fill_position": [
+      1
+    ],
+    "answer": "足",
+    "correct_orders": [
+      [
+        "雙",
+        "足"
+      ]
+    ]
+  },
+  {
+    "id": "fill_8eca_01",
+    "character": "車",
+    "book": 4,
+    "lesson": 1,
+    "sentence": "車馬炮",
+    "fill_position": [
+      0
+    ],
+    "answer": "車",
+    "correct_orders": [
+      [
+        "車",
+        "馬",
+        "炮"
+      ]
+    ]
+  }
+]

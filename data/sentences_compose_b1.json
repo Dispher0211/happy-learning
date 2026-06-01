@@ -1,0 +1,1136 @@
+[
+  {
+    "id": "compose_4e0a_01",
+    "character": "上",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "上",
+    "hint": "漢語聲調之一",
+    "example": "平上去入"
+  },
+  {
+    "id": "compose_4e0d_01",
+    "character": "不",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "不",
+    "hint": "(1)否定詞",
+    "example": "不能"
+  },
+  {
+    "id": "compose_4e14_01",
+    "character": "且",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "且",
+    "hint": "(1)連詞：A>表示並列或意思更進一層",
+    "example": "並且"
+  },
+  {
+    "id": "compose_4e3b_01",
+    "character": "主",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "主",
+    "hint": "(1)國君",
+    "example": "君主"
+  },
+  {
+    "id": "compose_4e5f_01",
+    "character": "也",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "也",
+    "hint": "(1)同樣",
+    "example": "他去，我也去。"
+  },
+  {
+    "id": "compose_4e86_01",
+    "character": "了",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "了",
+    "hint": "助詞",
+    "example": "下雨了！"
+  },
+  {
+    "id": "compose_4eba_01",
+    "character": "人",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "人",
+    "hint": "(1)具有高度智慧和靈性，使用語言進行溝通，能製造",
+    "example": "人是萬物之靈。"
+  },
+  {
+    "id": "compose_4ec0_01",
+    "character": "什",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "什",
+    "hint": "(1)數目字",
+    "example": "什佰"
+  },
+  {
+    "id": "compose_4ed6_01",
+    "character": "他",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "他",
+    "hint": "(1)第三人稱代詞，指你、我以外的第三人",
+    "example": "他們"
+  },
+  {
+    "id": "compose_4f60_01",
+    "character": "你",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "你",
+    "hint": "代詞",
+    "example": "你們"
+  },
+  {
+    "id": "compose_4fe1_01",
+    "character": "信",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "信",
+    "hint": "(1)誠實",
+    "example": "信用"
+  },
+  {
+    "id": "compose_500b_01",
+    "character": "個",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "個",
+    "hint": "自個兒：自己一個人",
+    "example": "個人"
+  },
+  {
+    "id": "compose_5011_01",
+    "character": "們",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "們",
+    "hint": "表複數的詞尾，常附在人稱代名詞或名詞之後",
+    "example": "我們"
+  },
+  {
+    "id": "compose_5012_01",
+    "character": "倒",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "倒",
+    "hint": "(1)物體由直立而橫躺下來",
+    "example": "摔倒"
+  },
+  {
+    "id": "compose_50b3_01",
+    "character": "傳",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "傳",
+    "hint": "(1)解釋經義的文字、書籍",
+    "example": "左傳"
+  },
+  {
+    "id": "compose_5148_01",
+    "character": "先",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "先",
+    "hint": "(1)時間或次序在前的",
+    "example": "首先"
+  },
+  {
+    "id": "compose_5169_01",
+    "character": "兩",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "兩",
+    "hint": "(1)數目是二的",
+    "example": "兩人"
+  },
+  {
+    "id": "compose_5171_01",
+    "character": "共",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "共",
+    "hint": "(1)一起、一同",
+    "example": "共犯"
+  },
+  {
+    "id": "compose_518d_01",
+    "character": "再",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "再",
+    "hint": "(1)重複",
+    "example": "再嫁"
+  },
+  {
+    "id": "compose_5206_01",
+    "character": "分",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "分",
+    "hint": "(1)名位、權利、義務等的範圍、限度",
+    "example": "身分"
+  },
+  {
+    "id": "compose_5230_01",
+    "character": "到",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "到",
+    "hint": "(1)來、抵達",
+    "example": "到站"
+  },
+  {
+    "id": "compose_5275_01",
+    "character": "創",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "創",
+    "hint": "傷、傷口",
+    "example": "創傷"
+  },
+  {
+    "id": "compose_5317_01",
+    "character": "北",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "北",
+    "hint": "(1)方位名",
+    "example": "北方"
+  },
+  {
+    "id": "compose_5343_01",
+    "character": "千",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "千",
+    "hint": "(1)數目字",
+    "example": "千方百計"
+  },
+  {
+    "id": "compose_53c8_01",
+    "character": "又",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "又",
+    "hint": "(1)再",
+    "example": "看了又看"
+  },
+  {
+    "id": "compose_53cb_01",
+    "character": "友",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "友",
+    "hint": "(1)意氣相投、情誼互通的人",
+    "example": "朋友"
+  },
+  {
+    "id": "compose_53f3_01",
+    "character": "右",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "右",
+    "hint": "(1)表示方向、位置",
+    "example": "右手"
+  },
+  {
+    "id": "compose_53f8_01",
+    "character": "司",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "司",
+    "hint": "(1)掌管",
+    "example": "司儀"
+  },
+  {
+    "id": "compose_5403_01",
+    "character": "吃",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "吃",
+    "hint": "口吃：說話不流暢，有時重複或拉長字音",
+    "example": "吃飯"
+  },
+  {
+    "id": "compose_5404_01",
+    "character": "各",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "各",
+    "hint": "每個",
+    "example": "各別"
+  },
+  {
+    "id": "compose_540c_01",
+    "character": "同",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "同",
+    "hint": "(1)一樣的，沒有差異",
+    "example": "同等"
+  },
+  {
+    "id": "compose_5438_01",
+    "character": "吸",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "吸",
+    "hint": "(1)用口或鼻將氣體引入體內",
+    "example": "呼吸"
+  },
+  {
+    "id": "compose_548c_01",
+    "character": "和",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "和",
+    "hint": "溫暖",
+    "example": "今天的天氣好暖和。"
+  },
+  {
+    "id": "compose_554a_01",
+    "character": "啊",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "啊",
+    "hint": "助詞",
+    "example": "好美啊！"
+  },
+  {
+    "id": "compose_5718_01",
+    "character": "團",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "團",
+    "hint": "(1)圓形的",
+    "example": "團扇"
+  },
+  {
+    "id": "compose_5728_01",
+    "character": "在",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "在",
+    "hint": "(1)居於、處於",
+    "example": "在職"
+  },
+  {
+    "id": "compose_5751_01",
+    "character": "坑",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "坑",
+    "hint": "(1)地面凹陷的地方",
+    "example": "泥坑"
+  },
+  {
+    "id": "compose_5916_01",
+    "character": "外",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "外",
+    "hint": "(1)不屬於某範圍裡面的稱為「外」",
+    "example": "此外"
+  },
+  {
+    "id": "compose_591a_01",
+    "character": "多",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "多",
+    "hint": "(1)增加",
+    "example": "班上多了一位新同學。"
+  },
+  {
+    "id": "compose_591c_01",
+    "character": "夜",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "夜",
+    "hint": "從天黑到隔天天亮的一段時間",
+    "example": "夜晚"
+  },
+  {
+    "id": "compose_5927_01",
+    "character": "大",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "大",
+    "hint": "大夫：醫生",
+    "example": "住院大夫"
+  },
+  {
+    "id": "compose_5929_01",
+    "character": "天",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "天",
+    "hint": "(1)日月星辰所羅列的空間，即天空",
+    "example": "碧海青天"
+  },
+  {
+    "id": "compose_597d_01",
+    "character": "好",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "好",
+    "hint": "喜愛、喜歡",
+    "example": "好客"
+  },
+  {
+    "id": "compose_5982_01",
+    "character": "如",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "如",
+    "hint": "(1)似、好像",
+    "example": "果真如此"
+  },
+  {
+    "id": "compose_5b50_01",
+    "character": "子",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "子",
+    "hint": "詞綴",
+    "example": "房子"
+  },
+  {
+    "id": "compose_5bb9_01",
+    "character": "容",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "容",
+    "hint": "(1)包含",
+    "example": "容納"
+  },
+  {
+    "id": "compose_5c0f_01",
+    "character": "小",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "小",
+    "hint": "(1)指體積、面積、容量、數量、年齡等，不如所比較",
+    "example": "小鳥"
+  },
+  {
+    "id": "compose_5c11_01",
+    "character": "少",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "少",
+    "hint": "(1)數量不多的",
+    "example": "少量"
+  },
+  {
+    "id": "compose_5c71_01",
+    "character": "山",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "山",
+    "hint": "陸地高起的部分",
+    "example": "高山"
+  },
+  {
+    "id": "compose_5de6_01",
+    "character": "左",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "左",
+    "hint": "(1)表示位置、方向",
+    "example": "左手"
+  },
+  {
+    "id": "compose_5dee_01",
+    "character": "差",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "差",
+    "hint": "參差：雜亂不整齊",
+    "example": "參差不齊"
+  },
+  {
+    "id": "compose_5e95_01",
+    "character": "底",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "底",
+    "hint": "(1)物體的最下面部分",
+    "example": "盆底"
+  },
+  {
+    "id": "compose_5f97_01",
+    "character": "得",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "得",
+    "hint": "應該、必須",
+    "example": "這件事總得讓大家知道。"
+  },
+  {
+    "id": "compose_5f9e_01",
+    "character": "從",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "從",
+    "hint": "附和的、陪同的",
+    "example": "從犯"
+  },
+  {
+    "id": "compose_5feb_01",
+    "character": "快",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "快",
+    "hint": "(1)迅速",
+    "example": "趕快"
+  },
+  {
+    "id": "compose_600e_01",
+    "character": "怎",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "怎",
+    "hint": "如何",
+    "example": "怎麼"
+  },
+  {
+    "id": "compose_601d_01",
+    "character": "思",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "思",
+    "hint": "(1)想",
+    "example": "思慮"
+  },
+  {
+    "id": "compose_60dc_01",
+    "character": "惜",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "惜",
+    "hint": "(1)愛、憐",
+    "example": "愛惜"
+  },
+  {
+    "id": "compose_6211_01",
+    "character": "我",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "我",
+    "hint": "(1)代詞",
+    "example": "自我反省"
+  },
+  {
+    "id": "compose_6234_01",
+    "character": "戴",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "戴",
+    "hint": "(1)將物品套掛在身體部位上",
+    "example": "戴帽子"
+  },
+  {
+    "id": "compose_624b_01",
+    "character": "手",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "手",
+    "hint": "(1)人體的兩臂",
+    "example": "雙手"
+  },
+  {
+    "id": "compose_62cd_01",
+    "character": "拍",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "拍",
+    "hint": "(1)用手掌或扁平器具擊打",
+    "example": "拍球"
+  },
+  {
+    "id": "compose_6383_01",
+    "character": "掃",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "掃",
+    "hint": "(1)用掃把清除髒汙",
+    "example": "掃地"
+  },
+  {
+    "id": "compose_6416_01",
+    "character": "搖",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "搖",
+    "hint": "擺動",
+    "example": "搖動"
+  },
+  {
+    "id": "compose_653e_01",
+    "character": "放",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "放",
+    "hint": "(1)由緊張狀態中鬆開",
+    "example": "放鬆"
+  },
+  {
+    "id": "compose_65e5_01",
+    "character": "日",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "日",
+    "hint": "(1)太陽",
+    "example": "落日"
+  },
+  {
+    "id": "compose_65e9_01",
+    "character": "早",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "早",
+    "hint": "(1)太陽剛出來的時候",
+    "example": "早晨"
+  },
+  {
+    "id": "compose_662f_01",
+    "character": "是",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "是",
+    "hint": "(1)用作動詞，表示肯定的意思",
+    "example": "他是男人"
+  },
+  {
+    "id": "compose_665a_01",
+    "character": "晚",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "晚",
+    "hint": "(1)夜",
+    "example": "晚上"
+  },
+  {
+    "id": "compose_6709_01",
+    "character": "有",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "有",
+    "hint": "用於數目之間，表示附加",
+    "example": "六十有六歲"
+  },
+  {
+    "id": "compose_670b_01",
+    "character": "朋",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "朋",
+    "hint": "(1)友人",
+    "example": "朋友"
+  },
+  {
+    "id": "compose_671f_01",
+    "character": "期",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "期",
+    "hint": "一周年",
+    "example": "期年"
+  },
+  {
+    "id": "compose_6735_01",
+    "character": "朵",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "朵",
+    "hint": "(1)植物的花或苞",
+    "example": "花朵"
+  },
+  {
+    "id": "compose_679c_01",
+    "character": "果",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "果",
+    "hint": "(1)植物所結的實",
+    "example": "果實"
+  },
+  {
+    "id": "compose_6821_01",
+    "character": "校",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "校",
+    "hint": "(1)文書的複查核正",
+    "example": "校對"
+  },
+  {
+    "id": "compose_68d2_01",
+    "character": "棒",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "棒",
+    "hint": "(1)棍子",
+    "example": "棍棒"
+  },
+  {
+    "id": "compose_68ee_01",
+    "character": "森",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "森",
+    "hint": "(1)樹木濃密的樣子",
+    "example": "森林"
+  },
+  {
+    "id": "compose_6bd4_01",
+    "character": "比",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "比",
+    "hint": "(1)較量",
+    "example": "比較"
+  },
+  {
+    "id": "compose_6cbf_01",
+    "character": "沿",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "沿",
+    "hint": "(1)順著",
+    "example": "沿路"
+  },
+  {
+    "id": "compose_6d0b_01",
+    "character": "洋",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "洋",
+    "hint": "(1)比海更大的水域",
+    "example": "太平洋"
+  },
+  {
+    "id": "compose_6d77_01",
+    "character": "海",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "海",
+    "hint": "(1)接鄰陸地，比洋小的水域",
+    "example": "黃海"
+  },
+  {
+    "id": "compose_7136_01",
+    "character": "然",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "然",
+    "hint": "(1)對、正確",
+    "example": "大謬不然"
+  },
+  {
+    "id": "compose_7159_01",
+    "character": "煙",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "煙",
+    "hint": "(1)東西燃燒時所產生的氣體",
+    "example": "煙囪"
+  },
+  {
+    "id": "compose_71b1_01",
+    "character": "熱",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "熱",
+    "hint": "(1)溫度高的",
+    "example": "熱天"
+  },
+  {
+    "id": "compose_72c2_01",
+    "character": "狂",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "狂",
+    "hint": "(1)發瘋，精神不正常",
+    "example": "發狂"
+  },
+  {
+    "id": "compose_738b_01",
+    "character": "王",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "王",
+    "hint": "統治",
+    "example": "王天下"
+  },
+  {
+    "id": "compose_73a9_01",
+    "character": "玩",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "玩",
+    "hint": "(1)遊戲",
+    "example": "玩耍"
+  },
+  {
+    "id": "compose_756a_01",
+    "character": "番",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "番",
+    "hint": "(1)古代對外國或邊境少數民族的稱呼",
+    "example": "番茄"
+  },
+  {
+    "id": "compose_767d_01",
+    "character": "白",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "白",
+    "hint": "(1)素淨，如雪、牛奶的顏色",
+    "example": "白雪"
+  },
+  {
+    "id": "compose_7684_01",
+    "character": "的",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "的",
+    "hint": "確實的",
+    "example": "他的確是個好人！"
+  },
+  {
+    "id": "compose_77e5_01",
+    "character": "知",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "知",
+    "hint": "(1)洞悉、了解",
+    "example": "知道"
+  },
+  {
+    "id": "compose_798f_01",
+    "character": "福",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "福",
+    "hint": "(1)吉祥幸運的",
+    "example": "福地"
+  },
+  {
+    "id": "compose_79cb_01",
+    "character": "秋",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "秋",
+    "hint": "(1)一年四季中的第三季",
+    "example": "秋天"
+  },
+  {
+    "id": "compose_79e4_01",
+    "character": "秤",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "秤",
+    "hint": "衡量物體重量的器具",
+    "example": "天秤"
+  },
+  {
+    "id": "compose_7a97_01",
+    "character": "窗",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "窗",
+    "hint": "開在牆上透光、通氣的孔洞",
+    "example": "窗戶"
+  },
+  {
+    "id": "compose_7d05_01",
+    "character": "紅",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "紅",
+    "hint": "女紅：女性所做的針線、編織、刺繡等工作",
+    "example": "紅色"
+  },
+  {
+    "id": "compose_7da0_01",
+    "character": "綠",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "綠",
+    "hint": "(1)藍色和黃色調和而成，像青草、樹葉的顏色",
+    "example": "綠苔"
+  },
+  {
+    "id": "compose_81fa_01",
+    "character": "臺",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "臺",
+    "hint": "(1)高出地面的平坦地方",
+    "example": "舞臺"
+  },
+  {
+    "id": "compose_82b1_01",
+    "character": "花",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "花",
+    "hint": "(1)植物體的一部分，被子植物的生殖器官，由許多變",
+    "example": "花朵"
+  },
+  {
+    "id": "compose_85cd_01",
+    "character": "藍",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "藍",
+    "hint": "(1)天青色",
+    "example": "湛藍"
+  },
+  {
+    "id": "compose_87f2_01",
+    "character": "蟲",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "蟲",
+    "hint": "(1)昆蟲的總稱",
+    "example": "懶蟲"
+  },
+  {
+    "id": "compose_88d9_01",
+    "character": "裙",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "裙",
+    "hint": "圍在腰部以下的服裝",
+    "example": "窄裙"
+  },
+  {
+    "id": "compose_88e1_01",
+    "character": "裡",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "裡",
+    "hint": "(1)衣服內層的襯布",
+    "example": "裡子"
+  },
+  {
+    "id": "compose_8a69_01",
+    "character": "詩",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "詩",
+    "hint": "(1)一種可以吟詠、朗誦的文體",
+    "example": "古詩"
+  },
+  {
+    "id": "compose_8aaa_01",
+    "character": "說",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "說",
+    "hint": "用言語勸說別人，讓他聽從或採納自己的意見",
+    "example": "說服"
+  },
+  {
+    "id": "compose_8ab0_01",
+    "character": "誰",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "誰",
+    "hint": "(1)什麼人",
+    "example": "是誰在敲門哪？"
+  },
+  {
+    "id": "compose_8d70_01",
+    "character": "走",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "走",
+    "hint": "(1)步行",
+    "example": "走路"
+  },
+  {
+    "id": "compose_8d77_01",
+    "character": "起",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "起",
+    "hint": "(1)由坐臥、趴伏而站立或由躺而坐",
+    "example": "起立"
+  },
+  {
+    "id": "compose_8de8_01",
+    "character": "跨",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "跨",
+    "hint": "(1)舉足超越",
+    "example": "跨欄"
+  },
+  {
+    "id": "compose_8def_01",
+    "character": "路",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "路",
+    "hint": "(1)人馬舟車通行的途徑",
+    "example": "陸路"
+  },
+  {
+    "id": "compose_9001_01",
+    "character": "送",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "送",
+    "hint": "(1)贈與",
+    "example": "送禮"
+  },
+  {
+    "id": "compose_9019_01",
+    "character": "這",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "這",
+    "hint": "(1)代詞",
+    "example": "這邊"
+  },
+  {
+    "id": "compose_90a3_01",
+    "character": "那",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "那",
+    "hint": "(1)指示代詞",
+    "example": "那天"
+  },
+  {
+    "id": "compose_90e8_01",
+    "character": "部",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "部",
+    "hint": "(1)整體中的一些分子",
+    "example": "部分"
+  },
+  {
+    "id": "compose_93ae_01",
+    "character": "鎮",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "鎮",
+    "hint": "(1)行政區域之一，置於縣下",
+    "example": "鄉鎮"
+  },
+  {
+    "id": "compose_9577_01",
+    "character": "長",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "長",
+    "hint": "(1)年紀大、輩分高的人",
+    "example": "尊長"
+  },
+  {
+    "id": "compose_9580_01",
+    "character": "門",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "門",
+    "hint": "(1)建築物或車、船等的出入口",
+    "example": "大門"
+  },
+  {
+    "id": "compose_958b_01",
+    "character": "開",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "開",
+    "hint": "(1)從關閉的狀態啟動",
+    "example": "開門"
+  },
+  {
+    "id": "compose_9662_01",
+    "character": "院",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "院",
+    "hint": "(1)圍牆內屋外的空地",
+    "example": "院子"
+  },
+  {
+    "id": "compose_966a_01",
+    "character": "陪",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "陪",
+    "hint": "(1)在旁伴隨",
+    "example": "陪考"
+  },
+  {
+    "id": "compose_982d_01",
+    "character": "頭",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "頭",
+    "hint": "2.詞綴，用於詞尾",
+    "example": "石頭"
+  },
+  {
+    "id": "compose_98a8_01",
+    "character": "風",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "風",
+    "hint": "吹",
+    "example": "春風風人"
+  },
+  {
+    "id": "compose_9ad8_01",
+    "character": "高",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "高",
+    "hint": "(1)物體直立時上下的長度",
+    "example": "高度"
+  },
+  {
+    "id": "compose_9b27_01",
+    "character": "鬧",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "鬧",
+    "hint": "(1)喧譁、不安靜",
+    "example": "吵鬧"
+  },
+  {
+    "id": "compose_9ce5_01",
+    "character": "鳥",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "鳥",
+    "hint": "長尾飛禽的總稱",
+    "example": "我喜歡鳥。"
+  },
+  {
+    "id": "compose_9ebc_01",
+    "character": "麼",
+    "book": 1,
+    "lesson": 1,
+    "prompt_word": "麼",
+    "hint": "疑問詞",
+    "example": "你說什麼？"
+  }
+]
