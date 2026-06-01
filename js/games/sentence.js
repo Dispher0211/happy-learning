@@ -421,8 +421,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="480" height="240"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:480px;">
+          <canvas id="hw-canvas" width="560" height="280"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:560px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -476,8 +476,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="480" height="240"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:480px;">
+          <canvas id="hw-canvas" width="560" height="280"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:560px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -684,26 +684,9 @@ export class SentenceGame extends GameEngine {
       return { correct, score: correct ? 1 : 0, needReview: false }
     }
 
-    // 模式3/4：GeminiManager 判斷
+    // 模式3/4：一律交家長審核（不呼叫 Gemini）
     if (mode === 3 || mode === 4) {
-      const reviewMode = AppState.settings?.parent_review_mode || 'notify'
-
-      // all_parent 模式：全部送審核，不呼叫 Gemini
-      if (reviewMode === 'all_parent') {
-        return { correct: false, score: -1, needReview: true }
-      }
-
-      // all_ai 模式：全部 AI 判斷，不送審核
-      const geminiResult = await GeminiManager.judgeAnswer(question, answer, mode)
-      const score        = geminiResult?.score ?? 0
-
-      if (reviewMode === 'all_ai') {
-        return { correct: score >= 0.8, score, needReview: false }
-      }
-
-      // notify 模式（預設）：score >= 0.8 直接通過，否則送審核
-      const needReview = score < 0.8
-      return { correct: score >= 0.8, score, needReview }
+      return { correct: false, score: -1, needReview: true }
     }
 
     return { correct: false, score: 0, needReview: false }
@@ -778,29 +761,56 @@ export class SentenceGame extends GameEngine {
       : STARS_MODE34.retry
 
     const reviewData = {
-      type:           mode === 3 ? 'sentence_pattern' : 'sentence_free',
-      question:       mode === 3
-        ? `句型：${question.example_pattern} 範例：${question.example_sentence}`
-        : `用「${question.character}」造句`,
-      answer:         answer,
+      // 欄位名稱與 ParentReviewPage 對齊
+      type:             mode === 3 ? 'sentence_pattern' : 'sentence_free',
+      game_id:          'sentence',
+      game_mode:        mode,                          // ParentReviewPage 用 r.game_mode
+      character:        question.character || '',
+      pronunciation:    null,
+      // 模式3 句型欄位
+      example_pattern:  mode === 3 ? (question.example_pattern || '') : '',
+      example_sentence: mode === 3 ? (question.example_sentence || question.example || '') : '',
+      // 學生答案
+      student_answer:   answer,                        // ParentReviewPage 用 r.student_answer
       corrected_answer: null,
-      ai_score:       score,         // all_parent 模式傳 -1
-      status:         'pending',
-      expected_stars: expectedStars,
-      game_id:        'sentence',
-      character:      question.character || '',
-      pronunciation:  null,
+      ai_score:         -1,                            // 不送 AI，標示未評
+      status:           'pending',
+      expected_stars:   expectedStars,
+      stars_given:      false,                         // 發過星星後設 true
     }
 
     try {
       await FirestoreAPI.addPendingReview(reviewData)
       AppState.pendingReviewCount = (AppState.pendingReviewCount || 0) + 1
-      globalThis.UIManager?.showToast?.('已暫存，等家長確認 👪', 'info')
     } catch (e) {
       console.warn('sentence.js: addPendingReview 失敗', e)
     }
 
-    // 進下一題（送審後繼續答題）
+    // 顯示家長審核橫幅（明顯，置於題目頂部）
+    this._showParentReviewBanner(answer)
+  }
+
+  /** 顯示家長審核橫幅 */
+  _showParentReviewBanner(answer) {
+    // 移除舊橫幅
+    const old = document.getElementById('parent-review-banner')
+    if (old) old.remove()
+
+    const banner = document.createElement('div')
+    banner.id = 'parent-review-banner'
+    banner.className = 'parent-review-banner'
+    banner.innerHTML = `
+      <div class="prb-icon">👪</div>
+      <div class="prb-text">
+        <strong>已記錄！等家長確認</strong>
+        <span>家長審核後，星星會在下次登入時發放 ⭐</span>
+      </div>
+    `
+    // 插入 game-container 頂部
+    const container = document.querySelector('.game-container')
+    if (container) container.insertBefore(banner, container.firstChild)
+
+    // 進下一題
     this._showNextButton()
   }
 
@@ -1055,17 +1065,40 @@ export class SentenceGame extends GameEngine {
   getHint(level, question) {
     const mode = this._currentMode
 
-    if (mode === 1 || mode === 2) {
+    if (mode === 1) {
       const { radical, zhuyin } = this._getCharInfo(question.answer)
       if (level === 1) {
-        const radStr = radical ? `部首：<strong>${radical}</strong>` : `部首：-`
-        return { html: `<div class="hint-radical">🔍 ${radStr}</div>` }
+        const radStr = radical ? `<span class="hint-big-char">${radical}</span>` : `-`
+        return { html: `<div class="hint-radical">🔍 部首：${radStr}</div>` }
       }
       if (level === 2) {
         const zhuyinHtml = zhuyin
           ? `<span class="hint-zhuyin-wrap">${this._renderZhuyinPv2(zhuyin)}</span>`
           : question.answer
         return { html: `<div class="hint-zhuyin">🔊 注音：${zhuyinHtml}</div>` }
+      }
+    }
+
+    if (mode === 2) {
+      const chars = question.correct_orders?.[0] || question.sentence.split('')
+      if (level === 1) {
+        // 提示一：每個字的部首
+        const radicals = chars.map(ch => {
+          const info = this._getCharInfo(ch)
+          return `<span class="hint-radical-item"><span class="hint-char-small">${ch}</span><span class="hint-radical-val">${info.radical || '?'}</span></span>`
+        }).join('')
+        return { html: `<div class="hint-drag-radicals">🔍 各字部首：<div class="hint-radical-row">${radicals}</div></div>` }
+      }
+      if (level === 2) {
+        // 提示二：顯示約1/3的字的正確位置
+        const revealCount = Math.max(1, Math.floor(chars.length / 3))
+        const revealIdx   = chars.slice(0, revealCount).map((_, i) => i)
+        const partials = chars.map((ch, i) =>
+          revealIdx.includes(i)
+            ? `<span class="hint-reveal-char">${i+1}.${ch}</span>`
+            : `<span class="hint-blank-pos">${i+1}._</span>`
+        ).join('')
+        return { html: `<div class="hint-drag-partial">💡 部分提示：<div class="hint-partial-row">${partials}</div></div>` }
       }
     }
 
@@ -1076,15 +1109,14 @@ export class SentenceGame extends GameEngine {
 
     if (mode === 4) {
       if (level === 1) {
-        // 優先用 compose 資料的 prompt_word，再查 characters.json 詞語
-        let word = question.prompt_word && question.prompt_word !== question.character
-          ? question.prompt_word : null
-        if (!word) {
-          const charInfo = this._getCharInfo(question.character)
-          if (charInfo._words?.length) word = charInfo._words[0]
-        }
-        if (!word) word = question.character
-        return { html: `<div class="hint-content">💡 試著用詞語「<strong style="font-size:1.3em;color:#6d28d9">${word}</strong>」造句</div>` }
+        // 從 characters.json 取詞語（最多3個）
+        const charInfo = this._getCharInfo(question.character)
+        let words = [...(charInfo._words || [])]
+        if (question.prompt_word && !words.includes(question.prompt_word)) words.unshift(question.prompt_word)
+        words = words.slice(0, 3)
+        if (!words.length) words = [question.character]
+        const wordsHtml = words.map(w => `<span class="hint-word-chip">${w}</span>`).join('')
+        return { html: `<div class="hint-words">💡 可以用這些詞語造句：<div class="hint-word-row">${wordsHtml}</div></div>` }
       }
       if (level === 2) {
         const ex = question.example || question.example_sentence || ''

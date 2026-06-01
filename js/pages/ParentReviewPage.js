@@ -242,10 +242,10 @@ export class ParentReviewPage {
         resolved_at: FirestoreAPI.serverTimestamp()
       })
 
-      // 發送星星
-      if (review.expected_stars > 0) {
-        await StarsManager.add(review.expected_stars)
-      }
+      // 標記星星待發（小孩下次登入時領取），不直接加入家長 StarsManager
+      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+        stars_given: false,   // SelectChildPage 登入時改為 true 並發星星
+      })
 
       // 遺忘曲線記錄為正確
       if (review.character) {
@@ -263,7 +263,7 @@ export class ParentReviewPage {
       this._reviews.splice(idx, 1)
       this._renderList()
 
-      UIManager.showToast(`✅ 已通過，發送 ★${review.expected_stars}`, 'success', 2000)
+      UIManager.showToast(`✅ 已通過！小孩下次登入時發送 ★${review.expected_stars}`, 'success', 2500)
     } catch (e) {
       console.error('[ParentReviewPage] approve 失敗', e)
       UIManager.showToast('操作失敗，請再試', 'error', 2000)
@@ -301,10 +301,10 @@ export class ParentReviewPage {
         resolved_at: FirestoreAPI.serverTimestamp()
       })
 
-      // 發送星星
-      if (review.expected_stars > 0) {
-        await StarsManager.add(review.expected_stars)
-      }
+      // 標記星星待發（小孩下次登入時領取）
+      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+        stars_given: false,
+      })
 
       // 遺忘曲線記錄為正確
       if (review.character) {
@@ -322,7 +322,7 @@ export class ParentReviewPage {
       this._reviews.splice(idx, 1)
       this._renderList()
 
-      UIManager.showToast(`✏️ 修改後通過，發送 ★${review.expected_stars}`, 'success', 2000)
+      UIManager.showToast(`✏️ 修改後通過！小孩下次登入時發送 ★${review.expected_stars}`, 'success', 2500)
     } catch (e) {
       console.error('[ParentReviewPage] approveWithCorrection 失敗', e)
       UIManager.showToast('操作失敗，請再試', 'error', 2000)

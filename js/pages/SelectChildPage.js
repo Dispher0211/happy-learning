@@ -9,6 +9,8 @@ import { Auth } from '../auth.js';
 import { UIManager } from '../ui/ui_manager.js';
 import { AppState } from '../state.js';
 import { PAGES } from '../ui/pages.js';
+import { StarsManager } from '../stars.js';
+import { AudioManager } from '../audio.js';
 
 export class SelectChildPage {
   constructor() {
@@ -167,8 +169,76 @@ export class SelectChildPage {
       AppState.idioms     = [];
     }
 
+    // 檢查已通過但未發星的審核（家長批准後第一次登入發星）
+    await this._grantApprovedReviewStars();
+
     // 導航到卡片主頁
     UIManager.navigate(PAGES.CARD);
+  }
+
+  /**
+   * 登入時檢查已通過但未發星的審核，發星星+動畫+音效+通知
+   */
+  async _grantApprovedReviewStars() {
+    try {
+      const uid = AppState.uid;
+      const allDocs = await FirestoreAPI.readCollection(`users/${uid}/pending_reviews`);
+      const approved = (allDocs || []).filter(d => d.status === 'approved' && d.stars_given === false);
+      if (approved.length === 0) return;
+
+      let totalStars = 0;
+      for (const review of approved) {
+        const stars = review.expected_stars || 0;
+        if (stars > 0) {
+          await StarsManager.add(stars);
+          totalStars += stars;
+        }
+        // 標記已發
+        await FirestoreAPI.updateDoc(
+          `users/${uid}/pending_reviews/${review.id}`,
+          { stars_given: true }
+        );
+      }
+
+      if (totalStars > 0) {
+        // 播放星星音效
+        AudioManager.playEffect('star').catch(() => {});
+
+        // 顯示醒目通知
+        const banner = document.createElement('div');
+        banner.id = 'approved-stars-banner';
+        banner.style.cssText = [
+          'position:fixed','top:50%','left:50%',
+          'transform:translate(-50%,-50%)',
+          'background:linear-gradient(135deg,#7c3aed,#f59e0b)',
+          'color:#fff','border-radius:20px','padding:28px 36px',
+          'text-align:center','z-index:9999',
+          'box-shadow:0 8px 32px rgba(0,0,0,0.35)',
+          'animation:approved-pop 0.5s ease',
+          'font-family:inherit',
+        ].join(';');
+        banner.innerHTML = `
+          <div style="font-size:3rem;margin-bottom:8px">🌟</div>
+          <div style="font-size:1.5rem;font-weight:900;margin-bottom:4px">家長批改通過！</div>
+          <div style="font-size:1.1rem;opacity:0.9">${approved.length} 題作業獲得</div>
+          <div style="font-size:2.5rem;font-weight:900;margin:8px 0">+${totalStars} ★</div>
+          <div style="font-size:0.9rem;opacity:0.8">太棒了，繼續加油！</div>
+        `;
+
+        // 插入 keyframe
+        if (!document.getElementById('approved-pop-style')) {
+          const style = document.createElement('style');
+          style.id = 'approved-pop-style';
+          style.textContent = '@keyframes approved-pop{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0}70%{transform:translate(-50%,-50%) scale(1.08)}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}';
+          document.head.appendChild(style);
+        }
+
+        document.body.appendChild(banner);
+        setTimeout(() => banner.remove(), 4000);
+      }
+    } catch (e) {
+      console.warn('[SelectChildPage] 發放審核星星失敗', e);
+    }
   }
 
   // ─────────────────────────────────────────
