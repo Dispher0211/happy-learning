@@ -421,8 +421,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="320" height="100"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none;">
+          <canvas id="hw-canvas" width="360" height="160"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:360px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -476,8 +476,8 @@ export class SentenceGame extends GameEngine {
 
         <!-- 手寫區 -->
         <div class="handwriting-area">
-          <canvas id="hw-canvas" width="320" height="100"
-            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none;">
+          <canvas id="hw-canvas" width="360" height="160"
+            style="border:2px solid #aaa; border-radius:8px; background:#fff; touch-action:none; width:100%; max-width:360px;">
           </canvas>
           <div class="hw-actions">
             <button class="undo-btn" onclick="window._sentenceGame._undoStroke()">↩ 撤銷</button>
@@ -512,21 +512,111 @@ export class SentenceGame extends GameEngine {
     this._canvasEl = document.getElementById('hw-canvas')
     if (!this._canvasEl) return
     this._canvasCtx = this._canvasEl.getContext('2d')
-    HandwritingManager.initCanvas(this._canvasEl, {
-      mode: 'chinese',
-      lineWidth: 3,
-      strokeColor: '#222',
-    })
+
+    // 清除舊監聽器
+    this._removeCanvasListeners?.()
+
+    // 筆劃狀態
+    this._isDrawing    = false
+    this._currentStroke = null
+    HandwritingManager.clearStrokes()
+
+    const canvas = this._canvasEl
+    const ctx    = this._canvasCtx
+
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect()
+      const scaleX = canvas.width  / rect.width
+      const scaleY = canvas.height / rect.height
+      const src = e.touches ? e.touches[0] : e
+      return {
+        x: (src.clientX - rect.left) * scaleX,
+        y: (src.clientY - rect.top)  * scaleY,
+      }
+    }
+
+    const onStart = (e) => {
+      e.preventDefault()
+      this._isDrawing = true
+      const pos = getPos(e)
+      this._currentStroke = { points: [pos] }
+      ctx.beginPath()
+      ctx.moveTo(pos.x, pos.y)
+      ctx.strokeStyle = '#222'
+      ctx.lineWidth   = 4
+      ctx.lineCap     = 'round'
+      ctx.lineJoin    = 'round'
+    }
+
+    const onMove = (e) => {
+      if (!this._isDrawing) return
+      e.preventDefault()
+      const pos = getPos(e)
+      this._currentStroke.points.push(pos)
+      ctx.lineTo(pos.x, pos.y)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(pos.x, pos.y)
+    }
+
+    const onEnd = (e) => {
+      if (!this._isDrawing) return
+      e.preventDefault()
+      this._isDrawing = false
+      if (this._currentStroke?.points?.length > 1) {
+        HandwritingManager.recordStroke(this._currentStroke)
+      }
+      this._currentStroke = null
+      ctx.beginPath()
+    }
+
+    canvas.addEventListener('mousedown',  onStart)
+    canvas.addEventListener('mousemove',  onMove)
+    canvas.addEventListener('mouseup',    onEnd)
+    canvas.addEventListener('mouseleave', onEnd)
+    canvas.addEventListener('touchstart', onStart, { passive: false })
+    canvas.addEventListener('touchmove',  onMove,  { passive: false })
+    canvas.addEventListener('touchend',   onEnd)
+
+    this._removeCanvasListeners = () => {
+      canvas.removeEventListener('mousedown',  onStart)
+      canvas.removeEventListener('mousemove',  onMove)
+      canvas.removeEventListener('mouseup',    onEnd)
+      canvas.removeEventListener('mouseleave', onEnd)
+      canvas.removeEventListener('touchstart', onStart)
+      canvas.removeEventListener('touchmove',  onMove)
+      canvas.removeEventListener('touchend',   onEnd)
+    }
   }
 
   /** 撤銷最後一筆劃 */
   _undoStroke() {
     HandwritingManager.undoLastStroke()
+    // 重繪 canvas
+    const canvas = this._canvasEl
+    const ctx    = this._canvasCtx
+    if (!canvas || !ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = '#222'
+    ctx.lineWidth   = 4
+    ctx.lineCap     = 'round'
+    ctx.lineJoin    = 'round'
+    for (const stroke of HandwritingManager._strokeStack) {
+      const pts = stroke.points || []
+      if (pts.length < 2) continue
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
+      ctx.stroke()
+    }
   }
 
   /** 清空手寫畫布 */
   _clearCanvas() {
-    HandwritingManager.clearCanvas()
+    HandwritingManager.clearStrokes()
+    const canvas = this._canvasEl
+    const ctx    = this._canvasCtx
+    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
   /** 手寫確認：送辨識 → 提交答案 */
@@ -542,7 +632,7 @@ export class SentenceGame extends GameEngine {
       // 辨識失敗（fallback: retry）
       if (recognized?.fallback === 'retry') {
         if (resultEl) resultEl.textContent = '請再寫一次（辨識失敗，不計答錯）'
-        HandwritingManager.clearCanvas()
+        this._clearCanvas()
         return
       }
 
@@ -554,7 +644,7 @@ export class SentenceGame extends GameEngine {
     } catch (err) {
       console.warn('sentence.js 手寫辨識例外', err)
       if (resultEl) resultEl.textContent = '請再寫一次'
-      HandwritingManager.clearCanvas()
+      this._clearCanvas()
     }
   }
 
@@ -806,7 +896,7 @@ export class SentenceGame extends GameEngine {
 
     // 模式3/4 手寫：清空畫布
     if (this._currentMode === 3 || this._currentMode === 4) {
-      HandwritingManager.clearCanvas()
+      this._clearCanvas()
     }
 
     // 顯示「再試一次」提示
@@ -1051,7 +1141,7 @@ export class SentenceGame extends GameEngine {
 
     // 清除手寫 Canvas 監聽器
     if (this._canvasEl) {
-      HandwritingManager.cleanup?.()
+      this._removeCanvasListeners?.()
       this._canvasEl = null
       this._canvasCtx = null
     }
