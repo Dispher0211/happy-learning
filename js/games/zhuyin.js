@@ -418,7 +418,7 @@ export class ZhuyinGame extends GameEngine {
       if (questions.length >= count) break
     }
 
-    // 若遺忘曲線 pool 不足，從剩餘生字補齊
+    // ── Step 2：生字簿字補齊（仍不足 count）──
     if (questions.length < count) {
       const usedChars = new Set(questions.map(q => q.char))
       const polyDataFb = JSONLoader.get('polyphones') || []
@@ -457,27 +457,18 @@ export class ZhuyinGame extends GameEngine {
           if (!polyphoneWordFb) {
             for (const p of charPronsFb) {
               const wFb = p.words?.find(w => w && w.includes(char))
-              if (wFb) {
-                polyphoneWordFb = wFb
-                pronunciationFb = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
-                break
-              }
+              if (wFb) { polyphoneWordFb = wFb; pronunciationFb = normalizeZhuyin(p.zhuyin); break }
             }
           }
           if (!polyphoneWordFb) {
             for (const p of charPronsFb) {
-              if (p.words?.[0]) {
-                polyphoneWordFb = p.words[0]
-                pronunciationFb = normalizeZhuyin(p.zhuyin)  // 同步更新讀音
-                break
-              }
+              if (p.words?.[0]) { polyphoneWordFb = p.words[0]; pronunciationFb = normalizeZhuyin(p.zhuyin); break }
             }
           }
         }
 
         questions.push({
-          char,
-          zhuyin,
+          char, zhuyin,
           pronunciation:  pronunciationFb,
           isPolyphone:    isPolyphoneFb,
           polyphoneWord:  polyphoneWordFb,
@@ -490,7 +481,68 @@ export class ZhuyinGame extends GameEngine {
       }
     }
 
-    this.questions = questions
+    // ── Step 3：生字簿不足 count → 循環複抽生字簿，換用不同詞語出題 ──
+    if (questions.length < count && questions.length > 0) {
+      const allCharsForExtra = JSONLoader.get('characters') || []
+      const basePool = [...questions]  // 已有的生字簿題目作為重複來源
+      // 記錄每個字已用過的詞語（避免重複同一詞語）
+      const usedWords = {}
+      for (const q of basePool) {
+        if (!usedWords[q.char]) usedWords[q.char] = new Set()
+        if (q.polyphoneWord) usedWords[q.char].add(q.polyphoneWord)
+      }
+
+      let poolIdx = 0
+      while (questions.length < count) {
+        const src      = basePool[poolIdx % basePool.length]
+        poolIdx++
+        const char     = src.char
+        if (!usedWords[char]) usedWords[char] = new Set()
+
+        // 從 characters.json 找該字的所有讀音詞語，排除已用過的
+        const fullData = allCharsForExtra.find(c => (c['字'] || c.char) === char)
+        let nextWord = ''
+        let nextPron = src.pronunciation
+
+        if (fullData) {
+          for (const p of (fullData.pronunciations || [])) {
+            for (const w of (p.words || [])) {
+              if (w && w.includes(char) && !usedWords[char].has(w)) {
+                nextWord = w
+                nextPron = normalizeZhuyin(p.zhuyin)
+                break
+              }
+            }
+            if (nextWord) break
+          }
+          // 若所有詞語都用過，重置 usedWords 重新輪替
+          if (!nextWord) {
+            usedWords[char] = new Set()
+            for (const p of (fullData.pronunciations || [])) {
+              for (const w of (p.words || [])) {
+                if (w && w.includes(char)) {
+                  nextWord = w
+                  nextPron = normalizeZhuyin(p.zhuyin)
+                  break
+                }
+              }
+              if (nextWord) break
+            }
+          }
+        }
+
+        usedWords[char].add(nextWord || src.polyphoneWord)
+
+        questions.push({
+          ...src,
+          polyphoneWord: nextWord || src.polyphoneWord,
+          pronunciation: nextPron,
+        })
+      }
+    }
+
+    this.questions = questions.slice(0, count)
+    this.totalQuestions = this.questions.length
     return this.questions
   }
 

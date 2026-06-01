@@ -315,8 +315,11 @@ export class RadicalGame extends GameEngine {
           char:           ch,
           correctRadical: radical,
           correctZhuyin:  zhuyin,
-          radicalStrokes: full.radical_strokes || 1,
-          totalStrokes:   full.total_strokes   || full.radical_strokes || 1,
+          // radical_strokes 存的是「剩餘筆畫」，部首筆畫 = total - 剩餘
+          radicalStrokes: (full.total_strokes > 0 && full.radical_strokes >= 0)
+            ? Math.max(1, full.total_strokes - full.radical_strokes)
+            : 1,
+          totalStrokes:   full.total_strokes || 1,
           firstStroke:    '',
           definition:     full.pronunciations?.[0]?.meaning || '',
         };
