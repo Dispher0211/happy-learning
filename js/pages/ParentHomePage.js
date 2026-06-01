@@ -132,10 +132,10 @@ export class ParentHomePage {
           </div>
 
           <!-- 待審核區塊 -->
-          <section class="parent-home__section">
+          <section class="parent-home__section ${pendingCount > 0 ? 'parent-home__section--urgent' : ''}">
             <h2 class="parent-home__section-title">📝 作業審核</h2>
-            <button class="parent-home__btn parent-home__btn--review" id="btnReview">
-              查看待審核
+            <button class="parent-home__btn parent-home__btn--review ${pendingCount > 0 ? 'parent-home__btn--has-pending' : ''}" id="btnReview">
+              ${pendingCount > 0 ? `🔔 有 ${pendingCount} 筆待審核！` : '查看待審核'}
               ${mobileBadgeHTML}
             </button>
           </section>

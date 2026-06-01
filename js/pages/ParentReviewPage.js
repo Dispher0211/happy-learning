@@ -131,7 +131,10 @@ export class ParentReviewPage {
 
         <div class="pr-answer-row">
           <span class="pr-label">學生答案：</span>
-          <span class="pr-answer-text">${this._escHtml(r.student_answer || '')}</span>
+          ${(r.student_answer || '').startsWith('data:image/')
+            ? `<img src="${r.student_answer}" class="pr-handwriting-img" alt="手寫內容"/>`
+            : `<span class="pr-answer-text">${this._escHtml(r.student_answer || '')}</span>`
+          }
         </div>
 
         <div class="pr-ai-row">
@@ -145,7 +148,7 @@ export class ParentReviewPage {
         <!-- 修改後通過：展開區域 -->
         <div class="pr-edit-area" id="prEdit_${r.id}" style="display:none">
           <textarea class="pr-textarea" id="prTextarea_${r.id}" 
-            placeholder="輸入修改後的正確答案…">${this._escHtml(r.student_answer || '')}</textarea>
+            placeholder="輸入修改後的正確答案…">${(r.student_answer || '').startsWith('data:image/') ? '' : this._escHtml(r.student_answer || '')}</textarea>
         </div>
 
         <div class="pr-actions">
@@ -239,7 +242,7 @@ export class ParentReviewPage {
       // 更新 Firestore status → approved，記錄處理時間
       await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'approved',
-        resolved_at: FirestoreAPI.serverTimestamp()
+        resolved_at: new Date().toISOString()
       })
 
       // 標記星星待發（小孩下次登入時領取），不直接加入家長 StarsManager
@@ -298,7 +301,7 @@ export class ParentReviewPage {
       await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'approved',
         corrected_answer: correctedAnswer,
-        resolved_at: FirestoreAPI.serverTimestamp()
+        resolved_at: new Date().toISOString()
       })
 
       // 標記星星待發（小孩下次登入時領取）
@@ -351,7 +354,7 @@ export class ParentReviewPage {
       // 更新 Firestore status → rejected
       await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'rejected',
-        resolved_at: FirestoreAPI.serverTimestamp()
+        resolved_at: new Date().toISOString()
       })
 
       // 遺忘曲線記錄為錯誤

@@ -619,42 +619,26 @@ export class SentenceGame extends GameEngine {
     if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
-  /** 手寫確認：送辨識 → 提交答案 */
+  /** 手寫確認：模式3/4 一律送家長審核，不需 AI 辨識，直接截圖送出 */
   async _submitHandwriting() {
     if (!this._canvasEl) return
 
+    // 模式3/4：不需辨識，直接以 canvas base64 當作答案內容，送家長審核
+    // （家長在審核頁面看到題目和 canvas 截圖即可判斷）
     const resultEl = document.getElementById('hw-result')
-    if (resultEl) resultEl.textContent = '辨識中⋯'
+    if (resultEl) resultEl.textContent = '準備送出⋯'
 
-    try {
-      const recognized = await HandwritingManager.recognize(this._canvasEl, { mode: 'chinese' })
-
-      // 辨識失敗（fallback: retry）
-      if (recognized?.fallback === 'retry') {
-        if (resultEl) resultEl.textContent = '請再寫一次（辨識失敗，不計答錯）'
-        this._clearCanvas()
-        return
-      }
-
-      const text = typeof recognized === 'string' ? recognized : (recognized?.text || recognized?.result || '')
-      if (!text) {
-        if (resultEl) resultEl.textContent = '⚠️ 未能辨識，請再寫一次'
-        this._clearCanvas()
-        const confirmBtn = document.getElementById('confirm-btn')
-        if (confirmBtn) confirmBtn.disabled = false
-        return
-      }
-      if (resultEl) resultEl.textContent = `辨識結果：${text}`
-
-      // 提交答案
-      await this._doSubmit(text)
-    } catch (err) {
-      console.warn('sentence.js 手寫辨識例外', err)
-      if (resultEl) resultEl.textContent = '⚠️ 辨識異常，請再寫一次'
-      this._clearCanvas()
-      const confirmBtn = document.getElementById('confirm-btn')
-      if (confirmBtn) confirmBtn.disabled = false
+    // 確認畫布有內容（至少有一筆劃）
+    if (!HandwritingManager._strokeStack || HandwritingManager._strokeStack.length === 0) {
+      if (resultEl) resultEl.textContent = '⚠️ 請先在畫布上寫字'
+      return
     }
+
+    // 用 canvas dataURL 作為 answer（家長審核時顯示圖片）
+    const imageData = this._canvasEl.toDataURL('image/png')
+    if (resultEl) resultEl.textContent = '已送出，等家長確認 👪'
+
+    await this._doSubmit(imageData)
   }
 
   // ──────────────────────────────────────────────────
@@ -1085,7 +1069,7 @@ export class SentenceGame extends GameEngine {
         // 提示一：每個字的部首
         const radicals = chars.map(ch => {
           const info = this._getCharInfo(ch)
-          return `<span class="hint-radical-item"><span class="hint-char-small">${ch}</span><span class="hint-radical-val">${info.radical || '?'}</span></span>`
+          return `<span class="hint-radical-item"><span class="hint-radical-val">${info.radical || '?'}</span></span>`
         }).join('')
         return { html: `<div class="hint-drag-radicals">🔍 各字部首：<div class="hint-radical-row">${radicals}</div></div>` }
       }

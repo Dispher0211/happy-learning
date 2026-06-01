@@ -611,3 +611,117 @@
     display: none;
   }
 }
+
+/* ══════════════════════════════════════════════
+   家長首頁手機版 (parent-home__*)
+   ══════════════════════════════════════════════ */
+
+.parent-home__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 4px;
+}
+.parent-home__back-btn {
+  font-size: 1rem;
+  padding: 6px 14px;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+.parent-home__title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.parent-home__section {
+  margin: 12px 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+}
+.parent-home__section--urgent {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  animation: urgent-pulse 1.5s ease-in-out infinite;
+}
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
+}
+
+.parent-home__section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: #1f2937;
+}
+
+.parent-home__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: 2px solid #d1d5db;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #1f2937;
+  margin-bottom: 8px;
+  position: relative;
+}
+.parent-home__btn:last-child { margin-bottom: 0; }
+.parent-home__btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+
+.parent-home__btn--review {
+  background: #fff;
+  border-color: #6b7280;
+  font-size: 1.1rem;
+}
+.parent-home__btn--has-pending {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  font-size: 1.25rem !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+  animation: review-bounce 0.6s ease;
+}
+@keyframes review-bounce {
+  0%   { transform: scale(0.95); }
+  60%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+.parent-home__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.parent-home__btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.parent-home__btn-grid .parent-home__btn {
+  margin-bottom: 0;
+  font-size: 1rem;
+  padding: 14px 10px;
+}

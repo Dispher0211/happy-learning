@@ -504,21 +504,21 @@
 
 /* 題目句子顯示區 */
 .sentence-display {
-  font-size: 2rem;
+  font-size: 2.6rem;
   font-weight: 700;
-  line-height: 2.2;
+  line-height: 2.4;
   color: var(--text-primary, #333);
   padding: 12px 16px;
-  min-height: 64px;
-  letter-spacing: 0.05em;
+  min-height: 72px;
+  letter-spacing: 0.08em;
   word-break: break-all;
 }
 
 /* 填空格 □ */
 .fill-blank {
   display: inline-block;
-  min-width: 2rem;
-  border-bottom: 3px solid var(--color-primary, #8B5CF6);
+  min-width: 2.6rem;
+  border-bottom: 4px solid var(--color-primary, #8B5CF6);
   color: var(--color-primary, #8B5CF6);
   text-align: center;
   font-weight: 700;
@@ -539,10 +539,10 @@
 }
 
 .fill-option-btn {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  padding: 10px 20px;
-  min-width: 60px;
+  padding: 12px 22px;
+  min-width: 70px;
   border: 2px solid #d1d5db;
   border-radius: 12px;
   background: #fff;
@@ -814,11 +814,31 @@
 .hint-zhuyin-wrap {
   display: inline-flex;
   align-items: center;
-  transform: scale(2);
-  transform-origin: left center;
-  margin-left: 8px;
-  margin-right: 40px;
+  font-size: 2rem;
+  margin-left: 12px;
+  margin-right: 16px;
+  line-height: 1;
 }
+/* 輕聲˙在提示區：確保定位在注音欄左上角 */
+.hint-zhuyin-wrap .pv2-dot {
+  top: -0.1em;
+  left: 0;
+  right: auto;
+  text-align: left;
+}
+.hint-zhuyin-wrap .pv2-col,
+.hint-zhuyin-wrap .pv2-tone-col {
+  height: 2.4rem;
+}
+.hint-zhuyin-wrap .pv2-r1,
+.hint-zhuyin-wrap .pv2-r2,
+.hint-zhuyin-wrap .pv2-r3 {
+  font-size: 0.8rem;
+  min-width: 0.9em;
+  color: #6d28d9;
+}
+.hint-zhuyin-wrap .pv2-tone  { font-size: 0.8rem; color: #6d28d9; }
+.hint-zhuyin-wrap .pv2-dot   { font-size: 0.9rem; color: #6d28d9; }
 
 /* ══ 家長審核橫幅 ══ */
 .parent-review-banner {
@@ -917,4 +937,14 @@
 .sentence-prompt {
   font-size: 1.4rem !important;
   font-weight: 700 !important;
+}
+
+/* 家長審核頁：手寫圖片顯示 */
+.pr-handwriting-img {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  margin-top: 4px;
+  display: block;
 }
