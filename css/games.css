@@ -512,6 +512,7 @@
   min-height: 72px;
   letter-spacing: 0.08em;
   word-break: break-all;
+  text-align: center;
 }
 
 /* 填空格 □ */

@@ -870,26 +870,10 @@ export class SentenceGame extends GameEngine {
   // 答對動畫（playCorrectAnimation）
   // ──────────────────────────────────────────────────
   async playCorrectAnimation(stars) {
-    const overlay = document.getElementById('anim-overlay')
-    if (!overlay) return
-
-    // 產生飛星動畫
-    overlay.innerHTML = `
-      <div class="correct-anim">
-        <div class="star-burst">✨</div>
-        <div class="stars-earned">+${stars}★</div>
-        ${Array.from({ length: Math.ceil(stars) }, (_, i) => `
-          <div class="flying-star" style="
-            left: ${30 + i * 15}%;
-            animation-delay: ${i * 0.1}s
-          ">★</div>
-        `).join('')}
-      </div>
-    `
-
-    // 等動畫播完
-    await new Promise(r => setTimeout(r, 900))
-    overlay.innerHTML = ''
+    // 星星飛行動畫由 GameEngine._addStars() → StarsManager.add() → _flyStarsAnimation() 處理
+    // 此處只播放答對音效並短暫等待，不再顯示靜態 +N★ 文字
+    AudioManager.playEffect('correct').catch(() => {})
+    await new Promise(r => setTimeout(r, 400))
   }
 
   // ──────────────────────────────────────────────────

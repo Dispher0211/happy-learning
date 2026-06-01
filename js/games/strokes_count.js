@@ -101,8 +101,21 @@ export class StrokesCountGame extends GameEngine {
       });
     }
 
-    this.questions = questions;
-    return questions;
+    const TARGET_Q = this.totalQuestions || 10;
+
+    // 不足 TARGET_Q 題：循環複抽生字簿補足（允許同字重複出題）
+    if (questions.length > 0 && questions.length < TARGET_Q) {
+      const basePool = [...questions];
+      let idx = 0;
+      while (questions.length < TARGET_Q) {
+        questions.push({ ...basePool[idx % basePool.length] });
+        idx++;
+      }
+    }
+
+    this.questions = questions.slice(0, TARGET_Q);
+    this.totalQuestions = this.questions.length;
+    return this.questions;
   }
 
   // ════════════════════════════════════════════

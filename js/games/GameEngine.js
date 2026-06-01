@@ -87,8 +87,10 @@ export class GameEngine {
       return
     }
     this.questionIndex = 0
-    // 建立遊戲 layout（header 含 ✕ 退出 + 進度條），取得內容容器
-    this._setupGameLayout()
+    // isRandomMode：子遊戲在隨機挑戰模式下不建立自己的 header，由 random.js shell 管理
+    if (!config.isRandomMode) {
+      this._setupGameLayout()
+    }
     await this.nextQuestion()
   }
 
@@ -418,6 +420,10 @@ export class GameEngine {
    * 若 game-content 不存在（相容舊版），fallback 到 #app
    */
   _getContainer() {
+    // isRandomMode：子遊戲渲染到 random-sub-game-area（由 random.js 注入的 containerId）
+    if (this.options?.containerId) {
+      return document.getElementById(this.options.containerId) || document.getElementById('game-content') || document.getElementById('app')
+    }
     return this.container || document.getElementById('game-content') || document.getElementById('app')
   }
 
