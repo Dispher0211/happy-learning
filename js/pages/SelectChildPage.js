@@ -194,7 +194,7 @@ export class SelectChildPage {
           totalStars += stars;
         }
         // 標記已發
-        await FirestoreAPI.updateDoc(
+        await FirestoreAPI.update(
           `users/${uid}/pending_reviews/${review.id}`,
           { stars_given: true }
         );

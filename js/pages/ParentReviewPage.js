@@ -240,13 +240,13 @@ export class ParentReviewPage {
     try {
       const uid = AppState.uid
       // 更新 Firestore status → approved，記錄處理時間
-      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+      await FirestoreAPI.update(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'approved',
         resolved_at: new Date().toISOString()
       })
 
       // 標記星星待發（小孩下次登入時領取），不直接加入家長 StarsManager
-      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+      await FirestoreAPI.update(`users/${uid}/pending_reviews/${reviewId}`, {
         stars_given: false,   // SelectChildPage 登入時改為 true 並發星星
       })
 
@@ -298,14 +298,14 @@ export class ParentReviewPage {
     try {
       const uid = AppState.uid
       // 更新 Firestore：status=approved + 修改後的答案
-      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+      await FirestoreAPI.update(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'approved',
         corrected_answer: correctedAnswer,
         resolved_at: new Date().toISOString()
       })
 
       // 標記星星待發（小孩下次登入時領取）
-      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+      await FirestoreAPI.update(`users/${uid}/pending_reviews/${reviewId}`, {
         stars_given: false,
       })
 
@@ -352,7 +352,7 @@ export class ParentReviewPage {
     try {
       const uid = AppState.uid
       // 更新 Firestore status → rejected
-      await FirestoreAPI.updateDoc(`users/${uid}/pending_reviews/${reviewId}`, {
+      await FirestoreAPI.update(`users/${uid}/pending_reviews/${reviewId}`, {
         status: 'rejected',
         resolved_at: new Date().toISOString()
       })
