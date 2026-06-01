@@ -65,6 +65,9 @@ const SPAWN_INTERVAL = {
 // 第一張卡片出現前的準備時間（ms）
 const FIRST_CARD_DELAY = 1200;
 
+// 每次遊戲的目標題數
+const TARGET_QUESTION_COUNT = 10;
+
 export class WordsGame extends GameEngine {
   constructor() {
     super('words');
@@ -130,9 +133,9 @@ export class WordsGame extends GameEngine {
     const myWords = AppState.words || [];
     const questions = [];
 
-    for (const char of chars) {
-      const charData = allChars.find(c => (c['字'] || c.char) === char);
-      if (!charData) continue;
+    // ── 建立單一字的題目資料 ──
+    const buildQuestionForChar = (charData) => {
+      const char = charData['字'] || charData.char;
 
       // 取得詞語：
       //   優先順序：① my_words（家長自訂詞語，含當字的）
@@ -142,7 +145,6 @@ export class WordsGame extends GameEngine {
       //             ⑤ char+'字' 最終備援
       let words = myWords.filter(w => w.includes(char));
       if (words.length === 0) {
-        // 從所有讀音的字義例詞蒐集
         const exAll = [];
         const prons = charData.pronunciations || [];
         for (const pron of prons) {
@@ -154,7 +156,6 @@ export class WordsGame extends GameEngine {
             }
           }
         }
-        // 優先2字詞（最貼近小學生字簿）
         const twoChar = exAll.filter(w => w.length === 2);
         const longer  = exAll.filter(w => w.length >= 3 && w.length <= 4);
         words = twoChar.length > 0
@@ -162,16 +163,14 @@ export class WordsGame extends GameEngine {
           : longer.slice(0, 4);
       }
       if (words.length === 0) {
-        // 備援：所有讀音的 words 陣列，同樣優先2字詞
         const allW = (charData.pronunciations || []).flatMap(p => p.words || []).filter(w => w.includes(char));
         const tw2 = allW.filter(w => w.length === 2);
         words = (tw2.length > 0 ? tw2 : allW).slice(0, 4);
       }
       if (words.length === 0) {
-        words = [char + '字']; // 最終備援
+        words = [char + '字'];
       }
 
-      // 取得干擾詞語：來自 confusables.json（related_characters）或形近字
       const confusablesData = JSONLoader.get('confusables') || [];
       const confusables = confusablesData
         .filter(e => e.correct === char || (e.related_characters && e.related_characters.includes(char)))
@@ -179,22 +178,51 @@ export class WordsGame extends GameEngine {
         .filter(c => c !== char);
       const wrongWords = this._buildWrongWords(char, words, confusables, allChars);
 
-      // 模式決定
       const mode = Math.random() < 0.6 ? 1 : 2;
 
-      questions.push({
+      return {
         char,
-        words: words.slice(0, 3),    // 最多3個正確詞語
+        words: words.slice(0, 3),
         wrongWords: wrongWords.slice(0, 4),
         pronunciation: charData.pronunciation || '',
         level: charData.level || 'medium',
         definition: charData.definition || '',
         mode,
-      });
+      };
+    };
+
+    // ── 先以生字簿字建題 ──
+    for (const char of chars) {
+      const charData = allChars.find(c => (c['字'] || c.char) === char);
+      if (!charData) continue;
+      questions.push(buildQuestionForChar(charData));
     }
 
-    this.questions = questions;
-    return questions;
+    // ── 不足 TARGET_QUESTION_COUNT 題時，從全字典隨機補充 ──
+    if (questions.length < TARGET_QUESTION_COUNT) {
+      const usedChars = new Set(chars);
+      // 洗牌全字典，隨機順序補充
+      const pool = allChars
+        .filter(c => {
+          const ch = c['字'] || c.char;
+          return ch && !usedChars.has(ch);
+        })
+        .sort(() => Math.random() - 0.5);
+
+      for (const charData of pool) {
+        if (questions.length >= TARGET_QUESTION_COUNT) break;
+        const char = charData['字'] || charData.char;
+        if (!char) continue;
+        questions.push(buildQuestionForChar(charData));
+        usedChars.add(char);
+      }
+    }
+
+    // 若超過 TARGET_QUESTION_COUNT，截斷（生字簿字優先保留）
+    this.questions = questions.slice(0, TARGET_QUESTION_COUNT);
+    // 同步更新 totalQuestions，讓 header counter 顯示正確
+    this.totalQuestions = this.questions.length;
+    return this.questions;
   }
 
   // ════════════════════════════════════════════
