@@ -476,3 +476,231 @@
     margin-right: auto;
   }
 }
+
+/* ══════════════════════════════════════════════
+   短句造詞 sentence.js 專用樣式
+   ══════════════════════════════════════════════ */
+
+/* 模式標籤 + 進度 */
+.sentence-game .game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+}
+.sentence-game .mode-badge {
+  background: var(--color-primary, #8B5CF6);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.sentence-game .game-progress {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+}
+
+/* 題目句子顯示區 */
+.sentence-display {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 2.2;
+  color: var(--text-primary, #333);
+  padding: 12px 16px;
+  min-height: 64px;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+
+/* 填空格 □ */
+.fill-blank {
+  display: inline-block;
+  min-width: 2rem;
+  border-bottom: 3px solid var(--color-primary, #8B5CF6);
+  color: var(--color-primary, #8B5CF6);
+  text-align: center;
+  font-weight: 700;
+  margin: 0 2px;
+}
+
+/* 句子中的單字 */
+.sentence-char {
+  display: inline-block;
+}
+
+/* 選字填空選項區 */
+.fill-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.fill-option-btn {
+  font-size: 1.8rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  min-width: 60px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fill-option-btn:hover {
+  border-color: var(--color-primary, #8B5CF6);
+  background: #f5f3ff;
+}
+.fill-option-btn.selected {
+  border-color: var(--color-primary, #8B5CF6);
+  background: var(--color-primary, #8B5CF6);
+  color: #fff;
+}
+
+/* 確認按鈕 */
+.sentence-game .confirm-btn {
+  display: block;
+  margin: 8px 16px;
+  padding: 10px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-primary, #8B5CF6);
+  color: #fff;
+  cursor: pointer;
+}
+.sentence-game .confirm-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* 提示按鈕區 */
+.hint-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
+}
+.hint-btn {
+  font-size: 0.88rem;
+  padding: 6px 14px;
+  border: 2px solid #a78bfa;
+  border-radius: 20px;
+  background: #fff;
+  color: #7c3aed;
+  cursor: pointer;
+}
+.hint-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 提示文字區 */
+.hint-area {
+  padding: 6px 16px;
+  min-height: 24px;
+}
+.hint-content {
+  font-size: 0.95rem;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+.wrong-msg {
+  color: var(--color-error, #ef4444);
+  font-weight: 600;
+}
+
+/* 下一題按鈕 */
+.next-btn {
+  display: block;
+  margin: 12px auto;
+  padding: 10px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-success, #22c55e);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* 拖曳排列（模式2）*/
+.drag-result-area {
+  min-height: 48px;
+  padding: 8px 16px;
+  border: 2px dashed #a78bfa;
+  border-radius: 10px;
+  margin: 8px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.drag-hint-text {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin: auto;
+}
+.drag-source-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+}
+.drag-card {
+  font-size: 1.6rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+.drag-card.used {
+  opacity: 0.3;
+}
+.drag-result-card {
+  font-size: 1.6rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border: 2px solid var(--color-primary, #8B5CF6);
+  border-radius: 10px;
+  background: #f5f3ff;
+  cursor: pointer;
+}
+.drag-actions {
+  display: flex;
+  gap: 10px;
+  padding: 8px 16px;
+}
+.reset-btn {
+  padding: 8px 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* 答對動畫層 */
+.anim-overlay {
+  pointer-events: none;
+  position: relative;
+}
+.anim-overlay .next-btn {
+  pointer-events: all;
+}
+
+/* 抖動動畫 */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+.shake-anim { animation: shake 0.5s ease; }

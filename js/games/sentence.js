@@ -74,7 +74,9 @@ export class SentenceGame extends GameEngine {
     }
 
     // 2. 確定要用哪些字（生字簿優先，否則用索引全部字）
-    const myChars = AppState.characters || []
+    // AppState.characters 可能是字串陣列或物件陣列 { 字, zhuyin }，統一取純字串
+    const _rawChars = AppState.characters || []
+    const myChars = _rawChars.map(c => (typeof c === 'object' && c !== null) ? (c['字'] || c.char || '') : String(c)).filter(Boolean)
     const indexData = JSONLoader.get('sentences')
     const allIndexChars = Object.keys(indexData?.char_book || {})
     const targetChars = myChars.length > 0
@@ -259,7 +261,8 @@ export class SentenceGame extends GameEngine {
         return `<span class="fill-blank" id="fill-blank-${i}">□</span>`
       }
       // 生字簿字：純文字；非生字簿字：依注音開關
-      const isMyChar = (AppState.characters || []).includes(ch)
+      const _mc2 = (AppState.characters || []).map(c => (typeof c === 'object' && c !== null) ? (c['字'] || '') : String(c))
+      const isMyChar = _mc2.includes(ch)
       if (isMyChar || !zhuyinOn) return `<span class="sentence-char">${ch}</span>`
       return `<span class="sentence-char zhuyin-char">${this._wrapZhuyin(ch)}</span>`
     }).join('')
@@ -989,7 +992,9 @@ export class SentenceGame extends GameEngine {
   // 生成干擾選項（模式1）
   // ──────────────────────────────────────────────────
   _generateDistractors(correct, count) {
-    const allChars = AppState.characters || []
+    const _raw = AppState.characters || []
+    // AppState.characters 可能是 { 字, zhuyin } 物件陣列，統一轉為純字串
+    const allChars = _raw.map(c => (typeof c === 'object' && c !== null) ? (c['字'] || '') : String(c)).filter(Boolean)
     const pool     = allChars.filter(c => c !== correct)
 
     // 補充不足時從固定集合取
