@@ -554,11 +554,14 @@ export class ListenGame extends GameEngine {
         this._moveRod(xPct);
       };
 
-      // 點擊 → 從當前釣竿位置投鉤
+      // 點擊 → 從點擊位置投鉤（先同步更新釣竿到點擊 X，消除延遲感）
       scene._lsClick = (e) => {
         if (this.isAnswering || this._hookActive) return;
+        const rect = scene.getBoundingClientRect();
+        const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
+        this._moveRod(xPct);  // 立即同步到點擊位置
         this._playMp3('water');
-        this._castHook(this._hookX);  // 從當前釣竿位置投出
+        this._castHook(xPct);
       };
 
       scene.addEventListener('mousemove', scene._lsMouseMove);
@@ -861,7 +864,7 @@ export class ListenGame extends GameEngine {
       width: 160px;
       height: 90px;
       pointer-events: none;
-      transition: left 0.05s linear;
+      will-change: left;
     }
     .ls-rod-img {
       width: 160px;

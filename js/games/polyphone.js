@@ -807,8 +807,8 @@ export class PolyphoneGame extends GameEngine {
     } else if (this.usedHints === 1) {
       // 提示二：高亮正確聲調
       const tone = this._extractTone(this._correctPronunciation);
-      const toneLabels = { '': '一聲（平調）', 'ˊ': '二聲（上揚）', 'ˇ': '三聲（先降後升）', 'ˋ': '四聲（下降）' };
-      const toneDesc = toneLabels[tone] || '輕聲';
+      const toneLabels = { '': '一聲（平調）', 'ˊ': '二聲（上揚）', 'ˇ': '三聲（先降後升）', 'ˋ': '四聲（下降）', '˙': '輕聲' };
+      const toneDesc = toneLabels[tone] ?? '輕聲';
 
       // 高亮含正確聲調的泡泡
       for (const b of this._bubbles) {
@@ -848,6 +848,8 @@ export class PolyphoneGame extends GameEngine {
   // ════════════════════════════════════════════
   _extractTone(pron) {
     if (!pron) return '';
+    if (pron.startsWith('˙') || pron.endsWith('˙')) return '˙';
+    if (pron.includes('˙')) return '˙';
     if (pron.includes('ˋ')) return 'ˋ';
     if (pron.includes('ˇ')) return 'ˇ';
     if (pron.includes('ˊ')) return 'ˊ';
