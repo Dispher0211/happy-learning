@@ -1553,7 +1553,7 @@ export class ZhuyinGame extends GameEngine {
     display: inline-flex; flex-direction: row; align-items: flex-end;
     vertical-align: bottom; white-space: nowrap; line-height: 1; position: relative;
   }
-  .pv2--dot { padding-top: 0.15em; }
+  .pv2--dot { padding-top: 0.45em; }  /* 為輕聲點留上方空間 */
   .pv2-col  { display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
   .pv2-tone-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .pv2-r1, .pv2-r2, .pv2-r3,
@@ -1564,7 +1564,7 @@ export class ZhuyinGame extends GameEngine {
   }
   .pv2-tone-spacer { flex: 1; visibility: hidden; }
   .pv2-dot {
-    position: absolute; top: 0; left: 0; right: 0;
+    position: absolute; top: -0.45em; left: 0; right: 0;
     text-align: center;
     font-family: var(--font-zhuyin, 'BpmfIVS','Noto Sans TC',serif);
     font-weight: 900; line-height: 1; color: inherit; pointer-events: none;
@@ -1579,8 +1579,8 @@ export class ZhuyinGame extends GameEngine {
   .zy-pv2-lg .pv2-r2,
   .zy-pv2-lg .pv2-r3   { font-size: 1.5rem; min-width: 1.6rem; color: #1d4ed8; }
   .zy-pv2-lg .pv2-tone { font-size: 1.3rem; color: #1d4ed8; }
-  .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -1.2rem; color: #1d4ed8; }
-  .zy-pv2-lg.pv2--dot  { padding-top: 0.45rem; }
+  .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -1.6rem; color: #1d4ed8; }  /* 正上方，有明顯距離 */
+  .zy-pv2-lg.pv2--dot  { padding-top: 1.6rem; }
   .zy-kb-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 
   /* ══ 提示區 ════════════════════════════════════════════════════ */

@@ -15,12 +15,12 @@ import { AudioManager } from '../audio.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
 const FISH_SPEEDS = { hard: 5000, medium: 4000, easy: 3000, easy_plus: 2500 };
-const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9];
-const FISH_EMOJIS = ['🐠','🐟','🐡','🦈'];
-const OPTION_COUNT = 4;
+const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9, 0.7, 1.3, 0.95, 1.1, 0.85, 1.05];
+const FISH_EMOJIS = ['🐠','🐟','🐡','🦈','🐙','🦐','🐚','🦑','🐬','🦀'];
+const OPTION_COUNT = 10;  // 10 隻魚
 
-// 魚的水深層（%，相對水域高度）
-const FISH_DEPTHS = [18, 36, 55, 74];
+// 魚的水深層（%，相對水域高度）：10 隻均勻分布
+const FISH_DEPTHS = [10, 22, 34, 46, 58, 12, 26, 40, 52, 64];
 
 export class ListenGame extends GameEngine {
   constructor() {
@@ -38,15 +38,18 @@ export class ListenGame extends GameEngine {
     this._currentWord    = '';
     this._waterAudio     = null;
 
-    // 魚鉤狀態
-    this._hookActive     = false;  // 鉤子是否正在下降
-    this._hookY          = 0;     // 鉤子當前 Y（px，相對水域頂部）
-    this._hookSplashed   = false;  // 入水音效是否已播
-    this._hookX          = 50;    // 鉤子 X（%）
-    this._hookSpeed      = 0.35;  // px/ms
+    // 魚鉤狀態（鉤子固定在中央，魚游向鉤子被釣起）
+    this._hookActive     = false;
+    this._hookY          = 0;
+    this._hookSplashed   = false;
+    this._hookX          = 50;    // 固定置中
+    this._hookSpeed      = 0.35;
     this._hookAnimId     = null;
     this._hookTimestamp  = null;
     this._aquariumHeight = 0;
+    // 「點魚游向鉤子」狀態
+    this._swimTarget     = -1;    // 正在游向鉤子的魚 index
+    this._swimAnimId     = null;  // 游向鉤子的 rAF id
   }
 
   // ════════════════════════════════════════════
@@ -146,35 +149,38 @@ export class ListenGame extends GameEngine {
   // _buildDistractors
   // ════════════════════════════════════════════
   _buildDistractors(char, charData, allChars, mode) {
-    const result = [];
-    const used   = new Set([char]);
+    const result  = [];
+    const used    = new Set([char]);
+    const need    = OPTION_COUNT - 1;  // 9 個干擾選項
 
     if (mode === 1) {
-      // 模式一：干擾字「發音必須不同」
+      // 模式一：干擾字「發音必須與正確答案不同」
       const correctPron = charData.pronunciations?.[0]?.zhuyin || '';
       const shuffled = [...allChars].sort(() => Math.random() - 0.5);
       for (const c of shuffled) {
-        if (result.length >= 3) break;
+        if (result.length >= need) break;
         const cChar = c['字'] || c.char;
-        const cPron = c.pronunciations?.[0]?.zhuyin || '';
-        if (!used.has(cChar) && cPron !== correctPron) {
+        if (!cChar || used.has(cChar)) continue;
+        // 確認所有讀音都與正確讀音不同
+        const allProns = (c.pronunciations || []).map(p => p.zhuyin || '');
+        if (allProns.length === 0) continue;
+        if (!allProns.includes(correctPron)) {
           result.push(cChar); used.add(cChar);
         }
       }
     } else {
-      // 模式二：干擾選項為其他字的詞語（國字詞語，不用注音）
+      // 模式二：干擾詞語「音節不能與正確詞語音節完全相同」
       const correctWord = charData.pronunciations?.[0]?.words?.[0] || charData.words?.[0] || char;
       const shuffled = [...allChars].sort(() => Math.random() - 0.5);
       for (const c of shuffled) {
-        if (result.length >= 3) break;
-        const cWords = c.pronunciations?.[0]?.words || c.words || [];
+        if (result.length >= need) break;
+        const cWords = (c.pronunciations?.[0]?.words || c.words || []);
         const cWord  = cWords[0] || (c['字'] || c.char);
-        if (cWord && cWord !== correctWord && !used.has(cWord)) {
-          result.push(cWord); used.add(cWord);
-        }
+        if (!cWord || cWord === correctWord || used.has(cWord)) continue;
+        result.push(cWord); used.add(cWord);
       }
     }
-    return result.slice(0, 3);
+    return result.slice(0, need);
   }
 
   // ════════════════════════════════════════════
@@ -360,13 +366,15 @@ export class ListenGame extends GameEngine {
   }
 
   _buildFishHTML(options) {
+    // 10 隻魚隨機初始 X（避免重疊）
+    const initX = [5, 18, 32, 48, 62, 75, 10, 40, 55, 80];
     let html = '';
     for (let i = 0; i < OPTION_COUNT; i++) {
       const labelHTML = this._renderZhuyinLabel(options[i]);
       html += `
         <div class="ls-fish-row" style="top:${FISH_DEPTHS[i]}%;">
           <div class="ls-fish" id="ls-fish-${i}" data-index="${i}"
-               style="left:${15 + i * 18}%" role="button" tabindex="0"
+               style="left:${initX[i]}%" role="button" tabindex="0"
                aria-label="選項 ${options[i]}">
             <span class="ls-fish-emoji">${FISH_EMOJIS[i]}</span>
             <span class="ls-fish-label" id="ls-fish-label-${i}">${labelHTML}</span>
@@ -390,8 +398,8 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   _initFishAnimation(level) {
     const base = FISH_SPEEDS[level] || FISH_SPEEDS.medium;
-    this._fishPositions  = [15, 30, 50, 65];
-    this._fishDirections = [1, -1, 1, -1];
+    this._fishPositions  = [5, 18, 32, 48, 62, 75, 10, 40, 55, 80];
+    this._fishDirections = [1, -1, 1, -1, 1, -1, 1, -1, 1, -1];
     this._fishSpeeds     = FISH_SPEED_MULTIPLIERS.map(m => (100 / base) * m);
     this._fishAnimRunning = true;
     this._lastTimestamp   = null;
@@ -531,51 +539,131 @@ export class ListenGame extends GameEngine {
   // _bindEvents
   // ════════════════════════════════════════════
   _bindEvents() {
-    const scene = document.getElementById('ls-scene');
-
     window.__lsPlay  = () => this._playCurrentAudio(this.currentQuestion);
     window.__lsHint  = () => this.useHint();
 
-    if (scene) {
-      // 滑鼠移動 → 釣竿跟著移動
-      scene._lsMouseMove = (e) => {
-        if (this._hookActive) return;
-        const rect = scene.getBoundingClientRect();
-        const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
-        this._moveRod(xPct);
+    // 點魚 → 魚游向鉤子被釣起
+    const aquarium = document.getElementById('ls-aquarium');
+    if (aquarium) {
+      aquarium._lsClick = (e) => {
+        if (this.isAnswering || this._hookActive || this._swimTarget >= 0) return;
+        const fishEl = e.target.closest('.ls-fish');
+        if (!fishEl) return;
+        const idx = parseInt(fishEl.dataset.index, 10);
+        if (isNaN(idx)) return;
+        this._startFishSwimToHook(idx);
       };
-
-      // 觸控移動（手機）
-      scene._lsTouchMove = (e) => {
-        if (this._hookActive) return;
-        const touch = e.touches[0];
-        const rect  = scene.getBoundingClientRect();
-        const xPct  = Math.max(5, Math.min(95, ((touch.clientX - rect.left) / rect.width) * 100));
-        this._moveRod(xPct);
-      };
-
-      // 點擊 → 從點擊位置投鉤（先同步更新釣竿到點擊 X，消除延遲感）
-      scene._lsClick = (e) => {
-        if (this.isAnswering || this._hookActive) return;
-        const rect = scene.getBoundingClientRect();
-        const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
-        this._moveRod(xPct);  // 立即同步到點擊位置
-        this._playMp3('water');
-        this._castHook(xPct);
-      };
-
-      scene.addEventListener('mousemove', scene._lsMouseMove);
-      scene.addEventListener('touchmove', scene._lsTouchMove, { passive: true });
-      scene.addEventListener('click',     scene._lsClick);
+      aquarium.addEventListener('click', aquarium._lsClick);
     }
   }
 
-  // _moveRod — 更新釣竿位置
+  // _moveRod — 釣竿固定置中（不再跟滑鼠）
   // ════════════════════════════════════════════
   _moveRod(xPct) {
     this._hookX = xPct;
-    const rod = document.getElementById('ls-rod-wrap');
-    if (rod) rod.style.left = xPct + '%';
+  }
+
+  // ════════════════════════════════════════════
+  // _startFishSwimToHook — 點魚後，魚直線游向鉤子，到達後被釣起
+  // ════════════════════════════════════════════
+  _startFishSwimToHook(idx) {
+    if (this._swimTarget >= 0 || this._hookActive) return;
+    this._swimTarget   = idx;
+    this._hookActive   = true;   // 鎖定，防止重複點擊
+    this._hookSplashed = false;
+
+    const fishEl = document.getElementById(`ls-fish-${idx}`);
+    if (!fishEl) return;
+
+    // 播放投鉤入水音效
+    this._playMp3('water');
+
+    // 鉤子下降動畫：先讓線延伸到魚所在深度
+    this._dropHookToFish(idx, fishEl);
+  }
+
+  // 鉤子快速落到魚的位置（依魚的 top% 算目標 Y）
+  _dropHookToFish(idx, fishEl) {
+    const aqEl = document.getElementById('ls-aquarium');
+    if (!aqEl || !fishEl) { this._hookActive = false; this._swimTarget = -1; return; }
+
+    const aqH = aqEl.clientHeight || 320;
+    const depthPct = FISH_DEPTHS[idx] || 30;
+    const targetY  = (depthPct / 100) * aqH;  // 目標 Y px
+
+    const lineEl = document.getElementById('ls-hook-line');
+    const hookEl = document.getElementById('ls-hook');
+
+    let startTs = null;
+    const HOOK_DURATION = 400;  // ms，快速落下
+
+    const animate = (ts) => {
+      if (!startTs) startTs = ts;
+      const prog = Math.min((ts - startTs) / HOOK_DURATION, 1);
+      const curY = prog * targetY;
+
+      if (lineEl) lineEl.style.height = curY + 'px';
+      if (hookEl) hookEl.style.top    = curY + 'px';
+
+      // 入水音效（到達水域頂部 ~10px 時）
+      if (!this._hookSplashed && curY >= 10) {
+        this._hookSplashed = true;
+        this._playMp3('fishing');
+      }
+
+      if (prog < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // 鉤子到位，魚游向鉤子
+        this._swimFishToHook(idx, fishEl);
+      }
+    };
+    requestAnimationFrame(animate);
+  }
+
+  // 魚從當前位置游向釣竿 X（置中），到達後被釣起
+  _swimFishToHook(idx, fishEl) {
+    const aqEl  = document.getElementById('ls-aquarium');
+    if (!aqEl || !fishEl) { this._finishSwim(); return; }
+
+    const aqW      = aqEl.clientWidth || 600;
+    const hookXPx  = aqW * 0.50;  // 釣竿固定置中 50%
+    const startXPx = this._fishPositions[idx] / 100 * aqW;
+    const dist     = Math.abs(hookXPx - startXPx);
+    const SWIM_SPEED_PX_MS = 0.5;  // px/ms，游向鉤子速度
+    const duration = Math.max(300, dist / SWIM_SPEED_PX_MS);
+
+    let startTs = null;
+    const animate = (ts) => {
+      if (!startTs) startTs = ts;
+      const prog = Math.min((ts - startTs) / duration, 1);
+      const curXPx = startXPx + (hookXPx - startXPx) * prog;
+      const curPct = (curXPx / aqW) * 100;
+
+      this._fishPositions[idx] = curPct;
+      fishEl.style.left = curPct + '%';
+
+      // 魚頭朝向鉤子方向
+      const emojiEl = fishEl.querySelector('.ls-fish-emoji');
+      if (emojiEl) emojiEl.style.transform = hookXPx > startXPx ? 'scaleX(-1)' : 'scaleX(1)';
+
+      if (prog < 1) {
+        this._swimAnimId = requestAnimationFrame(animate);
+      } else {
+        // 到達鉤子下方，觸發被釣起
+        this._playMp3('waterup');
+        const hookEl  = document.getElementById('ls-hook');
+        const lineEl  = document.getElementById('ls-hook-line');
+        this._onFishCaught(idx, fishEl, hookEl, lineEl);
+      }
+    };
+    this._swimAnimId = requestAnimationFrame(animate);
+  }
+
+  _finishSwim() {
+    this._swimTarget = -1;
+    this._hookActive = false;
+    this._retractHook();
   }
 
   // ════════════════════════════════════════════
@@ -771,11 +859,11 @@ export class ListenGame extends GameEngine {
     this._stopFishAnimation();
     this._retractHook();
     this._stopWaterLoop();
-    const scene = document.getElementById('ls-scene');
-    if (scene) {
-      if (scene._lsClick)      scene.removeEventListener('click',     scene._lsClick);
-      if (scene._lsMouseMove)  scene.removeEventListener('mousemove', scene._lsMouseMove);
-      if (scene._lsTouchMove)  scene.removeEventListener('touchmove', scene._lsTouchMove);
+    if (this._swimAnimId) { cancelAnimationFrame(this._swimAnimId); this._swimAnimId = null; }
+    this._swimTarget = -1;
+    const aquarium = document.getElementById('ls-aquarium');
+    if (aquarium && aquarium._lsClick) {
+      aquarium.removeEventListener('click', aquarium._lsClick);
     }
     delete window.__lsPlay;
     delete window.__lsHint;
@@ -851,7 +939,7 @@ export class ListenGame extends GameEngine {
       position: relative;
       width: 95%;
       padding-top: 95px;    /* 為釣竿留出空間 */
-      cursor: crosshair;
+      cursor: default;
       user-select: none;
     }
 
@@ -914,7 +1002,8 @@ export class ListenGame extends GameEngine {
     .ls-aquarium {
       position: relative;
       width: 100%;
-      height: 320px;
+      height: 380px;
+      cursor: default;
       background: linear-gradient(180deg,
         rgba(0,80,140,0.7) 0%,
         rgba(0,50,100,0.8) 60%,
@@ -1090,13 +1179,13 @@ export class ListenGame extends GameEngine {
 
     /* ── RWD ── */
     @media (max-width: 480px) {
-      .ls-aquarium  { height: 260px; }
+      .ls-aquarium  { height: 320px; }
       .ls-rod-img   { width: 120px; }
       .ls-fish-emoji { font-size: 1.6rem; }
       .ls-fish-label-text { font-size: 1.5rem; }
     }
     @media (min-width: 600px) {
-      .ls-aquarium  { height: 360px; }
+      .ls-aquarium  { height: 420px; }
       .ls-rod-img   { width: 180px; }
       .ls-fish-emoji { font-size: 2.2rem; }
     }
