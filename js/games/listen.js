@@ -291,8 +291,9 @@ export class ListenGame extends GameEngine {
   // _buildFishHTML
   // ════════════════════════════════════════════
   _renderZhuyinLabel(text) {
+    if (!text && text !== 0) return '<span class="ls-fish-label-text">？</span>';
     // 清除 IVS/variation selector 字元（使用 Unicode category 方式避免 surrogate pair regex 問題）
-    const clean = [...text].filter(c => {
+    const clean = [...String(text)].filter(c => {
       const cp = c.codePointAt(0);
       // 排除 Variation Selectors (U+FE00–U+FE0F) 和 IVS (U+E0100–U+E01EF)
       return !(cp >= 0xFE00 && cp <= 0xFE0F) && !(cp >= 0xE0100 && cp <= 0xE01EF);
@@ -385,7 +386,10 @@ export class ListenGame extends GameEngine {
   }
 
   _shuffleOptions(correct, distractors) {
-    const arr = [correct, ...distractors.slice(0, 3)];
+    // 取最多 OPTION_COUNT-1 個干擾選項，補足到 OPTION_COUNT 個
+    const arr = [correct, ...distractors.slice(0, OPTION_COUNT - 1)];
+    // 若不足 OPTION_COUNT，用正確答案補位（避免 undefined）
+    while (arr.length < OPTION_COUNT) arr.push(correct);
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];

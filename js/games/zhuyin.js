@@ -85,12 +85,17 @@ function normalizeZhuyin(str) {
   if (!str) return ''
   // 去除空白後，只保留注音符號（U+3105–U+3129）和聲調符號
   // ˊ=U+02CA  ˇ=U+02C7  ˋ=U+02CB  ˙=U+02D9（注意 ˇ 不在 02CA-02D9 連續範圍內）
-  return [...str.replace(/\s/g, '')].filter(c => {
+  const filtered = [...str.replace(/\s/g, '')].filter(c => {
     const cp = c.charCodeAt(0)
     return (cp >= 0x3105 && cp <= 0x3129) ||
            cp === 0x02C7 ||                   // ˇ 三聲
            (cp >= 0x02CA && cp <= 0x02D9)     // ˊˋ˙ 及其他
   }).join('')
+  // 統一輕聲˙位置：無論在開頭或末尾，一律移到末尾，確保判定一致
+  if (filtered.startsWith('˙')) {
+    return filtered.slice(1) + '˙'
+  }
+  return filtered
 }
 
 /**
@@ -1631,8 +1636,8 @@ export class ZhuyinGame extends GameEngine {
   .zy-pv2-lg .pv2-r2,
   .zy-pv2-lg .pv2-r3   { font-size: 1.5rem; min-width: 1.6rem; color: #1d4ed8; }
   .zy-pv2-lg .pv2-tone { font-size: 1.3rem; color: #1d4ed8; }
-  .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -1.6rem; color: #1d4ed8; }  /* 正上方，有明顯距離 */
-  .zy-pv2-lg.pv2--dot  { padding-top: 1.6rem; }
+  .zy-pv2-lg .pv2-dot  { font-size: 1.3rem; top: -1.4rem; color: #1d4ed8; }  /* 正上方，適中距離 */
+  .zy-pv2-lg.pv2--dot  { padding-top: 1.4rem; }
   .zy-kb-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 
   /* ══ 提示區 ════════════════════════════════════════════════════ */
