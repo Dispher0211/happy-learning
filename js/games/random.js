@@ -236,11 +236,21 @@ export class RandomGame extends GameEngine {
       /* 子遊戲渲染區 */
       .random-sub-game-area {
         flex: 1;
+        width: 100%;
         background: #fff;
         border-radius: 20px 20px 0 0;
         margin-top: 4px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
         position: relative;
+        box-sizing: border-box;
+      }
+      /* 確保子遊戲根元素撐滿容器 */
+      .random-sub-game-area > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        min-height: unset !important;
       }
 
       /* 結算畫面 */

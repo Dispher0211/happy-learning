@@ -437,6 +437,14 @@ export class GameEngine {
       try { await WrongQueue.add(char) } catch (_e) {}
     }
     this.wrongPool = []
+
+    // isRandomMode：通知 random.js 此題完成，由 random.js 決定繼續或結算
+    if (this.options?.isRandomMode && typeof this.options?.onQuestionComplete === 'function') {
+      const correct = (this.consecutiveCorrect > 0 || this.attemptCount === 1)
+      this.options.onQuestionComplete({ correct, stars: this.sessionStars })
+      return
+    }
+
     globalThis.UIManager?.showToast?.(
       `太棒了！本局共獲得 ★${this.sessionStars}`, 'success', 3000
     )
