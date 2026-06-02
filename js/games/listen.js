@@ -224,7 +224,10 @@ export class ListenGame extends GameEngine {
     this._updateHintButton();
     this._renderProgressBar();
     this._startWaterLoop();
-    this._playCurrentAudio(q);
+    // 延遲 800ms 再播音，讓小朋友先看清楚魚卡片再聽音
+    setTimeout(() => {
+      if (!this._isDestroyed) this._playCurrentAudio(this.currentQuestion);
+    }, 800);
   }
 
   // ════════════════════════════════════════════
@@ -420,17 +423,44 @@ export class ListenGame extends GameEngine {
     for (let i = 0; i < OPTION_COUNT; i++) {
       const el = document.getElementById(`ls-fish-${i}`);
       if (!el) continue;
-      el.addEventListener('mouseenter', () => {
+      el._lsMouseEnter = () => {
         this._hoveredFish.add(i);
-        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.08;  // hover 近乎靜止
-      });
-      el.addEventListener('mouseleave', () => {
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.08;
+      };
+      el._lsMouseLeave = () => {
         this._hoveredFish.delete(i);
         this._fishSpeeds[i] = this._fishBaseSpeeds[i];
-      });
+      };
+      el.addEventListener('mouseenter', el._lsMouseEnter);
+      el.addEventListener('mouseleave', el._lsMouseLeave);
     }
 
     requestAnimationFrame(ts => this._animateFish(ts));
+  }
+
+  // ════════════════════════════════════════════
+  // _rebindFishHover — 答錯後重新綁定 hover 減速
+  // （魚 DOM 不重建，但 mouseenter 監聽器可能失效時呼叫）
+  // ════════════════════════════════════════════
+  _rebindFishHover() {
+    for (let i = 0; i < OPTION_COUNT; i++) {
+      const el = document.getElementById(`ls-fish-${i}`);
+      if (!el) continue;
+      // 先移除舊的（避免重複綁定）
+      el.removeEventListener('mouseenter', el._lsMouseEnter);
+      el.removeEventListener('mouseleave', el._lsMouseLeave);
+      // 重新綁定
+      el._lsMouseEnter = () => {
+        this._hoveredFish.add(i);
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.08;
+      };
+      el._lsMouseLeave = () => {
+        this._hoveredFish.delete(i);
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i];
+      };
+      el.addEventListener('mouseenter', el._lsMouseEnter);
+      el.addEventListener('mouseleave', el._lsMouseLeave);
+    }
   }
 
   _animateFish(timestamp) {
@@ -779,6 +809,10 @@ export class ListenGame extends GameEngine {
     this._stopWaterLoop();
     AudioManager.playEffect('wrong').catch(() => {});
 
+    // 重置游向鉤子的狀態，確保玩家可以繼續點選
+    if (this._swimAnimId) { cancelAnimationFrame(this._swimAnimId); this._swimAnimId = null; }
+    this._swimTarget = -1;
+
     const feedback = document.getElementById('ls-feedback');
     if (feedback) {
       feedback.innerHTML = '<div class="ls-wrong-text">❌ 答錯了</div>';
@@ -789,6 +823,9 @@ export class ListenGame extends GameEngine {
     // 收回鉤子，恢復水聲，讓玩家繼續釣
     this._retractHook();
     this._startWaterLoop();
+
+    // 答錯後重新綁定 hover 減速（魚 DOM 未變，只需重刷 mouseenter）
+    this._rebindFishHover();
   }
 
   // ════════════════════════════════════════════
