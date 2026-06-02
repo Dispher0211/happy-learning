@@ -110,6 +110,12 @@ export class RandomGame extends GameEngine {
     // 渲染隨機挑戰外框 UI
     this._renderShell()
 
+    // ✕ 返回按鈕：直接導航回 game_list
+    window.__randomExit = () => {
+      delete window.__randomExit
+      globalThis.UIManager?.navigate?.('game_list')
+    }
+
     // 開始第一題
     await this._startNextQuestion()
   }
@@ -131,6 +137,7 @@ export class RandomGame extends GameEngine {
 
         <!-- 頂部資訊列 -->
         <div class="random-header">
+          <button class="random-exit-btn" onclick="window.__randomExit?.()" aria-label="返回">✕</button>
           <div class="random-progress">
             <span id="random-current-q">0</span>
             <span class="random-progress-sep">/</span>
@@ -234,6 +241,26 @@ export class RandomGame extends GameEngine {
       }
 
       /* 子遊戲渲染區 */
+      /* ✕ 返回按鈕 */
+      .random-exit-btn {
+        background: rgba(255,255,255,0.25);
+        border: none;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: bold;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .random-exit-btn:hover { background: rgba(255,255,255,0.45); }
+      .random-exit-btn:active { transform: scale(0.92); }
+
       .random-sub-game-area {
         flex: 1;
         width: 100%;
@@ -251,6 +278,14 @@ export class RandomGame extends GameEngine {
         max-width: 100% !important;
         box-sizing: border-box;
         min-height: unset !important;
+      }
+      /* 隱藏子遊戲自己的 header（由 random shell 統一管理） */
+      .random-sub-game-area .typo-header,
+      .random-sub-game-area .game-header,
+      .random-sub-game-area .wd-header,
+      .random-sub-game-area .zy-header,
+      .random-sub-game-area [id="game-header"] {
+        display: none !important;
       }
 
       /* 結算畫面 */

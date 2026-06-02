@@ -50,6 +50,8 @@ export class ListenGame extends GameEngine {
     // 「點魚游向鉤子」狀態
     this._swimTarget     = -1;    // 正在游向鉤子的魚 index
     this._swimAnimId     = null;  // 游向鉤子的 rAF id
+    // hover 減速追蹤
+    this._hoveredFish    = new Set();  // 目前滑鼠 hover 中的魚 index
   }
 
   // ════════════════════════════════════════════
@@ -402,11 +404,28 @@ export class ListenGame extends GameEngine {
   // ════════════════════════════════════════════
   _initFishAnimation(level) {
     const base = FISH_SPEEDS[level] || FISH_SPEEDS.medium;
-    this._fishPositions  = [5, 18, 32, 48, 62, 75, 10, 40, 55, 80];
-    this._fishDirections = [1, -1, 1, -1, 1, -1, 1, -1, 1, -1];
-    this._fishSpeeds     = FISH_SPEED_MULTIPLIERS.map(m => (100 / base) * m);
+    this._fishPositions   = [5, 18, 32, 48, 62, 75, 10, 40, 55, 80];
+    this._fishDirections  = [1, -1, 1, -1, 1, -1, 1, -1, 1, -1];
+    this._fishBaseSpeeds  = FISH_SPEED_MULTIPLIERS.map(m => (100 / base) * m);
+    this._fishSpeeds      = [...this._fishBaseSpeeds];
+    this._hoveredFish     = new Set();
     this._fishAnimRunning = true;
     this._lastTimestamp   = null;
+
+    // 綁定 hover 減速：滑鼠靠近時速度降為 15%
+    for (let i = 0; i < OPTION_COUNT; i++) {
+      const el = document.getElementById(`ls-fish-${i}`);
+      if (!el) continue;
+      el.addEventListener('mouseenter', () => {
+        this._hoveredFish.add(i);
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.15;
+      });
+      el.addEventListener('mouseleave', () => {
+        this._hoveredFish.delete(i);
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i];
+      });
+    }
+
     requestAnimationFrame(ts => this._animateFish(ts));
   }
 
@@ -625,27 +644,57 @@ export class ListenGame extends GameEngine {
     requestAnimationFrame(animate);
   }
 
-  // 魚從當前位置游向釣竿 X（置中），到達後被釣起
+  // 魚放大並移動到魚鉤位置，到達後被釣起
   _swimFishToHook(idx, fishEl) {
     const aqEl  = document.getElementById('ls-aquarium');
+    const hookEl = document.getElementById('ls-hook');
     if (!aqEl || !fishEl) { this._finishSwim(); return; }
 
-    const aqW      = aqEl.clientWidth || 600;
-    const hookXPx  = aqW * 0.50;  // 釣竿固定置中 50%
-    const startXPx = this._fishPositions[idx] / 100 * aqW;
-    const dist     = Math.abs(hookXPx - startXPx);
-    const SWIM_SPEED_PX_MS = 0.5;  // px/ms，游向鉤子速度
-    const duration = Math.max(300, dist / SWIM_SPEED_PX_MS);
+    const aqRect   = aqEl.getBoundingClientRect();
+    const fishRect = fishEl.getBoundingClientRect();
+    const hookRect = hookEl ? hookEl.getBoundingClientRect() : null;
+
+    // 目標：移動到魚鉤正下方（鉤子的 X，深度約 40% 水域）
+    const aqW     = aqRect.width || 600;
+    const aqH     = aqRect.height || 320;
+    const hookXPx = hookRect
+      ? (hookRect.left + hookRect.width / 2) - aqRect.left
+      : aqW * 0.50;
+    const hookYPx = hookRect
+      ? (hookRect.bottom) - aqRect.top
+      : aqH * 0.35;
+
+    // 魚目前中心位置（px，相對 aquarium）
+    const startXPx = (fishRect.left + fishRect.width / 2) - aqRect.left;
+    const startYPx = (fishRect.top + fishRect.height / 2) - aqRect.top;
+
+    // 游向鉤子的持續時間（依距離計算）
+    const dist    = Math.sqrt((hookXPx - startXPx) ** 2 + (hookYPx - startYPx) ** 2);
+    const SPEED   = 0.45;  // px/ms
+    const duration = Math.max(400, dist / SPEED);
+
+    // 使用絕對定位覆蓋讓魚脫離 ls-fish-row 流
+    const startLeft = parseFloat(fishEl.style.left) || 0;
+    const startTop  = parseFloat(fishEl.closest('.ls-fish-row')?.style.top || '0') +
+                      (fishRect.top - fishRect.top);
+    // 改用 transform translate 做動畫（保持原位置的相對計算）
+    fishEl.style.transformOrigin = 'center center';
+    fishEl.style.zIndex = '50';
+    fishEl.style.pointerEvents = 'none';
 
     let startTs = null;
     const animate = (ts) => {
       if (!startTs) startTs = ts;
       const prog = Math.min((ts - startTs) / duration, 1);
-      const curXPx = startXPx + (hookXPx - startXPx) * prog;
-      const curPct = (curXPx / aqW) * 100;
+      // easeInOut
+      const ease = prog < 0.5 ? 2 * prog * prog : -1 + (4 - 2 * prog) * prog;
 
-      this._fishPositions[idx] = curPct;
-      fishEl.style.left = curPct + '%';
+      const dx = (hookXPx - startXPx) * ease;
+      const dy = (hookYPx - startYPx) * ease;
+      // 放大到 2x，中途達到最大，到達後縮回
+      const scale = 1 + Math.sin(ease * Math.PI) * 1.2;
+
+      fishEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
 
       // 魚頭朝向鉤子方向
       const emojiEl = fishEl.querySelector('.ls-fish-emoji');
@@ -654,10 +703,9 @@ export class ListenGame extends GameEngine {
       if (prog < 1) {
         this._swimAnimId = requestAnimationFrame(animate);
       } else {
-        // 到達鉤子下方，觸發被釣起
+        // 到達鉤子，觸發被釣起音效與判斷
         this._playMp3('waterup');
-        const hookEl  = document.getElementById('ls-hook');
-        const lineEl  = document.getElementById('ls-hook-line');
+        const lineEl = document.getElementById('ls-hook-line');
         this._onFishCaught(idx, fishEl, hookEl, lineEl);
       }
     };

@@ -504,13 +504,14 @@
 
 /* 題目句子顯示區 */
 .sentence-display {
-  font-size: 2.6rem;
-  font-weight: 700;
+  font-size: 3rem;
+  font-weight: 900;
+  font-family: 'Noto Serif TC', 'Noto Sans TC', serif;
   line-height: 2.4;
-  color: var(--text-primary, #333);
+  color: #1a1a1a;
   padding: 12px 16px;
-  min-height: 72px;
-  letter-spacing: 0.08em;
+  min-height: 80px;
+  letter-spacing: 0.12em;
   word-break: break-all;
   text-align: center;
 }

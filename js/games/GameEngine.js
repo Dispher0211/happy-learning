@@ -83,6 +83,11 @@ export class GameEngine {
       this.questions = []
     }
     if (this.questions.length === 0) {
+      // isRandomMode：沒有題目時也要通知 random.js 跳過此題，繼續下一題
+      if (config.isRandomMode && typeof this.options?.onQuestionComplete === 'function') {
+        this.options.onQuestionComplete({ correct: false, stars: 0 })
+        return
+      }
       globalThis.UIManager?.showToast?.('家長還未設定生字簿，請先新增生字', 'warning', 3000)
       return
     }
