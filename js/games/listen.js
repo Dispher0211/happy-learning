@@ -377,7 +377,7 @@ export class ListenGame extends GameEngine {
       html += `
         <div class="ls-fish-row" style="top:${FISH_DEPTHS[i]}%;">
           <div class="ls-fish" id="ls-fish-${i}" data-index="${i}"
-               style="left:${initX[i]}%" role="button" tabindex="0"
+               style="left:${initX[i]}%; z-index:${10 + i};" role="button" tabindex="0"
                aria-label="選項 ${options[i]}">
             <span class="ls-fish-emoji">${FISH_EMOJIS[i]}</span>
             <span class="ls-fish-label" id="ls-fish-label-${i}">${labelHTML}</span>
@@ -1080,6 +1080,7 @@ export class ListenGame extends GameEngine {
       position: absolute;
       left: 0; right: 0;
       height: 64px;
+      pointer-events: none;  /* 行容器不攔截事件，讓魚自己處理 */
     }
     .ls-fish {
       position: absolute;
@@ -1088,6 +1089,7 @@ export class ListenGame extends GameEngine {
       align-items: center;
       cursor: pointer;
       user-select: none;
+      pointer-events: auto;  /* 魚本身可點擊和 hover */
     }
     .ls-fish-emoji {
       font-size: 2rem;

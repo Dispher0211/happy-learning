@@ -107,6 +107,9 @@ export class RandomGame extends GameEngine {
     // 同步 GameEngine 的 totalQuestions，確保右上角 header counter 顯示正確
     this.totalQuestions = this._totalCount
 
+    // 建立10題計劃（按資料來源分配遊戲）
+    this._buildQuestionPlan()
+
     // 渲染隨機挑戰外框 UI
     this._renderShell()
 
@@ -337,10 +340,49 @@ export class RandomGame extends GameEngine {
    * 隨機選取一個遊戲 ID（不重複使用上一個）
    * @returns {string} gameId
    */
+  // 依資料來源分類遊戲
+  // chars 類：需要生字簿
+  // words 類：需要詞語簿
+  // idioms 類：需要成語簿
+  _buildQuestionPlan() {
+    const charGames   = ['writing', 'zhuyin', 'polyphone', 'radical', 'strokes_count', 'listen']
+    const wordGames   = ['words', 'sentence']
+    const idiomGames  = ['idiom', 'typo']
+
+    const hasChars  = (globalThis.AppState?.characters || []).length > 0
+    const hasWords  = (globalThis.AppState?.words  || []).length > 0
+    const hasIdioms = (globalThis.AppState?.idioms || []).length > 0
+
+    // 可用遊戲池
+    let pool = []
+    if (hasChars)  pool = pool.concat(charGames)
+    if (hasWords)  pool = pool.concat(wordGames)
+    if (hasIdioms) pool = pool.concat(idiomGames)
+
+    // 若沒有詞語/成語，用生字填滿
+    if (!hasWords)  pool = pool.concat(charGames.slice(0, 2))
+    if (!hasIdioms) pool = pool.concat(charGames.slice(0, 2))
+
+    // 洗牌並取前 _totalCount 個不重複遊戲
+    const shuffled = [...new Set(pool)].sort(() => Math.random() - 0.5)
+    this._questionPlan = shuffled.slice(0, this._totalCount)
+
+    // 補足（若不夠10題，循環補充）
+    while (this._questionPlan.length < this._totalCount) {
+      const extra = shuffled[this._questionPlan.length % shuffled.length]
+      this._questionPlan.push(extra)
+    }
+  }
+
   _pickRandomGameId() {
-    let candidates = GAME_IDS.filter(id => id !== this._currentGameId)
-    const idx = Math.floor(Math.random() * candidates.length)
-    return candidates[idx]
+    // 使用預先建立的計劃順序
+    const planIdx = this._questionIndex - 1
+    if (this._questionPlan && planIdx >= 0 && planIdx < this._questionPlan.length) {
+      return this._questionPlan[planIdx]
+    }
+    // fallback
+    const candidates = GAME_IDS.filter(id => id !== this._currentGameId)
+    return candidates[Math.floor(Math.random() * candidates.length)]
   }
 
   /**
@@ -362,16 +404,14 @@ export class RandomGame extends GameEngine {
     // 更新進度 UI
     this._updateProgressUI()
 
-    // 清空子遊戲渲染區
+    // 清空子遊戲渲染區，並建立 #game-content 讓子遊戲渲染進去（避免覆蓋 random shell）
     const area = document.getElementById('random-sub-game-area')
     if (area) {
       area.innerHTML = `
-        <div style="
-          display:flex;align-items:center;justify-content:center;
-          height:200px;color:#aaa;font-size:16px;
-        ">
+        <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#aaa;font-size:16px;">
           ⏳ 載入中…
         </div>
+        <div id="game-content" style="width:100%;"></div>
       `
     }
 
