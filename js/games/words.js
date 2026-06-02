@@ -69,8 +69,8 @@ const FIRST_CARD_DELAY = 1200;
 const TARGET_QUESTION_COUNT = 10;
 
 export class WordsGame extends GameEngine {
-  constructor() {
-    super('words');
+  constructor(options = {}) {
+    super('words', options);
 
     // ── 模式一狀態 ──
     this._mode = 1;

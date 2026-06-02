@@ -256,8 +256,8 @@ function escapeHTML(str) {
 
 export class ZhuyinGame extends GameEngine {
 
-  constructor() {
-    super('zhuyin')
+  constructor(options = {}) {
+    super('zhuyin', options)
 
     /** 遊戲設定（從 GameConfig 讀取） */
     this.config = GameConfig['zhuyin'] || {

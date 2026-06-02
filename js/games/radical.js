@@ -266,8 +266,8 @@ const HOUSE_STAGES = [
 // ────────────────────────────────────────────────
 export class RadicalGame extends GameEngine {
 
-  constructor() {
-    super('radical');
+  constructor(options = {}) {
+    super('radical', options);
 
     /** 蓋房子：session 內累計答對題數 */
     this._houseProgress = 0;

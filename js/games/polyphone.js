@@ -45,8 +45,8 @@ const MAX_BUBBLES = 5;
 const BUBBLE_AREA_HEIGHT_RATIO = 0.6;
 
 export class PolyphoneGame extends GameEngine {
-  constructor() {
-    super('polyphone');
+  constructor(options = {}) {
+    super('polyphone', options);
 
     // ── 炮台狀態 ──
     this._cannonAngle = 90;      // 炮台角度（度，90=直上）

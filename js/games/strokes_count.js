@@ -38,8 +38,8 @@ const TARGET_SPEEDS = {
 const TARGET_COUNT = 4;
 
 export class StrokesCountGame extends GameEngine {
-  constructor() {
-    super('strokes_count');
+  constructor(options = {}) {
+    super('strokes_count', options);
 
     // ── 兩射狀態追蹤 ──
     this._phase = 'first';       // 'first'（猜總筆劃）或 'second'（猜部首筆劃）

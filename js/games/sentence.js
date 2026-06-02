@@ -38,8 +38,8 @@ const STARS_MODE34 = { first: 5,   retry: 2.5 }  // 模式3, 4
 const MODE_THRESHOLDS = [0.15, 0.30, 0.65, 1.00]
 
 export class SentenceGame extends GameEngine {
-  constructor() {
-    super('sentence')
+  constructor(options = {}) {
+    super('sentence', options)
 
     // 句子資料庫（sentences.json）
     this._sentences = []
@@ -260,11 +260,8 @@ export class SentenceGame extends GameEngine {
       if (positions.includes(i)) {
         return `<span class="fill-blank" id="fill-blank-${i}">□</span>`
       }
-      // 生字簿字：純文字；非生字簿字：依注音開關
-      const _mc2 = (AppState.characters || []).map(c => (typeof c === 'object' && c !== null) ? (c['字'] || '') : String(c))
-      const isMyChar = _mc2.includes(ch)
-      if (isMyChar || !zhuyinOn) return `<span class="sentence-char">${ch}</span>`
-      return `<span class="sentence-char zhuyin-char">${this._wrapZhuyin(ch)}</span>`
+      // 句子本體只顯示大漢字，不加注音（避免 pv2 縮小字體）
+      return `<span class="sentence-char">${ch}</span>`
     }).join('')
   }
 

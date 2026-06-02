@@ -447,6 +447,10 @@ export class RandomGame extends GameEngine {
         isRandomMode: true,
       })
 
+      // init 完成後移除「載入中…」提示（子遊戲已渲染進 #game-content）
+      const loadingDiv = area?.querySelector('div[style*="載入中"]')
+      if (loadingDiv) loadingDiv.remove()
+
     } catch (err) {
       console.error('[RandomGame] 子遊戲載入失敗：', this._currentGameId, err)
       // 子遊戲載入失敗時，直接跳過此題

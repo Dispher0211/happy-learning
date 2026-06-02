@@ -47,9 +47,9 @@ const TRAIN_STAY_MS = 2000
 
 export class IdiomGame extends GameEngine {
 
-  constructor () {
+  constructor (options = {}) {
     // ✅ 修正：傳入 'idiom' 讓 GameEngine 能正確取得遊戲名稱
-    super('idiom')
+    super('idiom', options)
 
     // 本局成語題庫
     this._idiomPool = []

@@ -23,8 +23,8 @@ const OPTION_COUNT = 10;  // 10 隻魚
 const FISH_DEPTHS = [10, 22, 34, 46, 58, 12, 26, 40, 52, 64];
 
 export class ListenGame extends GameEngine {
-  constructor() {
-    super('listen');
+  constructor(options = {}) {
+    super('listen', options);
     this._mode           = 1;
     this._wrongCount     = 0;
     this._fishAnimRunning= false;
@@ -196,6 +196,10 @@ export class ListenGame extends GameEngine {
     this._wrongCount = 0;
     this._stopFishAnimation();
     this._retractHook();
+    // 重置點擊/游向鉤子狀態，防止上一題殘留 flag 擋住下一題
+    if (this._swimAnimId) { cancelAnimationFrame(this._swimAnimId); this._swimAnimId = null; }
+    this._swimTarget = -1;
+    this._hookActive = false;
 
     const appEl = this._getContainer();
     if (!appEl) return;
