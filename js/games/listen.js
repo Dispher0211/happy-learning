@@ -14,7 +14,7 @@ import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
-const FISH_SPEEDS = { hard: 5000, medium: 4000, easy: 3000, easy_plus: 2500 };
+const FISH_SPEEDS = { hard: 8000, medium: 6500, easy: 5000, easy_plus: 4000 };
 const FISH_SPEED_MULTIPLIERS = [1.0, 0.8, 1.2, 0.9, 0.7, 1.3, 0.95, 1.1, 0.85, 1.05];
 const FISH_EMOJIS = ['🐠','🐟','🐡','🦈','🐙','🦐','🐚','🦑','🐬','🦀'];
 const OPTION_COUNT = 10;  // 10 隻魚
@@ -418,7 +418,7 @@ export class ListenGame extends GameEngine {
       if (!el) continue;
       el.addEventListener('mouseenter', () => {
         this._hoveredFish.add(i);
-        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.15;
+        this._fishSpeeds[i] = this._fishBaseSpeeds[i] * 0.08;  // hover 近乎靜止
       });
       el.addEventListener('mouseleave', () => {
         this._hoveredFish.delete(i);

@@ -239,6 +239,13 @@ export class GameEngine {
     }
     await this.showCorrectAnswer(result)
     this.isAnswering = false
+    // isRandomMode：答錯兩次後也繼續下一題（通知 random.js）
+    if (this.options?.isRandomMode && typeof this.options?.onQuestionComplete === 'function') {
+      await new Promise(r => setTimeout(r, 1200))
+      this.options.onQuestionComplete({ correct: false, stars: 0 })
+    } else if (this.options?.autoNext !== false) {
+      await this.nextQuestion()
+    }
   }
 
   // ─────────────────────────────────────────────
