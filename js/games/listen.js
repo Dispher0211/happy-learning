@@ -760,13 +760,13 @@ export class ListenGame extends GameEngine {
     if (this._mode === 1) {
       await AudioManager.play(q.pronunciation).catch(() => {});
     } else {
-      // 模式二：逐字播放詞語，350ms 間隔語速自然
+      // 模式二：逐字播放詞語，先等音效播完再延遲 200ms，避免截斷
       for (const c of this._currentWord) {
         const charData = (JSONLoader.get('characters') || []).find(ch => (ch['字'] || ch.char) === c);
         const pron = charData?.pronunciations?.[0]?.zhuyin || '';
         if (pron) {
-          AudioManager.play(pron).catch(() => {});
-          await new Promise(r => setTimeout(r, 350));
+          await AudioManager.play(pron).catch(() => {});  // 等音效播完
+          await new Promise(r => setTimeout(r, 200));     // 字與字之間間隔
         }
       }
     }

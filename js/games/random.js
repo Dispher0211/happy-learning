@@ -264,6 +264,7 @@ export class RandomGame extends GameEngine {
       .random-exit-btn:hover { background: rgba(255,255,255,0.45); }
       .random-exit-btn:active { transform: scale(0.92); }
 
+      /* 子遊戲渲染區：讓子遊戲保持原本的完整介面 */
       .random-sub-game-area {
         flex: 1;
         width: 100%;
@@ -274,20 +275,15 @@ export class RandomGame extends GameEngine {
         overflow-x: hidden;
         position: relative;
         box-sizing: border-box;
+        /* 子遊戲保持原始高度，不限制 min-height */
       }
-      /* 確保子遊戲根元素撐滿容器 */
-      .random-sub-game-area > * {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box;
-        min-height: unset !important;
+      /* #game-content 撐滿子遊戲區 */
+      .random-sub-game-area #game-content {
+        width: 100%;
+        min-height: 100%;
       }
-      /* 隱藏子遊戲自己的 header（由 random shell 統一管理） */
-      .random-sub-game-area .typo-header,
-      .random-sub-game-area .game-header,
-      .random-sub-game-area .wd-header,
-      .random-sub-game-area .zy-header,
-      .random-sub-game-area [id="game-header"] {
+      /* 隱藏子遊戲自己的 GameEngine header（progress bar 等），由 random shell 管理 */
+      .random-sub-game-area #game-header {
         display: none !important;
       }
 
@@ -447,8 +443,8 @@ export class RandomGame extends GameEngine {
         isRandomMode: true,
       })
 
-      // init 完成後移除「載入中…」提示（子遊戲已渲染進 #game-content）
-      const loadingDiv = area?.querySelector('div[style*="載入中"]')
+      // init 完成後移除「載入中…」提示（取第一個 div，即 loading div）
+      const loadingDiv = area?.querySelector('div:first-child:not(#game-content)')
       if (loadingDiv) loadingDiv.remove()
 
     } catch (err) {
@@ -495,8 +491,8 @@ export class RandomGame extends GameEngine {
    * @param {number} baseStars - 子遊戲本身給予的基礎星星數
    */
   async _onSubGameCorrect(baseStars) {
-    // consecutiveCorrect 由 GameEngine 的 onCorrect 已遞增
-    // 此處直接讀取已更新後的值
+    // random.js 自己維護 consecutiveCorrect（子遊戲 destroy 後值會消失）
+    this.consecutiveCorrect = (this.consecutiveCorrect || 0) + 1
     const streak = this.consecutiveCorrect
 
     // 計算本次 bonus（檢查是否達到新的 tier）
@@ -533,6 +529,7 @@ export class RandomGame extends GameEngine {
 
     // 更新 UI
     this._updateStreakUI(0)
+    this._updateProgressUI()  // 同步更新 header 連續顯示
   }
 
   /**

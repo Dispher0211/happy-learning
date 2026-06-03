@@ -1496,7 +1496,7 @@ export function injectTypoStyles() {
     .typo-game {
       display: flex;
       flex-direction: column;
-      min-height: 100%;
+      min-height: 100vh;
       background: linear-gradient(160deg, #fef9e7 0%, #fde9b5 100%);
       padding: 0 0 80px;
       font-family: 'Noto Sans TC', sans-serif;
