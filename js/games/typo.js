@@ -254,6 +254,9 @@ export class TypoGame extends GameEngine {
     const app = this._getContainer();
     if (!app) return;
 
+    // 確保樣式已注入（隨機模式下 GamePage 不會主動呼叫 injectTypoStyles）
+    injectTypoStyles();
+
     this._currentMode = question.mode;
     this._substep = SUBSTEP.FIND;
     this._selectedWrongIndex = null;
