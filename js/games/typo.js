@@ -1508,14 +1508,15 @@ export function injectTypoStyles() {
       font-family: 'Noto Sans TC', sans-serif;
     }
 
-    /* isRandomMode：嵌入 random shell 時調整佈局 */
+    /* isRandomMode：嵌入 random shell 時調整佈局，保留原始視覺樣式 */
     .typo-game-random {
       min-height: unset;
       padding: 0 0 16px;
-      background: transparent;
+      background: linear-gradient(160deg, #fef9e7 0%, #fde9b5 100%);
+      border-radius: 0 0 16px 16px;
     }
     .typo-game-random .typo-content {
-      padding: 12px 16px;
+      padding: 16px 16px;
     }
 
     /* ── 標題列 ── */
