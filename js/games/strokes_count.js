@@ -79,7 +79,8 @@ export class StrokesCountGame extends GameEngine {
       radicalStrokesMap[r.radical] = r.strokes;
     }
 
-    const questions = [];
+    // 先同步篩出有效字元資料，避免在迴圈內串行 await
+    const validItems = [];
     for (const char of chars) {
       const charData = allChars.find(c => (c['字'] || c.char) === char);
       if (!charData) continue;
@@ -91,15 +92,24 @@ export class StrokesCountGame extends GameEngine {
 
       if (!totalStrokes || !radicalStrokes || !radical) continue;
 
-      questions.push({
+      validItems.push({
         char,
-        totalStrokes,      // 總筆劃
-        radicalStrokes,    // 部首筆劃
-        radical,           // 部首
+        totalStrokes,
+        radicalStrokes,
+        radical,
         pronunciation: charData.pronunciations?.[0]?.zhuyin || charData.pronunciation || '',
-        level: (await ForgettingCurve.getLevel(char)) || 'medium',
       });
     }
+
+    // 並行查詢所有字的遺忘等級，避免串行 N 次 Firestore 查詢造成延遲
+    const levels = await Promise.all(
+      validItems.map(item => ForgettingCurve.getLevel(item.char).catch(() => 'medium'))
+    );
+
+    const questions = validItems.map((item, idx) => ({
+      ...item,
+      level: levels[idx] || 'medium',
+    }));
 
     const TARGET_Q = this.totalQuestions || 10;
 

@@ -404,10 +404,9 @@ export class RandomGame extends GameEngine {
     const area = document.getElementById('random-sub-game-area')
     if (area) {
       area.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#aaa;font-size:16px;">
+        <div class="random-loading-indicator" style="display:flex;align-items:center;justify-content:center;height:200px;color:#aaa;font-size:16px;">
           ⏳ 載入中…
         </div>
-        <div id="game-content" style="width:100%;"></div>
       `
     }
 
@@ -443,8 +442,8 @@ export class RandomGame extends GameEngine {
         isRandomMode: true,
       })
 
-      // init 完成後移除「載入中…」提示（取第一個 div，即 loading div）
-      const loadingDiv = area?.querySelector('div:first-child:not(#game-content)')
+      // init 完成後移除「載入中…」提示（只移除有 random-loading-indicator class 的 div）
+      const loadingDiv = area?.querySelector('.random-loading-indicator')
       if (loadingDiv) loadingDiv.remove()
 
     } catch (err) {
