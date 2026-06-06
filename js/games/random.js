@@ -186,26 +186,30 @@ export class RandomGame extends GameEngine {
     const style = document.createElement('style')
     style.id = 'random-game-styles'
     style.textContent = `
+      /* ── 外層殼：只做紫色背景，不限制高度 ── */
       .random-game-shell {
-        display: flex;
-        flex-direction: column;
         min-height: 100vh;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 0;
         box-sizing: border-box;
         font-family: 'Noto Sans TC', 'Arial', sans-serif;
+        position: relative;
       }
 
-      /* 頂部資訊列 */
+      /* ── 頂部資訊列：sticky 固定，永遠可見 ── */
       .random-header {
+        position: sticky;
+        top: 0;
+        z-index: 200;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
-        background: rgba(0,0,0,0.25);
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #fff;
         font-size: 16px;
         font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
       }
       .random-progress { font-size: 18px; }
       .random-progress-sep { margin: 0 2px; opacity: 0.6; }
@@ -217,10 +221,13 @@ export class RandomGame extends GameEngine {
       .random-stars-icon { color: #FFD700; font-size: 18px; }
       #random-stars-earned { font-size: 18px; color: #FFD700; }
 
-      /* bonus 橫幅 */
+      /* ── bonus 橫幅：sticky，緊貼 header 下方 ── */
       .random-bonus-banner {
+        position: sticky;
+        top: 48px;
+        z-index: 199;
         text-align: center;
-        padding: 10px 16px;
+        padding: 8px 16px;
         background: linear-gradient(90deg, #f7971e, #ffd200);
         color: #333;
         font-size: 17px;
@@ -234,17 +241,16 @@ export class RandomGame extends GameEngine {
         100% { transform: scale(1); opacity: 1; }
       }
 
-      /* 當前遊戲標題 */
+      /* ── 當前遊戲標題（在白色卡片上方） ── */
       .random-game-title {
         text-align: center;
         padding: 8px 16px 4px;
-        color: rgba(255,255,255,0.85);
+        color: rgba(255,255,255,0.9);
         font-size: 14px;
         letter-spacing: 1px;
       }
 
-      /* 子遊戲渲染區 */
-      /* ✕ 返回按鈕 */
+      /* ── ✕ 返回按鈕 ── */
       .random-exit-btn {
         background: rgba(255,255,255,0.25);
         border: none;
@@ -264,27 +270,28 @@ export class RandomGame extends GameEngine {
       .random-exit-btn:hover { background: rgba(255,255,255,0.45); }
       .random-exit-btn:active { transform: scale(0.92); }
 
-      /* 子遊戲渲染區：讓子遊戲保持原本的完整介面 */
+      /* ── 子遊戲渲染區：不限制高度，讓子遊戲自然流動 ── */
       .random-sub-game-area {
-        flex: 1;
         width: 100%;
         background: #fff;
         border-radius: 20px 20px 0 0;
         margin-top: 4px;
-        overflow-y: auto;
         overflow-x: hidden;
         position: relative;
         box-sizing: border-box;
-        /* 子遊戲保持原始高度，不限制 min-height */
+        min-height: calc(100vh - 58px);
       }
-      /* #game-content 撐滿子遊戲區 */
+      /* 撐滿子遊戲區 */
       .random-sub-game-area #game-content {
         width: 100%;
-        min-height: 100%;
       }
-      /* 隱藏子遊戲自己的 GameEngine header（progress bar 等），由 random shell 管理 */
+      /* 隱藏子遊戲自己的 GameEngine header，由 random shell 管理 */
       .random-sub-game-area #game-header {
         display: none !important;
+      }
+      /* 子遊戲自帶的 min-height:100vh 在此容器內應只填滿自身高度 */
+      .random-sub-game-area > * {
+        min-height: unset !important;
       }
 
       /* 結算畫面 */
