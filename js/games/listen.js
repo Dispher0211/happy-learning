@@ -909,6 +909,12 @@ export class ListenGame extends GameEngine {
   // _getContainer
   // ════════════════════════════════════════════
   _getContainer() {
+    // isRandomMode：優先使用 options.containerId（由 random.js 注入）
+    if (this.options?.containerId) {
+      return document.getElementById(this.options.containerId)
+        || document.getElementById('game-content')
+        || document.getElementById('app');
+    }
     return document.getElementById('game-content')
       || document.getElementById('app')
       || document.getElementById('game-container');
