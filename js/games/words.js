@@ -121,7 +121,8 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   // loadQuestions
   // ════════════════════════════════════════════
-  async loadQuestions() {
+  async loadQuestions(config = {}) {
+    const targetCount = config.count || TARGET_QUESTION_COUNT;
     const chars = this.questionChars;
     if (!chars || chars.length === 0) {
       throw new Error('words: 題目字元為空');
@@ -199,7 +200,7 @@ export class WordsGame extends GameEngine {
     }
 
     // ── 不足 TARGET_QUESTION_COUNT 題時，從全字典隨機補充 ──
-    if (questions.length < TARGET_QUESTION_COUNT) {
+    if (questions.length < targetCount) {
       const usedChars = new Set(chars);
       // 洗牌全字典，隨機順序補充
       const pool = allChars
@@ -210,7 +211,7 @@ export class WordsGame extends GameEngine {
         .sort(() => Math.random() - 0.5);
 
       for (const charData of pool) {
-        if (questions.length >= TARGET_QUESTION_COUNT) break;
+        if (questions.length >= targetCount) break;
         const char = charData['字'] || charData.char;
         if (!char) continue;
         questions.push(buildQuestionForChar(charData));
@@ -219,7 +220,7 @@ export class WordsGame extends GameEngine {
     }
 
     // 若超過 TARGET_QUESTION_COUNT，截斷（生字簿字優先保留）
-    this.questions = questions.slice(0, TARGET_QUESTION_COUNT);
+    this.questions = questions.slice(0, targetCount);
     // 同步更新 totalQuestions，讓 header counter 顯示正確
     this.totalQuestions = this.questions.length;
     return this.questions;

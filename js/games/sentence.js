@@ -116,10 +116,21 @@ export class SentenceGame extends GameEngine {
 
     // 7. 依四種模式比例組合題目
     const count = config?.count || 10
-    const n1 = Math.max(1, Math.round(count * 0.15))   // 模式1 fill
-    const n2 = Math.max(1, Math.round(count * 0.15))   // 模式2 fill
-    const n3 = Math.max(1, Math.round(count * 0.35))   // 模式3 pattern
-    const n4 = count - n1 - n2 - n3                    // 模式4 compose
+
+    // isRandomMode（count=1）：隨機選一個模式出1題
+    let n1, n2, n3, n4
+    if (count <= 1) {
+      const modeIdx = Math.floor(Math.random() * 4)
+      n1 = modeIdx === 0 ? 1 : 0
+      n2 = modeIdx === 1 ? 1 : 0
+      n3 = modeIdx === 2 ? 1 : 0
+      n4 = modeIdx === 3 ? 1 : 0
+    } else {
+      n1 = Math.max(1, Math.round(count * 0.15))   // 模式1 fill
+      n2 = Math.max(1, Math.round(count * 0.15))   // 模式2 fill
+      n3 = Math.max(1, Math.round(count * 0.35))   // 模式3 pattern
+      n4 = count - n1 - n2 - n3                    // 模式4 compose
+    }
 
     const pick = (pool, n) => {
       if (pool.length === 0) return []

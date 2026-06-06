@@ -262,17 +262,23 @@ export class TypoGame extends GameEngine {
     // 重置手寫相關 handler（每題重建）
     this._cleanupHandwritingListeners();
 
+    // isRandomMode：隱藏 typo 自帶 header/hint-bar，由 random shell 管理
+    const isRandom = !!(this.options && this.options.isRandomMode)
+    const headerHtml  = isRandom ? '' : _renderHeader(this)
+    const hintBarHtml = isRandom ? '' : _renderHintBar(this)
+    const extraClass  = isRandom ? ' typo-game-random' : ''
+
     // 建立 DOM
     app.innerHTML = `
-      <div class="typo-game" id="typo-game-root">
-        ${_renderHeader(this)}
+      <div class="typo-game${extraClass}" id="typo-game-root">
+        ${headerHtml}
         <div class="typo-content" id="typo-content">
           ${this._currentMode === 'mode1'
             ? this._renderMode1(question)
             : this._renderMode2FindStep(question)
           }
         </div>
-        ${_renderHintBar(this)}
+        ${hintBarHtml}
       </div>
     `;
 
@@ -1500,6 +1506,16 @@ export function injectTypoStyles() {
       background: linear-gradient(160deg, #fef9e7 0%, #fde9b5 100%);
       padding: 0 0 80px;
       font-family: 'Noto Sans TC', sans-serif;
+    }
+
+    /* isRandomMode：嵌入 random shell 時調整佈局 */
+    .typo-game-random {
+      min-height: unset;
+      padding: 0 0 16px;
+      background: transparent;
+    }
+    .typo-game-random .typo-content {
+      padding: 12px 16px;
     }
 
     /* ── 標題列 ── */

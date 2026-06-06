@@ -359,16 +359,17 @@ export class StrokesCountGame extends GameEngine {
   // _bindEvents — 綁定靶的點擊事件
   // ════════════════════════════════════════════
   _bindEvents(q) {
-    // 使用 window 全域函式避免 ES Module 內 inline onclick 問題
-    window.__scSelectTarget = (index) => {
-      if (this.isAnswering) return; // 防重複點擊
-      const selectedNumber = this._currentTargetNumbers[index];
-      // 音效與箭效果已在 mousedown/touchstart 處理，此處只送出答案
-      this.submitAnswer(selectedNumber);
-    };
-
+    // 使用 window 全域函式供 hint button inline onclick 呼叫
     window.__scHint = () => {
       this.useHint();
+    };
+
+    // 閉包捕獲 this，避免 window.__scSelectTarget 被 destroy 後仍被呼叫報錯
+    const selectTarget = (index) => {
+      if (this.isAnswering) return;
+      if (this._destroyed) return; // 已 destroy，忽略殘留點擊
+      const selectedNumber = this._currentTargetNumbers[index];
+      this.submitAnswer(selectedNumber);
     };
 
     // 為每個靶綁定點擊與鍵盤事件
@@ -403,10 +404,10 @@ export class StrokesCountGame extends GameEngine {
       // click：送出答案（在 mousedown 之後觸發，已有箭效果）
       el.addEventListener('click', () => {
         if (this._lastClickedIndex !== idx) return; // 防止非本次點擊
-        window.__scSelectTarget(idx);
+        selectTarget(idx);
       });
       el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') window.__scSelectTarget(idx);
+        if (e.key === 'Enter' || e.key === ' ') selectTarget(idx);
       });
     }
   }
@@ -788,9 +789,9 @@ export class StrokesCountGame extends GameEngine {
   // destroy — 清理遊戲資源
   // ════════════════════════════════════════════
   destroy() {
+    this._destroyed = true; // 標記已銷毀，阻止殘留事件回調
     this._stopTargetAnimation();
     // 清除 window 全域函式
-    delete window.__scSelectTarget;
     delete window.__scHint;
     // 呼叫父類清理
     super.destroy();
