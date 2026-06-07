@@ -1308,6 +1308,16 @@
   color: #DC2626;
 }
 
+/* 圖片星星圖示（bluestar / redstar） */
+.star-img-icon {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: middle;
+  margin-right: 2px;
+  object-fit: contain;
+}
+
 /* ══════════════════════════════════════════
    底部圖鑑入口（最下方）
    ══════════════════════════════════════════ */

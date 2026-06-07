@@ -488,3 +488,13 @@ body {
     font-size: 18px;
   }
 }
+
+/* 圖片星星圖示（bluestar / redstar）- 全域 */
+.star-img-icon {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: middle;
+  margin-right: 2px;
+  object-fit: contain;
+}

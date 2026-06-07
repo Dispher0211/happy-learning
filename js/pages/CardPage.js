@@ -136,9 +136,9 @@ export class CardPage {
         <!-- ★ 星星列（最上方） -->
         <div class="card-page__stars-bar">
           <span class="card-page__stars-item card-page__stars-item--red"
-                id="stars-red">❤️ ${red}</span>
+                id="stars-red"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'> ${red}</span>
           <span class="card-page__stars-item card-page__stars-item--blue"
-                id="stars-blue">💙 ${blue}</span>
+                id="stars-blue"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> ${blue}</span>
           <span class="card-page__stars-item card-page__stars-item--yellow"
                 id="stars-yellow">★ ${yellowText}</span>
         </div>

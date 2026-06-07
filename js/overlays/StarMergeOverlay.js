@@ -387,7 +387,7 @@ export const StarMergeOverlay = {
             <span class="smo-star-count" id="smo-yellow">0</span>
             <span style="font-size:13px;color:#ccc;">/ 1000</span>
             <span class="smo-arrow">→</span>
-            <span class="smo-star-icon">💙</span>
+            <span class="smo-star-icon"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'></span>
             <span class="smo-result-count blue" id="smo-blue">0</span>
           </div>
 
@@ -413,18 +413,18 @@ export const StarMergeOverlay = {
           <div class="smo-anim-layer" id="smo-anim-ytb" aria-hidden="true">
             <div class="smo-anim-stars">⭐⭐⭐</div>
             <div class="smo-anim-text">合成中...</div>
-            <div class="smo-anim-result" style="display:none">💙</div>
+            <div class="smo-anim-result" style="display:none"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'></div>
           </div>
         </div>
 
         <!-- ===== 藍星 → 紅星 合成區塊 ===== -->
         <div class="smo-merge-section" style="position:relative;">
           <div class="smo-stars-row">
-            <span class="smo-star-icon">💙</span>
+            <span class="smo-star-icon"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'></span>
             <span class="smo-star-count blue" id="smo-blue2">0</span>
             <span style="font-size:13px;color:#ccc;">/ 1000</span>
             <span class="smo-arrow">→</span>
-            <span class="smo-star-icon">❤️</span>
+            <span class="smo-star-icon"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'></span>
             <span class="smo-result-count red" id="smo-red">0</span>
           </div>
 
@@ -448,9 +448,9 @@ export const StarMergeOverlay = {
 
           <!-- 合成動畫層 -->
           <div class="smo-anim-layer" id="smo-anim-btr" aria-hidden="true">
-            <div class="smo-anim-stars">💙💙💙</div>
+            <div class="smo-anim-stars"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'></div>
             <div class="smo-anim-text">合成中...</div>
-            <div class="smo-anim-result" style="display:none">❤️</div>
+            <div class="smo-anim-result" style="display:none"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'></div>
           </div>
         </div>
 
@@ -515,7 +515,7 @@ export const StarMergeOverlay = {
       if (readyY) {
         btnYEl.disabled   = false
         btnYEl.className  = 'smo-btn-merge ready-yellow'
-        btnYEl.textContent = '✨ 立刻合成！1000⭐ → 1💙'
+        btnYEl.innerHTML  = `✨ 立刻合成！1000⭐ → 1<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>`
       } else {
         btnYEl.disabled   = true
         btnYEl.className  = 'smo-btn-merge disabled'
@@ -542,7 +542,7 @@ export const StarMergeOverlay = {
       if (readyB) {
         btnBEl.disabled   = false
         btnBEl.className  = 'smo-btn-merge ready-blue'
-        btnBEl.textContent = '✨ 立刻合成！1000💙 → 1❤️'
+        btnBEl.innerHTML  = `✨ 立刻合成！1000<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> → 1<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>`
       } else {
         btnBEl.disabled   = true
         btnBEl.className  = 'smo-btn-merge disabled'

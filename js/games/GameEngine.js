@@ -299,8 +299,8 @@ export class GameEngine {
     const ghRed    = document.getElementById('gh-red')
     const ghBlue   = document.getElementById('gh-blue')
     const ghYellow = document.getElementById('gh-yellow')
-    if (ghRed)    ghRed.textContent    = `🔴★×${red}`
-    if (ghBlue)   ghBlue.textContent   = `🔵★×${blue}`
+    if (ghRed)    ghRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>×${red}`
+    if (ghBlue)   ghBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>×${blue}`
     if (ghYellow) ghYellow.textContent = `⭐×${yellow}`
 
     // 連續答對 bonus 提示
@@ -375,8 +375,8 @@ export class GameEngine {
               font-size:0.8rem; font-weight:700; flex:1;
               justify-content:center;
             ">
-              <span id="gh-red"  style="color:#ef4444;">🔴★×${red}</span>
-              <span id="gh-blue" style="color:#3b82f6;">🔵★×${blue}</span>
+              <span id="gh-red"  style="color:#ef4444;"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>×${red}</span>
+              <span id="gh-blue" style="color:#3b82f6;"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>×${blue}</span>
               <span id="gh-yellow" style="color:#f59e0b;">⭐×${yellow}</span>
             </div>
 

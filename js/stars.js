@@ -338,8 +338,8 @@ export const StarsManager = {
   _playMergeAnimation(type) {
     if (typeof document === 'undefined') return
 
-    const fromEmoji = type === 'yellow_to_blue' ? '★' : '💙'
-    const toEmoji   = type === 'yellow_to_blue' ? '💙' : '❤️'
+    const fromEmoji = type === 'yellow_to_blue' ? '★' : '🔵★'
+    const toEmoji   = type === 'yellow_to_blue' ? '🔵★' : '🔴★'
     const fromColor = type === 'yellow_to_blue' ? '#FFD700' : '#4169E1'
 
     // 建立合成動畫容器（覆蓋整個畫面）

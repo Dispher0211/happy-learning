@@ -488,15 +488,15 @@ const UIManager = {
     const elRed    = document.getElementById('stars-red')
 
     if (elYellow) elYellow.textContent = `★ ${yellowText}`
-    if (elBlue)   elBlue.textContent   = `💙 ${blue_total}`
-    if (elRed)    elRed.textContent    = `❤️ ${red_total}`
+    if (elBlue)   elBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> ${blue_total}`
+    if (elRed)    elRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'> ${red_total}`
 
     // 同步更新遊戲頁 header 星星（GameEngine._setupGameLayout 產生的 gh-* 元素）
     const ghRed    = document.getElementById('gh-red')
     const ghBlue   = document.getElementById('gh-blue')
     const ghYellow = document.getElementById('gh-yellow')
-    if (ghRed)    ghRed.textContent    = `🔴★×${red_total}`
-    if (ghBlue)   ghBlue.textContent   = `🔵★×${blue_total}`
+    if (ghRed)    ghRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>×${red_total}`
+    if (ghBlue)   ghBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>×${blue_total}`
     if (ghYellow) ghYellow.textContent = `⭐×${yellowText}`
   },
 
