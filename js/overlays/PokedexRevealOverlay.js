@@ -249,9 +249,18 @@ export const PokedexRevealOverlay = {
     this._isVisible = true
     const total = queue.length
 
+    // consumeRevealQueue 回傳 number[] 或 {index,seriesId}[]
+    // 統一轉為 { index, seriesId } 格式
+    const seriesId = globalThis.AppState?.pokedex?.active_series || 'pokemon'
+    const normalizedQueue = queue.map(item =>
+      (typeof item === 'number' || typeof item === 'string')
+        ? { index: Number(item), seriesId }
+        : item
+    )
+
     // ── for...of：逐一播放，等用戶點[繼續]才播下一張 ──
     let current = 0
-    for (const item of queue) {
+    for (const item of normalizedQueue) {
       current++
       await this.showOne(item, current, total)
     }
