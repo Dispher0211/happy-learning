@@ -5,15 +5,18 @@
  * 依賴：state.js（AppState）、firebase.js（db, arrayUnion）
  * 位置：/js/sync.js
  *
- * 修正（Bug fix）：
+ * v1.2.11 修改：
+ *   revealPokedex 改為隨機解鎖：
+ *   - 原邏輯：按 next_index 順序（#1, #2, #3...）
+ *   - 新邏輯：在 Transaction 內從 1~total 中隨機挑一個尚未收集的 index
+ *   - 移除 REVEAL_CONFLICT expectedNextIndex 檢查（改為防重複機制：
+ *     Transaction 內讀取最新 collected_ids，確保不重複解鎖）
+ *   - next_index 欄位語意改為「已解鎖數量」（向後相容，值仍遞增）
+ *
+ * 原有 Bug fix（保留）：
  *   revealPokedex 的 Transaction 寫入從 txn.set(..., {merge:true}) 改為：
  *   ① 文件不存在 → txn.set(ref, 巢狀物件, {merge:true})  建立文件
  *   ② 文件已存在 → txn.update(ref, 點記法物件)           展開欄位路徑
- *
- *   原因：Firestore SDK 的 txn.set() 不展開點記法 key（如 'pokedex.p.next_index'），
- *   會把它當字面量 key 存入，導致下次 txn.get() 讀到的 data.pokedex 永遠是 undefined，
- *   REVEAL_CONFLICT 衝突檢查永遠通過（第二次呼叫仍回傳 success）。
- *   txn.update() 才支援點記法展開為巢狀欄位更新。
  */
 
 import { AppState }          from './state.js'
@@ -31,23 +34,43 @@ import {
 // ── localStorage key ──
 const OFFLINE_QUEUE_KEY = 'offline_queue'
 
+/**
+ * 從 1~total 中隨機挑一個不在 collectedIds 內的 index
+ * @param {number[]} collectedIds
+ * @param {number} total
+ * @returns {number|null} 隨機未收集 index，或 null（全收集完了）
+ */
+function _pickRandomUncollected(collectedIds, total) {
+  const collectedSet = new Set(collectedIds)
+  // 建立未收集清單
+  const uncollected = []
+  for (let i = 1; i <= total; i++) {
+    if (!collectedSet.has(i)) uncollected.push(i)
+  }
+  if (uncollected.length === 0) return null
+  // 隨機抽一個
+  return uncollected[Math.floor(Math.random() * uncollected.length)]
+}
+
 export const SyncManager = {
 
   // ─────────────────────────────────────────────
-  // revealPokedex — 圖鑑揭曉（Transaction 防重複）
+  // revealPokedex — 圖鑑隨機揭曉（Transaction 防重複）
   // ─────────────────────────────────────────────
 
   /**
-   * revealPokedex(seriesId, triggerType, expectedNextIndex)
+   * revealPokedex(seriesId, triggerType, total)
    *
-   * Transaction 讀取 users/{uid}.pokedex.{seriesId}.next_index
-   *   - next_index !== expectedNextIndex → throw Error('REVEAL_CONFLICT')
+   * Transaction 內隨機抽取一個尚未收集的寶可夢解鎖
+   *   - 所有已收集 → 回傳 { result: 'all_collected', revealed: null }
    *   - 成功 → update next_index+1, collected_ids, collected, 餘數, reveal_queue
    *
-   * @returns {{ result: 'success'|'conflict', revealed: number|null }}
-   * @throws {Error} message='REVEAL_CONFLICT' 時向上拋出（呼叫端顯示 toast）
+   * @param {string} seriesId
+   * @param {'sentence'|'star'} triggerType
+   * @param {number} total - 系列總數（如 898）
+   * @returns {{ result: 'success'|'conflict'|'all_collected', revealed: number|null }}
    */
-  async revealPokedex(seriesId, triggerType, expectedNextIndex) {
+  async revealPokedex(seriesId, triggerType, total) {
     if (!AppState.uid) {
       console.error('SyncManager.revealPokedex：AppState.uid 為 null')
       return { result: 'conflict', revealed: null }
@@ -64,16 +87,19 @@ export const SyncManager = {
         const docExists  = snap.exists()
         const data       = docExists ? snap.data() : {}
 
-        // ── 讀取 next_index（巢狀欄位安全讀取）──
-        const currentIdx = data?.pokedex?.[seriesId]?.next_index ?? 1
-        const seriesData = data?.pokedex?.[seriesId] ?? {}
+        const seriesData    = data?.pokedex?.[seriesId] ?? {}
+        const collectedIds  = seriesData.collected_ids  ?? []
+        const currentIdx    = seriesData.next_index     ?? 1  // 已解鎖數量（向後相容）
 
-        // ── REVEAL_CONFLICT 檢查 ──
-        if (currentIdx !== expectedNextIndex) {
-          throw new Error('REVEAL_CONFLICT')
+        // ── 隨機抽取尚未收集的 index ──
+        const picked = _pickRandomUncollected(collectedIds, total)
+        if (picked === null) {
+          // 全部已收集，不揭曉
+          revealedIndex = null
+          return
         }
 
-        revealedIndex   = currentIdx
+        revealedIndex   = picked
         const today     = new Date().toISOString().slice(0, 10)
 
         // ── 揭曉門檻與餘數計算 ──
@@ -85,28 +111,18 @@ export const SyncManager = {
         const countKey = triggerType === 'sentence' ? 'sentence_count' : 'star_count'
         const newCount = Math.max(0, (seriesData[countKey] ?? 0) - threshold)
 
-        // ─────────────────────────────────────────
-        // 修正核心：
-        //   txn.set() 不展開點記法 key → 改為 txn.update()
-        //   txn.update() 才支援 'pokedex.series.next_index' 展開為巢狀欄位
-        //
-        //   若文件不存在（首次）→ 先用 txn.set(巢狀物件) 建立，
-        //   再用 txn.update(點記法) 是不行的（update 要求文件已存在）。
-        //   所以：不存在 → set 巢狀物件；已存在 → update 點記法。
-        // ─────────────────────────────────────────
-
         if (!docExists) {
           // ── 文件不存在：用巢狀物件 set（建立文件）──
           const nestedData = {
             pokedex: {
               [seriesId]: {
                 next_index:    currentIdx + 1,
-                collected_ids: [currentIdx],
+                collected_ids: [picked],
                 collected: {
-                  [currentIdx]: { source: triggerType, date: today },
+                  [picked]: { source: triggerType, date: today },
                 },
                 [countKey]:    newCount,
-                reveal_queue:  [currentIdx],
+                reveal_queue:  [picked],
               },
             },
             last_updated: serverTimestamp(),
@@ -116,28 +132,26 @@ export const SyncManager = {
         } else {
           // ── 文件已存在：用點記法 update（展開欄位路徑）──
           const updateData = {
-            [`pokedex.${seriesId}.next_index`]:              currentIdx + 1,
-            [`pokedex.${seriesId}.collected_ids`]:           fsArrayUnion(currentIdx),
-            [`pokedex.${seriesId}.collected.${currentIdx}`]: {
+            [`pokedex.${seriesId}.next_index`]:            currentIdx + 1,
+            [`pokedex.${seriesId}.collected_ids`]:         fsArrayUnion(picked),
+            [`pokedex.${seriesId}.collected.${picked}`]:   {
               source: triggerType,
               date:   today,
             },
-            [`pokedex.${seriesId}.${countKey}`]:             newCount,
-            [`pokedex.${seriesId}.reveal_queue`]:            fsArrayUnion(currentIdx),
+            [`pokedex.${seriesId}.${countKey}`]:           newCount,
+            [`pokedex.${seriesId}.reveal_queue`]:          fsArrayUnion(picked),
             last_updated: serverTimestamp(),
           }
           txn.update(userRef, updateData)
         }
       })
 
+      if (revealedIndex === null) {
+        return { result: 'all_collected', revealed: null }
+      }
       return { result: 'success', revealed: revealedIndex }
 
     } catch (e) {
-      if (e.message === 'REVEAL_CONFLICT') {
-        // 規格：REVEAL_CONFLICT 必須 throw，不可靜默
-        // 呼叫端（PokedexManager.checkAndReveal）捕捉後顯示 toast
-        throw e
-      }
       console.error('SyncManager.revealPokedex 失敗:', e)
       return { result: 'conflict', revealed: null }
     }

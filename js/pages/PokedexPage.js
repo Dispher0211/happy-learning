@@ -2,7 +2,7 @@
  * PokedexPage.js — 圖鑑收藏頁（Task 36）
  * 依賴：state.js（T02）、firebase.js（T05）、ui_manager.js（T28）、pokedex.js（T12.5）
  * 功能：顯示圖鑑收集狀態，已收集顯示圖片，未收集顯示❓
- * v1.2.11：新增亂序顯示（shuffle）按鈕，RWD 優化
+ * v1.2.11：RWD 優化（電腦/手機/平板）
  */
 
 import { AppState } from '../state.js'
@@ -38,7 +38,6 @@ function injectStyle() {
       background: rgba(0,0,0,0.3);
       border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
-      flex-wrap: wrap;
     }
     .pokedex-back-btn {
       background: rgba(255,255,255,0.15);
@@ -70,49 +69,6 @@ function injectStyle() {
       padding: 4px 10px;
       border-radius: 20px;
       white-space: nowrap;
-    }
-
-    /* ── 亂序切換按鈕 ── */
-    .pokedex-shuffle-btn {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: #ccc;
-      font-size: 18px;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
-      flex-shrink: 0;
-      position: relative;
-    }
-    .pokedex-shuffle-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    .pokedex-shuffle-btn.active {
-      background: rgba(255,215,0,0.2);
-      border-color: #ffd700;
-      color: #ffd700;
-    }
-    .pokedex-shuffle-btn .shuffle-tooltip {
-      display: none;
-      position: absolute;
-      bottom: -30px;
-      right: 0;
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
-      pointer-events: none;
-      z-index: 50;
-    }
-    .pokedex-shuffle-btn:hover .shuffle-tooltip {
-      display: block;
     }
 
     /* ── 進度條 ── */
@@ -198,7 +154,7 @@ function injectStyle() {
       font-weight: 600;
     }
 
-    /* 收集時間小標（已收集格子左下） */
+    /* NEW 標 */
     .pokedex-cell-new-badge {
       position: absolute;
       top: 4px;
@@ -211,7 +167,7 @@ function injectStyle() {
       padding: 1px 5px;
     }
 
-    /* ── 詳情面板（點擊格子後出現） ── */
+    /* ── 詳情面板 ── */
     .pokedex-detail-overlay {
       position: fixed;
       inset: 0;
@@ -284,13 +240,8 @@ function injectStyle() {
       justify-content: space-between;
       font-size: 13px;
     }
-    .pokedex-detail-info-label {
-      color: rgba(255,255,255,0.5);
-    }
-    .pokedex-detail-info-value {
-      color: #fff;
-      font-weight: 600;
-    }
+    .pokedex-detail-info-label { color: rgba(255,255,255,0.5); }
+    .pokedex-detail-info-value { color: #fff; font-weight: 600; }
 
     /* ── 空狀態 ── */
     .pokedex-empty {
@@ -330,12 +281,10 @@ function injectStyle() {
     /* ── 手機（≤480px）── */
     @media (max-width: 480px) {
       .pokedex-grid {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
         gap: 6px;
       }
-      .pokedex-header {
-        padding: 12px 12px 8px;
-      }
+      .pokedex-header { padding: 12px 12px 8px; }
       .pokedex-title { font-size: 16px; }
     }
 
@@ -359,41 +308,21 @@ function injectStyle() {
   document.head.appendChild(style)
 }
 
-// Fisher-Yates shuffle（不修改原陣列）
-function shuffleArray(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 // ─────────────────────────────────────────────
 // PokedexPage 類別
 // ─────────────────────────────────────────────
 export class PokedexPage {
   constructor() {
-    // 當前使用的系列 ID（從 AppState 取得，預設 pokemon）
     this._seriesId = null
-    // 圖鑑系列設定（含 total、name 等）
     this._seriesConfig = null
-    // 已收集資料：{ "1": { source, date }, "3": {...}, ... }
     this._collected = {}
-    // 詳情面板用的 DOM（僅一個，重複使用）
     this._detailEl = null
-    // 事件監聽參考（destroy 時移除）
     this._boundHandlers = {}
-    // 用於記錄哪些格子已開始 fetch（避免重複請求）
     this._fetchingSet = new Set()
-    // 是否亂序顯示
-    this._shuffleMode = false
-    // 亂序後的索引排列（1~total 的打亂陣列）
-    this._shuffledOrder = []
   }
 
   // ──────────────────────────────────────────
-  // init：讀取收集狀態並渲染
+  // init
   // ──────────────────────────────────────────
   async init(params = {}) {
     injectStyle()
@@ -401,33 +330,20 @@ export class PokedexPage {
     const app = document.getElementById('app')
     if (!app) throw new Error('找不到 #app')
 
-    // 取得 PokedexManager（全域掛載）
     const PM = globalThis.PokedexManager
     if (!PM) throw new Error('PokedexManager 尚未載入')
 
-    // 讀取系列設定
     this._seriesId = (AppState.pokedex?.active_series) || 'pokemon'
     this._seriesConfig = PM.getSeriesConfig(this._seriesId)
-
-    // 讀取已收集資料
     this._collected = (await PM.getCollected(this._seriesId)) || {}
 
-    // 產生預設順序陣列
-    const total = this._seriesConfig?.api?.total || 898
-    this._shuffledOrder = Array.from({ length: total }, (_, i) => i + 1)
-
-    // 渲染頁面骨架
     app.innerHTML = this._buildHTML()
-
-    // 渲染格子
     await this.renderGrid()
-
-    // 綁定事件
     this._bindEvents()
   }
 
   // ──────────────────────────────────────────
-  // 建立頁面 HTML 骨架
+  // _buildHTML
   // ──────────────────────────────────────────
   _buildHTML() {
     const config = this._seriesConfig
@@ -439,47 +355,29 @@ export class PokedexPage {
 
     return `
       <div class="pokedex-page" id="pokedex-page-root">
-        <!-- 頂部標題列 -->
         <div class="pokedex-header">
           <button class="pokedex-back-btn" id="pokedex-back-btn" aria-label="返回">‹</button>
           <span class="pokedex-title">${seriesIcon} ${seriesName}</span>
           <span class="pokedex-count-badge">${collectedCount} / ${total}</span>
-          <button class="pokedex-shuffle-btn" id="pokedex-shuffle-btn" aria-label="亂序顯示" title="亂序顯示">
-            🔀
-            <span class="shuffle-tooltip">亂序顯示</span>
-          </button>
         </div>
-
-        <!-- 進度條 -->
         <div class="pokedex-progress-wrap">
           <div class="pokedex-progress-bar">
             <div class="pokedex-progress-fill" style="width:${progressPct.toFixed(1)}%"></div>
           </div>
         </div>
-
-        <!-- 圖鑑格子區 -->
         <div class="pokedex-grid-wrap">
-          <div class="pokedex-grid" id="pokedex-grid">
-            <!-- renderGrid() 填入 -->
-          </div>
+          <div class="pokedex-grid" id="pokedex-grid"></div>
         </div>
       </div>
     `
   }
 
   // ──────────────────────────────────────────
-  // renderGrid：渲染所有格子
+  // renderGrid
   // ──────────────────────────────────────────
   async renderGrid() {
     const grid = document.getElementById('pokedex-grid')
     if (!grid) return
-
-    // 停止舊的 observer
-    if (this._observer) {
-      this._observer.disconnect()
-      this._observer = null
-    }
-    this._fetchingSet.clear()
 
     const config = this._seriesConfig
     const total = config?.api?.total || 898
@@ -494,11 +392,8 @@ export class PokedexPage {
       return
     }
 
-    // 取得排列順序（亂序 or 正序）
-    const order = this._shuffleMode ? this._shuffledOrder : Array.from({ length: total }, (_, i) => i + 1)
-
     let html = ''
-    for (const i of order) {
+    for (let i = 1; i <= total; i++) {
       const isCollected = this._collected[String(i)] !== undefined
       if (isCollected) {
         html += `
@@ -528,12 +423,11 @@ export class PokedexPage {
     }
     grid.innerHTML = html
 
-    // 使用 IntersectionObserver 延遲載入圖片
     this._setupLazyLoad()
   }
 
   // ──────────────────────────────────────────
-  // 延遲載入：使用 IntersectionObserver 偵測可視格子後才 fetchImage
+  // _setupLazyLoad
   // ──────────────────────────────────────────
   _setupLazyLoad() {
     const PM = globalThis.PokedexManager
@@ -551,12 +445,8 @@ export class PokedexPage {
         observer.unobserve(cell)
 
         PM.fetchImage(index, this._seriesId)
-          .then(url => {
-            this._updateCellImage(cell, index, url)
-          })
-          .catch(() => {
-            this._updateCellImage(cell, index, null)
-          })
+          .then(url => { this._updateCellImage(cell, index, url) })
+          .catch(() => { this._updateCellImage(cell, index, null) })
       })
     }, {
       root: document.querySelector('.pokedex-grid-wrap'),
@@ -574,7 +464,7 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
-  // 更新格子圖片（fetchImage 成功或失敗後呼叫）
+  // _updateCellImage
   // ──────────────────────────────────────────
   _updateCellImage(cell, index, url) {
     const fallback = cell.querySelector('.pokedex-cell-fallback')
@@ -615,7 +505,7 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
-  // showDetail：顯示格子詳情（名稱/日期/來源）
+  // showDetail
   // ──────────────────────────────────────────
   async showDetail(index) {
     const info = this._collected[String(index)]
@@ -624,21 +514,14 @@ export class PokedexPage {
     const PM = globalThis.PokedexManager
     let imageUrl = null
     if (PM) {
-      try {
-        imageUrl = await PM.fetchImage(index, this._seriesId)
-      } catch {
-        // fetchImage 失敗：使用預設圖示
-      }
+      try { imageUrl = await PM.fetchImage(index, this._seriesId) } catch { /* 失敗使用預設 */ }
     }
 
     const dateStr = info.date
       ? new Date(info.date).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
       : '日期不明'
 
-    const sourceMap = {
-      sentence: '短句造詞答對',
-      star:     '累積星星解鎖',
-    }
+    const sourceMap = { sentence: '短句造詞答對', star: '累積星星解鎖' }
     const sourceStr = sourceMap[info.source] || info.source || '未知來源'
 
     const imgHTML = imageUrl
@@ -684,14 +567,10 @@ export class PokedexPage {
     const closeHandler = () => this._removeDetail()
     closeBtn.addEventListener('click', closeHandler)
 
-    const bgHandler = (e) => {
-      if (e.target === overlay) this._removeDetail()
-    }
+    const bgHandler = (e) => { if (e.target === overlay) this._removeDetail() }
     overlay.addEventListener('click', bgHandler)
 
-    const escHandler = (e) => {
-      if (e.key === 'Escape') this._removeDetail()
-    }
+    const escHandler = (e) => { if (e.key === 'Escape') this._removeDetail() }
     document.addEventListener('keydown', escHandler)
 
     this._detailCleanup = () => {
@@ -702,7 +581,7 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
-  // _removeDetail：移除詳情面板
+  // _removeDetail
   // ──────────────────────────────────────────
   _removeDetail() {
     if (this._detailCleanup) {
@@ -716,36 +595,9 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
-  // 切換亂序模式
-  // ──────────────────────────────────────────
-  _toggleShuffle() {
-    this._shuffleMode = !this._shuffleMode
-
-    // 更新按鈕狀態
-    const btn = document.getElementById('pokedex-shuffle-btn')
-    if (btn) {
-      if (this._shuffleMode) {
-        btn.classList.add('active')
-      } else {
-        btn.classList.remove('active')
-      }
-    }
-
-    if (this._shuffleMode) {
-      // 重新 shuffle
-      const total = this._seriesConfig?.api?.total || 898
-      this._shuffledOrder = shuffleArray(Array.from({ length: total }, (_, i) => i + 1))
-    }
-
-    // 重新渲染格子
-    this.renderGrid()
-  }
-
-  // ──────────────────────────────────────────
-  // 綁定頁面事件
+  // _bindEvents
   // ──────────────────────────────────────────
   _bindEvents() {
-    // 返回按鈕
     const backBtn = document.getElementById('pokedex-back-btn')
     if (backBtn) {
       const handler = () => {
@@ -756,23 +608,13 @@ export class PokedexPage {
       this._boundHandlers.back = { el: backBtn, type: 'click', fn: handler }
     }
 
-    // 亂序按鈕
-    const shuffleBtn = document.getElementById('pokedex-shuffle-btn')
-    if (shuffleBtn) {
-      const handler = () => this._toggleShuffle()
-      shuffleBtn.addEventListener('click', handler)
-      this._boundHandlers.shuffle = { el: shuffleBtn, type: 'click', fn: handler }
-    }
-
-    // 格子點擊（事件委派）
     const grid = document.getElementById('pokedex-grid')
     if (grid) {
       const gridHandler = (e) => {
         const cell = e.target.closest('.pokedex-cell')
         if (!cell) return
         const index = parseInt(cell.dataset.index, 10)
-        const isCollected = cell.dataset.collected === 'true'
-        if (isCollected) {
+        if (cell.dataset.collected === 'true') {
           this.showDetail(index)
         }
       }
@@ -792,7 +634,7 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
-  // destroy：清理資源（事件監聽、observer、詳情面板）
+  // destroy
   // ──────────────────────────────────────────
   destroy() {
     Object.values(this._boundHandlers).forEach(({ el, type, fn }) => {

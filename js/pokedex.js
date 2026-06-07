@@ -11,6 +11,8 @@
  *
  * ⚠️ 本模組不可 import 任何 Page 或 Overlay
  *    UIManager 透過 globalThis.UIManager?.showToast 可選鏈呼叫
+ *
+ * v1.2.11：checkAndReveal 改為傳 total 給 SyncManager.revealPokedex（隨機解鎖）
  */
 
 import { AppState }             from './state.js'
@@ -126,7 +128,7 @@ export const PokedexManager = {
   /**
    * checkAndReveal(triggerType)
    * client 端預判：未達標 → 直接 return（節省 Firestore 讀取）
-   * 達標 → 呼叫 SyncManager.revealPokedex（含 Transaction 防重複）
+   * 達標 → 呼叫 SyncManager.revealPokedex（隨機抽取未收集寶可夢）
    *
    * @param {'sentence'|'star'} triggerType
    */
@@ -136,6 +138,9 @@ export const PokedexManager = {
     const seriesId   = AppState.pokedex?.active_series || 'pokemon'
     const seriesData = AppState.pokedex?.[seriesId]    || {}
     const config     = this.getSeriesConfig(seriesId)
+
+    // ── 取系列總數（隨機抽取需要） ──
+    const total = config?.api?.total || 898
 
     // ── 取門檻值 ──
     const threshold =
@@ -150,35 +155,56 @@ export const PokedexManager = {
     // ── client 預判未達標 → 直接 return，不呼叫 Firestore ──
     if (current < threshold) return
 
-    // ── 達標 → 呼叫 SyncManager.revealPokedex ──
-    const expectedNextIndex = seriesData.next_index || 1
+    // ── 已全部收集 → 不再呼叫 ──
+    const collectedCount = (seriesData.collected_ids || []).length
+    if (collectedCount >= total) {
+      globalThis.UIManager?.showToast?.('🎉 所有寶可夢已全數收集！', 'success', 3000)
+      return
+    }
 
     try {
+      // 傳入 total，讓 SyncManager 在 Transaction 內隨機抽取
       const { result, revealed } = await SyncManager.revealPokedex(
         seriesId,
         triggerType,
-        expectedNextIndex
+        total
       )
 
       if (result === 'success' && revealed != null) {
         // 更新記憶體端 AppState
         if (!AppState.pokedex[seriesId]) AppState.pokedex[seriesId] = {}
-        AppState.pokedex[seriesId].next_index = expectedNextIndex + 1
+
+        // next_index 遞增（語意：已解鎖數量）
+        const currentNextIdx = seriesData.next_index ?? 0
+        AppState.pokedex[seriesId].next_index = currentNextIdx + 1
+
+        // 更新 collected_ids（本機樂觀更新）
+        const ids = AppState.pokedex[seriesId].collected_ids || []
+        if (!ids.includes(revealed)) {
+          AppState.pokedex[seriesId].collected_ids = [...ids, revealed]
+        }
+
+        // 更新 collected（本機樂觀更新）
+        if (!AppState.pokedex[seriesId].collected) {
+          AppState.pokedex[seriesId].collected = {}
+        }
+        AppState.pokedex[seriesId].collected[String(revealed)] = {
+          source: triggerType,
+          date:   new Date().toISOString().slice(0, 10),
+        }
 
         const newCount = Math.max(0, current - threshold)
         AppState.pokedex[seriesId][countKey] = newCount
 
         // 加入揭曉佇列
         await RevealQueue.add(revealed, seriesId)
+
+      } else if (result === 'all_collected') {
+        globalThis.UIManager?.showToast?.('🎉 所有寶可夢已全數收集！', 'success', 3000)
       }
 
     } catch (e) {
-      if (e.message === 'REVEAL_CONFLICT') {
-        // 其他裝置先揭曉了，顯示提示
-        globalThis.UIManager?.showToast?.('已在其他裝置解鎖', 'info', 2500)
-      } else {
-        console.error('PokedexManager.checkAndReveal 失敗:', e)
-      }
+      console.error('PokedexManager.checkAndReveal 失敗:', e)
     }
   },
 
@@ -233,7 +259,7 @@ export const PokedexManager = {
   },
 
   /**
-   * getNextRevealIndex(seriesId?) — 下一個揭曉編號
+   * getNextRevealIndex(seriesId?) — 下一個揭曉編號（已解鎖數量，向後相容）
    */
   getNextRevealIndex(seriesId) {
     const sid = seriesId || AppState.pokedex?.active_series || 'pokemon'
