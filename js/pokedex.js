@@ -88,6 +88,10 @@ export const PokedexManager = {
   // 揭曉防並發鎖（同一時間只允許一次 revealPokedex Transaction）
   _isRevealing: false,
 
+  // 自訂系列快取（從 Firestore 讀入，避免重複讀取）
+  _customSeriesCache: null,
+  _customSeriesCacheUid: null,
+
   // ─────────────────────────────────────────────
   // init — 從 Firestore 讀取圖鑑狀態
   // ─────────────────────────────────────────────
@@ -119,6 +123,11 @@ export const PokedexManager = {
       if (queue.length > 0) {
         RevealQueue._queues[seriesId] = [...queue]
       }
+
+      // ── 載入自訂系列（快取）──
+      this._customSeriesCache = userData?.custom_series || []
+      this._customSeriesCacheUid = AppState.uid
+
     } catch (e) {
       console.error('PokedexManager.init 失敗:', e)
     }
@@ -324,14 +333,56 @@ export const PokedexManager = {
   getSeriesConfig(seriesId) {
     const sid = seriesId || AppState.pokedex?.active_series || 'pokemon'
     try {
+      // ① 先查靜態 JSON（pokemon 等內建系列）
       const data    = JSONLoader.get('pokedex_series')
-      const series  = Array.isArray(data)
-        ? data
-        : (data?.series || [])
-      return series.find(s => s.id === sid) || null
+      const series  = Array.isArray(data) ? data : (data?.series || [])
+      const found   = series.find(s => s.id === sid)
+      if (found) return found
+
+      // ② 查自訂系列快取（家長在 Firestore 建立的系列）
+      const custom = this._customSeriesCache || []
+      return custom.find(s => s.id === sid) || null
     } catch (_e) {
       return null
     }
+  },
+
+  /**
+   * loadCustomSeries() — 從 Firestore 載入自訂系列並快取
+   * 僅在 uid 變更或強制重載時重新讀取
+   */
+  async loadCustomSeries(force = false) {
+    if (!AppState.uid) return
+    if (!force && this._customSeriesCacheUid === AppState.uid && this._customSeriesCache) return
+    try {
+      const userData = await FirestoreAPI.read(`users/${AppState.uid}`)
+      this._customSeriesCache = userData?.custom_series || []
+      this._customSeriesCacheUid = AppState.uid
+    } catch (e) {
+      console.warn('[PokedexManager] loadCustomSeries 失敗', e)
+      this._customSeriesCache = []
+    }
+  },
+
+  /**
+   * getAllSeries() — 取得所有系列（內建 + 自訂）
+   */
+  getAllSeries() {
+    const data    = JSONLoader.get('pokedex_series')
+    const builtin = Array.isArray(data) ? data : (data?.series || [])
+    const custom  = (this._customSeriesCache || []).map(s => ({ ...s, isCustom: true }))
+    return [...builtin, ...custom]
+  },
+
+  /**
+   * saveCustomSeries(seriesList) — 儲存自訂系列到 Firestore
+   */
+  async saveCustomSeries(seriesList) {
+    if (!AppState.uid) return
+    await FirestoreAPI.update(`users/${AppState.uid}`, {
+      custom_series: seriesList,
+    })
+    this._customSeriesCache = seriesList
   },
 
   // ─────────────────────────────────────────────
@@ -403,6 +454,16 @@ export const PokedexManager = {
     // ── 快取命中（非 pokeapi 系列才使用快取）──
     if (this._imageCache.has(cacheKey)) {
       return this._imageCache.get(cacheKey)
+    }
+
+    // ── 自訂系列：url_pattern（家長設定的批次 URL 規則）──
+    // config.url_pattern 範例："https://example.com/img/{index}.jpg"
+    // {index} 會被替換成 1, 2, 3...
+    if (config?.source === 'url_pattern' && config?.url_pattern) {
+      if (this._imageCache.has(cacheKey)) return this._imageCache.get(cacheKey)
+      const url = config.url_pattern.replace('{index}', String(index))
+      this._imageCache.set(cacheKey, url)
+      return url
     }
 
     // ── 非 pokeapi：無已知快捷路徑 ──
