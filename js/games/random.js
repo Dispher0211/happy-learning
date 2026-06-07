@@ -86,7 +86,7 @@ export class RandomGame extends GameEngine {
     this._bonusToastTimer = null
 
     // 子遊戲完成後的回調（由外部 GamePage 注入）
-    this.onGameComplete = options.onGameComplete || null
+    this.onGameComplete = options.onGameComplete || options.onComplete || null
   }
 
   // ─── 初始化 ──────────────────────────────────────────────────────────────────
@@ -113,10 +113,13 @@ export class RandomGame extends GameEngine {
     // 渲染隨機挑戰外框 UI
     this._renderShell()
 
-    // ✕ 返回按鈕：直接導航回 game_list
+    // ✕ 返回按鈕：使用 back() 讓 PageHistory 正確維護
     window.__randomExit = () => {
       delete window.__randomExit
-      globalThis.UIManager?.navigate?.('game_list')
+      if (!this._destroyed) {
+        this._destroyed = true
+        globalThis.UIManager?.back?.()
+      }
     }
 
     // 開始第一題
