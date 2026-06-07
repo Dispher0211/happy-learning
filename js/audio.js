@@ -294,37 +294,51 @@ export const AudioManager = {
 window.AudioManager = AudioManager
 
 // ══════════════════════════════════════════════════════════════
-// BgMusic — 背景音樂管理（遊戲頁面循環播放，音效播放時自動暫停）
+// BgMusic — 背景音樂管理（遊戲列表＋遊戲頁面循環播放，音效時自動暫停）
 // ══════════════════════════════════════════════════════════════
+const _BG_SRC = 'audio/effects/gamebackmusic.mp3'
+
 export const BgMusic = {
   _audio:        null,
-  _active:       false,   // 是否應播放（遊戲進行中）
+  _active:       false,   // 是否應播放（進入遊戲列表/遊戲中）
   _effectCount:  0,       // 正在播放的音效數量
+  _userMuted:    false,   // 使用者手動關閉音樂
 
-  /** start(src) — 開始循環播放背景音樂 */
-  start (src) {
-    this.stop()
+  /** start() — 開始循環播放（若已在播放則略過） */
+  start () {
+    if (this._active && this._audio) return
     this._active = true
-    if (AppState.settings?.soundOn === false) return
-    const prefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
-    const url = src.startsWith('http') ? src : `${prefix}/${src.replace(/^\//, '')}`
-    const audio = new Audio(url)
-    audio.loop   = true
-    audio.volume = 0.35
-    this._audio  = audio
-    if (this._effectCount === 0) {
-      audio.play().catch(() => {})
-    }
+    this._playIfAllowed()
   },
 
-  /** stop() — 停止並釋放 */
+  /** stop() — 停止並釋放（完全離開遊戲流程時） */
   stop () {
     this._active = false
+    this._destroyAudio()
+  },
+
+  /** mute() — 使用者手動關閉音樂 */
+  mute () {
+    this._userMuted = true
     if (this._audio) {
-      try { this._audio.pause(); this._audio.currentTime = 0 } catch (_e) {}
-      this._audio = null
+      try { this._audio.pause() } catch (_e) {}
     }
   },
+
+  /** unmute() — 使用者手動開啟音樂 */
+  unmute () {
+    this._userMuted = false
+    this._playIfAllowed()
+  },
+
+  /** toggle() — 切換靜音狀態，回傳目前是否靜音 */
+  toggle () {
+    if (this._userMuted) { this.unmute(); return false }
+    else                 { this.mute();   return true  }
+  },
+
+  /** isMuted() — 目前是否靜音 */
+  isMuted () { return this._userMuted },
 
   /** _pauseForEffect() — 音效開始時呼叫 */
   _pauseForEffect () {
@@ -337,10 +351,33 @@ export const BgMusic = {
   /** _resumeAfterEffect() — 音效結束時呼叫 */
   _resumeAfterEffect () {
     this._effectCount = Math.max(0, this._effectCount - 1)
-    if (this._effectCount === 0 && this._active && this._audio) {
-      if (AppState.settings?.soundOn !== false) {
-        this._audio.play().catch(() => {})
-      }
+    if (this._effectCount === 0) {
+      this._playIfAllowed()
+    }
+  },
+
+  /** _playIfAllowed() — 滿足所有條件才播放 */
+  _playIfAllowed () {
+    if (!this._active)          return
+    if (this._userMuted)        return
+    if (this._effectCount > 0)  return
+    if (AppState.settings?.soundOn === false) return
+    if (!this._audio) {
+      const prefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
+      this._audio = new Audio(`${prefix}/${_BG_SRC}`)
+      this._audio.loop   = true
+      this._audio.volume = 0.35
+    }
+    if (this._audio.paused) {
+      this._audio.play().catch(() => {})
+    }
+  },
+
+  /** _destroyAudio() — 釋放 Audio 物件 */
+  _destroyAudio () {
+    if (this._audio) {
+      try { this._audio.pause(); this._audio.currentTime = 0 } catch (_e) {}
+      this._audio = null
     }
   },
 }

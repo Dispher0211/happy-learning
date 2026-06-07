@@ -8,6 +8,7 @@
 import { AppState } from '../state.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
+import { BgMusic } from '../audio.js'
 
 // ──────────────────────────────────────
 // 11 個遊戲定義（gameId / 名稱 / 圖示 / 星星數）
@@ -51,6 +52,16 @@ export class GameListPage {
 
     // 綁定所有事件
     this._bindEvents()
+
+    // 啟動背景音樂
+    BgMusic.start()
+
+    // 同步音樂按鈕圖示
+    const musicBtn = document.getElementById('gl-music-btn')
+    if (musicBtn) {
+      musicBtn.textContent = BgMusic.isMuted() ? '🔇' : '🎵'
+      musicBtn.title = BgMusic.isMuted() ? '背景音樂（已關閉）' : '背景音樂（點擊關閉）'
+    }
   }
 
   // ──────────────────────────────────────
@@ -80,6 +91,7 @@ export class GameListPage {
         <div class="gl-header">
           <button class="gl-back-btn" data-action="back" aria-label="返回">◀ 返回</button>
           <h1 class="gl-title">🎮 挑戰遊戲</h1>
+          <button class="gl-music-btn" id="gl-music-btn" data-action="music" aria-label="音樂開關" title="背景音樂開關">🎵</button>
         </div>
 
         <!-- 當前生字顯示（若有） -->
@@ -119,6 +131,9 @@ export class GameListPage {
       } else if (action === 'random') {
         // 點隨機挑戰
         this.selectRandom()
+      } else if (action === 'music') {
+        // 切換背景音樂
+        this._toggleMusic()
       } else if (action === 'back') {
         // 返回上一頁
         UIManager.back()
@@ -128,6 +143,18 @@ export class GameListPage {
     app.addEventListener('click', clickHandler)
     // 記錄以便 destroy 時移除
     this._handlers.push({ el: app, type: 'click', fn: clickHandler })
+  }
+
+  // ──────────────────────────────────────
+  // _toggleMusic：切換背景音樂開關
+  // ──────────────────────────────────────
+  _toggleMusic () {
+    const muted = BgMusic.toggle()
+    const btn = document.getElementById('gl-music-btn')
+    if (btn) {
+      btn.textContent = muted ? '🔇' : '🎵'
+      btn.title = muted ? '背景音樂（已關閉）' : '背景音樂（點擊關閉）'
+    }
   }
 
   // ──────────────────────────────────────
@@ -213,6 +240,19 @@ export class GameListPage {
         flex-shrink: 0;
       }
       .gl-back-btn:hover { background: rgba(255,255,255,0.15); }
+      .gl-music-btn {
+        margin-left: auto;
+        background: transparent;
+        border: 1.5px solid rgba(255,255,255,0.7);
+        border-radius: 8px;
+        color: #fff;
+        padding: 6px 10px;
+        font-size: 16px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .gl-music-btn:hover { background: rgba(255,255,255,0.2); }
       .gl-title {
         margin: 0;
         font-size: 20px;

@@ -91,7 +91,7 @@ export class GamePage {
       await this._gameInstance.init()
 
       // 啟動背景音樂
-      BgMusic.start('audio/effects/gamebackmusic.mp3')
+      BgMusic.start()
 
       // typo 遊戲：注入樣式 + 安裝全域提示橋接
       if (this._gameId === 'typo') {
