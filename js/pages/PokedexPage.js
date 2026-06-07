@@ -2,6 +2,7 @@
  * PokedexPage.js — 圖鑑收藏頁（Task 36）
  * 依賴：state.js（T02）、firebase.js（T05）、ui_manager.js（T28）、pokedex.js（T12.5）
  * 功能：顯示圖鑑收集狀態，已收集顯示圖片，未收集顯示❓
+ * v1.2.11：新增亂序顯示（shuffle）按鈕，RWD 優化
  */
 
 import { AppState } from '../state.js'
@@ -32,11 +33,12 @@ function injectStyle() {
     .pokedex-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 16px 20px 12px;
+      gap: 10px;
+      padding: 14px 16px 10px;
       background: rgba(0,0,0,0.3);
       border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     .pokedex-back-btn {
       background: rgba(255,255,255,0.15);
@@ -51,51 +53,71 @@ function injectStyle() {
       align-items: center;
       justify-content: center;
       transition: background 0.2s;
+      flex-shrink: 0;
     }
     .pokedex-back-btn:hover { background: rgba(255,255,255,0.25); }
     .pokedex-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
       flex: 1;
+      min-width: 80px;
     }
     .pokedex-count-badge {
       font-size: 13px;
       background: rgba(255,215,0,0.2);
       border: 1px solid rgba(255,215,0,0.5);
       color: #ffd700;
-      padding: 4px 12px;
+      padding: 4px 10px;
       border-radius: 20px;
       white-space: nowrap;
     }
 
-    /* ── 系列切換標籤（預留，目前單系列） ── */
-    .pokedex-series-bar {
-      display: flex;
-      gap: 8px;
-      padding: 10px 20px;
-      overflow-x: auto;
-      flex-shrink: 0;
-    }
-    .pokedex-series-chip {
+    /* ── 亂序切換按鈕 ── */
+    .pokedex-shuffle-btn {
       background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #fff;
-      border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ccc;
+      font-size: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+      position: relative;
     }
-    .pokedex-series-chip.active {
-      background: rgba(255,215,0,0.25);
+    .pokedex-shuffle-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .pokedex-shuffle-btn.active {
+      background: rgba(255,215,0,0.2);
       border-color: #ffd700;
       color: #ffd700;
+    }
+    .pokedex-shuffle-btn .shuffle-tooltip {
+      display: none;
+      position: absolute;
+      bottom: -30px;
+      right: 0;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .pokedex-shuffle-btn:hover .shuffle-tooltip {
+      display: block;
     }
 
     /* ── 進度條 ── */
     .pokedex-progress-wrap {
-      padding: 0 20px 10px;
+      padding: 0 16px 8px;
       flex-shrink: 0;
     }
     .pokedex-progress-bar {
@@ -116,12 +138,12 @@ function injectStyle() {
     .pokedex-grid-wrap {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 14px 20px;
+      padding: 8px 12px 20px;
     }
     .pokedex-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
     }
 
     /* ── 單一圖鑑格子 ── */
@@ -155,13 +177,13 @@ function injectStyle() {
     }
     /* 圖片載入失敗備用圖示 */
     .pokedex-cell-fallback {
-      font-size: 32px;
+      font-size: 28px;
       opacity: 0.7;
     }
 
     /* 未收集：❓ */
     .pokedex-cell-unknown {
-      font-size: 28px;
+      font-size: 26px;
       opacity: 0.4;
       user-select: none;
     }
@@ -304,12 +326,47 @@ function injectStyle() {
     @keyframes pokedex-spin {
       to { transform: rotate(360deg); }
     }
+
+    /* ── 手機（≤480px）── */
+    @media (max-width: 480px) {
+      .pokedex-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 6px;
+      }
+      .pokedex-header {
+        padding: 12px 12px 8px;
+      }
+      .pokedex-title { font-size: 16px; }
+    }
+
+    /* ── 平板（481px ~ 1023px）── */
+    @media (min-width: 481px) and (max-width: 1023px) {
+      .pokedex-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 9px;
+      }
+    }
+
     /* ── 桌面（≥1024px）── */
     @media (min-width: 1024px) {
       .pokedex-page { max-width: 1200px; margin: 0 auto; width: 100%; }
+      .pokedex-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+      }
     }
   `
   document.head.appendChild(style)
+}
+
+// Fisher-Yates shuffle（不修改原陣列）
+function shuffleArray(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
 }
 
 // ─────────────────────────────────────────────
@@ -329,6 +386,10 @@ export class PokedexPage {
     this._boundHandlers = {}
     // 用於記錄哪些格子已開始 fetch（避免重複請求）
     this._fetchingSet = new Set()
+    // 是否亂序顯示
+    this._shuffleMode = false
+    // 亂序後的索引排列（1~total 的打亂陣列）
+    this._shuffledOrder = []
   }
 
   // ──────────────────────────────────────────
@@ -350,6 +411,10 @@ export class PokedexPage {
 
     // 讀取已收集資料
     this._collected = (await PM.getCollected(this._seriesId)) || {}
+
+    // 產生預設順序陣列
+    const total = this._seriesConfig?.api?.total || 898
+    this._shuffledOrder = Array.from({ length: total }, (_, i) => i + 1)
 
     // 渲染頁面骨架
     app.innerHTML = this._buildHTML()
@@ -379,6 +444,10 @@ export class PokedexPage {
           <button class="pokedex-back-btn" id="pokedex-back-btn" aria-label="返回">‹</button>
           <span class="pokedex-title">${seriesIcon} ${seriesName}</span>
           <span class="pokedex-count-badge">${collectedCount} / ${total}</span>
+          <button class="pokedex-shuffle-btn" id="pokedex-shuffle-btn" aria-label="亂序顯示" title="亂序顯示">
+            🔀
+            <span class="shuffle-tooltip">亂序顯示</span>
+          </button>
         </div>
 
         <!-- 進度條 -->
@@ -400,11 +469,17 @@ export class PokedexPage {
 
   // ──────────────────────────────────────────
   // renderGrid：渲染所有格子
-  // 已收集→顯示❓佔位（圖片延遲載入）；未收集→顯示❓
   // ──────────────────────────────────────────
   async renderGrid() {
     const grid = document.getElementById('pokedex-grid')
     if (!grid) return
+
+    // 停止舊的 observer
+    if (this._observer) {
+      this._observer.disconnect()
+      this._observer = null
+    }
+    this._fetchingSet.clear()
 
     const config = this._seriesConfig
     const total = config?.api?.total || 898
@@ -419,12 +494,13 @@ export class PokedexPage {
       return
     }
 
-    // 先顯示載入提示（格子數量大時先佔位）
+    // 取得排列順序（亂序 or 正序）
+    const order = this._shuffleMode ? this._shuffledOrder : Array.from({ length: total }, (_, i) => i + 1)
+
     let html = ''
-    for (let i = 1; i <= total; i++) {
+    for (const i of order) {
       const isCollected = this._collected[String(i)] !== undefined
       if (isCollected) {
-        // 已收集格子：先顯示載入佔位（圖片用 data-index 延遲載入）
         html += `
           <div class="pokedex-cell collected"
                data-index="${i}"
@@ -437,7 +513,6 @@ export class PokedexPage {
           </div>
         `
       } else {
-        // 未收集格子：顯示❓，不呼叫 fetchImage（節省 API 請求）
         html += `
           <div class="pokedex-cell"
                data-index="${i}"
@@ -453,7 +528,7 @@ export class PokedexPage {
     }
     grid.innerHTML = html
 
-    // 使用 IntersectionObserver 延遲載入圖片（可視範圍才 fetch）
+    // 使用 IntersectionObserver 延遲載入圖片
     this._setupLazyLoad()
   }
 
@@ -473,16 +548,13 @@ export class PokedexPage {
         if (this._fetchingSet.has(index)) return
         this._fetchingSet.add(index)
 
-        // 停止觀察（只載入一次）
         observer.unobserve(cell)
 
-        // 非同步載入圖片（不阻塞 UI）
         PM.fetchImage(index, this._seriesId)
           .then(url => {
             this._updateCellImage(cell, index, url)
           })
           .catch(() => {
-            // fetchImage 失敗：顯示預設圖示，不崩潰
             this._updateCellImage(cell, index, null)
           })
       })
@@ -492,14 +564,12 @@ export class PokedexPage {
       threshold: 0.01
     })
 
-    // 觀察所有已收集格子
     const grid = document.getElementById('pokedex-grid')
     if (!grid) return
     grid.querySelectorAll('.pokedex-cell[data-collected="true"]').forEach(cell => {
       observer.observe(cell)
     })
 
-    // 儲存 observer 供 destroy 時清理
     this._observer = observer
   }
 
@@ -507,18 +577,16 @@ export class PokedexPage {
   // 更新格子圖片（fetchImage 成功或失敗後呼叫）
   // ──────────────────────────────────────────
   _updateCellImage(cell, index, url) {
-    // 移除佔位符
     const fallback = cell.querySelector('.pokedex-cell-fallback')
     if (fallback) fallback.remove()
 
     if (url) {
-      // 成功：顯示圖片
       const img = document.createElement('img')
       img.src = url
       img.className = 'pokedex-cell-img'
       img.alt = `#${index}`
       img.loading = 'lazy'
-      img.dataset.pokedexIndex = index  // 供 PokedexManager blob 更新用
+      img.dataset.pokedexIndex = index
       img.onerror = () => {
         img.remove()
         const fb = document.createElement('span')
@@ -528,14 +596,12 @@ export class PokedexPage {
       }
       cell.prepend(img)
     } else {
-      // fetchImage 回傳 null：顯示預設圖示
       const fb = document.createElement('span')
       fb.className = 'pokedex-cell-fallback'
       fb.textContent = '🎴'
       cell.prepend(fb)
     }
 
-    // 檢查是否為新收集（3天內）
     const info = this._collected[String(index)]
     if (info?.date) {
       const days = (Date.now() - new Date(info.date).getTime()) / 86400000
@@ -553,9 +619,8 @@ export class PokedexPage {
   // ──────────────────────────────────────────
   async showDetail(index) {
     const info = this._collected[String(index)]
-    if (!info) return // 未收集，不顯示詳情
+    if (!info) return
 
-    // 取得圖片（優先從快取，不重複請求）
     const PM = globalThis.PokedexManager
     let imageUrl = null
     if (PM) {
@@ -566,25 +631,21 @@ export class PokedexPage {
       }
     }
 
-    // 格式化日期
     const dateStr = info.date
       ? new Date(info.date).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
       : '日期不明'
 
-    // 來源說明
     const sourceMap = {
       sentence: '短句造詞答對',
       star:     '累積星星解鎖',
     }
     const sourceStr = sourceMap[info.source] || info.source || '未知來源'
 
-    // 圖片 or 備用圖示
     const imgHTML = imageUrl
       ? `<img class="pokedex-detail-img" src="${imageUrl}" alt="#${index}" data-pokedex-index="${index}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">`
         + `<div class="pokedex-detail-fallback" style="display:none">🎴</div>`
       : `<div class="pokedex-detail-fallback">🎴</div>`
 
-    // 取得真實名稱
     let pokemonName = `No.${String(index).padStart(3, '0')}`
     if (PM) {
       try {
@@ -593,7 +654,6 @@ export class PokedexPage {
       } catch (_) { /* 取得失敗使用預設編號 */ }
     }
 
-    // 建立詳情 overlay
     const overlay = document.createElement('div')
     overlay.className = 'pokedex-detail-overlay'
     overlay.id = 'pokedex-detail-overlay'
@@ -616,29 +676,24 @@ export class PokedexPage {
       </div>
     `
 
-    // 移除舊有詳情（防重複）
     this._removeDetail()
     document.body.appendChild(overlay)
     this._detailEl = overlay
 
-    // 關閉按鈕
     const closeBtn = overlay.querySelector('#pokedex-detail-close')
     const closeHandler = () => this._removeDetail()
     closeBtn.addEventListener('click', closeHandler)
 
-    // 點背景關閉
     const bgHandler = (e) => {
       if (e.target === overlay) this._removeDetail()
     }
     overlay.addEventListener('click', bgHandler)
 
-    // ESC 關閉
     const escHandler = (e) => {
       if (e.key === 'Escape') this._removeDetail()
     }
     document.addEventListener('keydown', escHandler)
 
-    // 儲存供 destroy 清理
     this._detailCleanup = () => {
       closeBtn.removeEventListener('click', closeHandler)
       overlay.removeEventListener('click', bgHandler)
@@ -661,6 +716,32 @@ export class PokedexPage {
   }
 
   // ──────────────────────────────────────────
+  // 切換亂序模式
+  // ──────────────────────────────────────────
+  _toggleShuffle() {
+    this._shuffleMode = !this._shuffleMode
+
+    // 更新按鈕狀態
+    const btn = document.getElementById('pokedex-shuffle-btn')
+    if (btn) {
+      if (this._shuffleMode) {
+        btn.classList.add('active')
+      } else {
+        btn.classList.remove('active')
+      }
+    }
+
+    if (this._shuffleMode) {
+      // 重新 shuffle
+      const total = this._seriesConfig?.api?.total || 898
+      this._shuffledOrder = shuffleArray(Array.from({ length: total }, (_, i) => i + 1))
+    }
+
+    // 重新渲染格子
+    this.renderGrid()
+  }
+
+  // ──────────────────────────────────────────
   // 綁定頁面事件
   // ──────────────────────────────────────────
   _bindEvents() {
@@ -675,7 +756,15 @@ export class PokedexPage {
       this._boundHandlers.back = { el: backBtn, type: 'click', fn: handler }
     }
 
-    // 格子點擊（事件委派，避免 898 個監聽器）
+    // 亂序按鈕
+    const shuffleBtn = document.getElementById('pokedex-shuffle-btn')
+    if (shuffleBtn) {
+      const handler = () => this._toggleShuffle()
+      shuffleBtn.addEventListener('click', handler)
+      this._boundHandlers.shuffle = { el: shuffleBtn, type: 'click', fn: handler }
+    }
+
+    // 格子點擊（事件委派）
     const grid = document.getElementById('pokedex-grid')
     if (grid) {
       const gridHandler = (e) => {
@@ -686,10 +775,8 @@ export class PokedexPage {
         if (isCollected) {
           this.showDetail(index)
         }
-        // 未收集格子：點擊無反應（不呼叫 fetchImage）
       }
       grid.addEventListener('click', gridHandler)
-      // 鍵盤支援（Enter / Space）
       const keyHandler = (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           const cell = e.target.closest('.pokedex-cell')
@@ -708,22 +795,17 @@ export class PokedexPage {
   // destroy：清理資源（事件監聽、observer、詳情面板）
   // ──────────────────────────────────────────
   destroy() {
-    // 移除所有事件監聽
     Object.values(this._boundHandlers).forEach(({ el, type, fn }) => {
       if (el) el.removeEventListener(type, fn)
     })
     this._boundHandlers = {}
 
-    // 停止 IntersectionObserver
     if (this._observer) {
       this._observer.disconnect()
       this._observer = null
     }
 
-    // 移除詳情面板
     this._removeDetail()
-
-    // 清空 fetch 集合
     this._fetchingSet.clear()
   }
 }
