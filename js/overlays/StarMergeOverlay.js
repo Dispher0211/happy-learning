@@ -299,6 +299,15 @@ export const StarMergeOverlay = {
     if (yellow < 1000) return
 
     await InputGuard.guard('star_merge_ytb', async () => {
+      // 播放合成音效
+      const _pp = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
+      try {
+        if (globalThis.AppState?.settings?.soundOn !== false) {
+          const _snd = new Audio(`${_pp}/audio/effects/starchange.mp3`)
+          _snd.volume = 0.9
+          _snd.play().catch(() => {})
+        }
+      } catch (_e) {}
       const animLayer = this._el?.querySelector('#smo-anim-ytb')
       if (animLayer) {
         animLayer.classList.add('visible')
@@ -331,6 +340,15 @@ export const StarMergeOverlay = {
     if (blue < 1000) return
 
     await InputGuard.guard('star_merge_btr', async () => {
+      // 播放合成音效
+      const _pp = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
+      try {
+        if (globalThis.AppState?.settings?.soundOn !== false) {
+          const _snd = new Audio(`${_pp}/audio/effects/starchange.mp3`)
+          _snd.volume = 0.9
+          _snd.play().catch(() => {})
+        }
+      } catch (_e) {}
       const animLayer = this._el?.querySelector('#smo-anim-btr')
       if (animLayer) {
         animLayer.classList.add('visible')
