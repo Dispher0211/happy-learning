@@ -194,11 +194,15 @@ export const ForgettingCurve = {
         ...otherItems,
       ]
 
-      // ── seeded shuffle（v4：seed 使用 UTC 日期）──
-      // 同天同用戶 → 順序固定；不同天 → 不同順序
-      const utcDate = new Date().toISOString().slice(0, 10)  // 如 '2026-04-12'
-      const seedStr = AppState.uid + utcDate
-      const shuffled = this._seededShuffle(limitedPool, seedStr)
+      // ── 每次遊戲在同難度群組內隨機洗牌（保留優先級邏輯，但同級間順序每次不同）──
+      const _shuffle = arr => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[arr[i], arr[j]] = [arr[j], arr[i]]
+        }
+        return arr
+      }
+      const shuffled = _shuffle(limitedPool)
 
       // ── 去重（同一字只取第一次）──
       const seen    = new Set()
