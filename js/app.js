@@ -111,6 +111,28 @@ async function handleAuthStateChanged(user) {
     console.error('[App] PokedexManager.init() 失敗：', err)
   }
 
+  // 從 Firestore 同步 settings（含 api_keys），確保跨裝置一致
+  // localStorage 只存本機快取，Firestore 才是跨裝置來源
+  try {
+    const { FirestoreAPI } = await import('./firebase.js')
+    const userData = await FirestoreAPI.read(`users/${user.uid}`)
+    if (userData?.settings) {
+      // 深度合併：Firestore 的 settings 覆蓋 localStorage 快取
+      AppState.settings = {
+        ...AppState.settings,
+        ...userData.settings,
+        api_keys: {
+          ...(AppState.settings?.api_keys || {}),
+          ...(userData.settings?.api_keys || {}),
+        },
+      }
+      AppState.save()
+      console.log('[App] Firestore settings 同步完成（含 api_keys）')
+    }
+  } catch (err) {
+    console.warn('[App] Firestore settings 同步失敗，使用本機快取：', err)
+  }
+
   try {
     // v4 新增：每日 WrongQueue decay（同日只執行一次，內部有日期鎖）
     await WrongQueue.dailyDecay()
