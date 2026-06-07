@@ -207,10 +207,15 @@ export class StrokeGame extends GameEngine {
     if (!container) return;
 
     // 取得或建立 HanziWriter instance（HWM 保證同容器不重建）
+    // 動態取得容器實際尺寸，確保平板手機上畫布填滿容器
+    // 等待一個 rAF 確保 CSS vmin 已計算完成
+    await new Promise(r => requestAnimationFrame(r));
+    const containerSize = Math.max(container.offsetWidth || 0, container.offsetHeight || 0);
+    const hwSize = containerSize > 20 ? containerSize : Math.min(Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.72), 340);
     const writerOptions = {
-      width: 220,
-      height: 220,
-      padding: 10,
+      width: hwSize,
+      height: hwSize,
+      padding: Math.round(hwSize * 0.045),
       strokeColor: '#2c3e50',
       radicalColor: '#e74c3c',
       highlightColor: '#f1c40f',
@@ -694,8 +699,8 @@ export class StrokeGame extends GameEngine {
     }
 
     .sw-hw-container {
-      width: 220px;
-      height: 220px;
+      width: min(72vmin, 340px);
+      height: min(72vmin, 340px);
       border: 3px solid #bdc3c7;
       border-radius: 12px;
       background: #fff;
@@ -878,7 +883,7 @@ export class StrokeGame extends GameEngine {
 
     /* ── 降級顯示 ── */
     .sw-fallback {
-      width: 220px; height: 220px;
+      width: min(72vmin, 340px); height: min(72vmin, 340px);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       background: #f8f9fa;
@@ -898,7 +903,6 @@ export class StrokeGame extends GameEngine {
 
     @media (max-width: 480px) {
       .sw-char-display { font-size: 3rem; }
-      .sw-hw-container { width: 180px; height: 180px; }
     }
     
       /* ── RWD 平板（≥600px）── */
