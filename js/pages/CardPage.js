@@ -130,11 +130,17 @@ export class CardPage {
     const yellowHalf = (yellow % 1) >= 0.5
     const yellowText = yellowHalf ? `${yellowFull}½` : `${yellowFull}`
 
+    // 取已收集寶可夢數量
+    const seriesId      = AppState.pokedex?.active_series || 'pokemon'
+    const pokeCollected = (AppState.pokedex?.[seriesId]?.collected_ids || []).length
+
     app.innerHTML = `
       <div class="card-page" id="card-page-root">
 
         <!-- ★ 星星列（最上方） -->
         <div class="card-page__stars-bar">
+          <span class="card-page__stars-item card-page__stars-item--pokeball"
+                id="pokeball-count"><img src='./icons/pokball.png' class='star-img-icon' alt='寶可夢'> ${pokeCollected}</span>
           <span class="card-page__stars-item card-page__stars-item--red"
                 id="stars-red"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'> ${red}</span>
           <span class="card-page__stars-item card-page__stars-item--blue"

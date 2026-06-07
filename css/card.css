@@ -1295,6 +1295,10 @@
   border-radius: 16px;
 }
 
+.card-page__stars-item--pokeball {
+  background: #F0FDF4;
+  color: #16A34A;
+}
 .card-page__stars-item--yellow {
   background: #FEF3C7;
   color: #D97706;

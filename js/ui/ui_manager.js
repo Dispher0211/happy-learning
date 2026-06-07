@@ -491,6 +491,14 @@ const UIManager = {
     if (elBlue)   elBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> ${blue_total}`
     if (elRed)    elRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'> ${red_total}`
 
+    // 同步更新寶可夢球計數
+    const elPokeball = document.getElementById('pokeball-count')
+    if (elPokeball) {
+      const sid = AppState.pokedex?.active_series || 'pokemon'
+      const pokeCount = (AppState.pokedex?.[sid]?.collected_ids || []).length
+      elPokeball.innerHTML = `<img src='./icons/pokball.png' class='star-img-icon' alt='寶可夢'> ${pokeCount}`
+    }
+
     // 同步更新遊戲頁 header 星星（GameEngine._setupGameLayout 產生的 gh-* 元素）
     const ghRed    = document.getElementById('gh-red')
     const ghBlue   = document.getElementById('gh-blue')
