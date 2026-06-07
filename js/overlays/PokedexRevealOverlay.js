@@ -249,18 +249,9 @@ export const PokedexRevealOverlay = {
     this._isVisible = true
     const total = queue.length
 
-    // consumeRevealQueue 回傳 number[] 或 {index,seriesId}[]
-    // 統一轉為 { index, seriesId } 格式
-    const seriesId = globalThis.AppState?.pokedex?.active_series || 'pokemon'
-    const normalizedQueue = queue.map(item =>
-      (typeof item === 'number' || typeof item === 'string')
-        ? { index: Number(item), seriesId }
-        : item
-    )
-
     // ── for...of：逐一播放，等用戶點[繼續]才播下一張 ──
     let current = 0
-    for (const item of normalizedQueue) {
+    for (const item of queue) {
       current++
       await this.showOne(item, current, total)
     }
@@ -369,7 +360,19 @@ export const PokedexRevealOverlay = {
       // ── 工具函式：等待毫秒 ──
       const wait = ms => new Promise(r => setTimeout(r, ms))
 
+      // 音效播放（尊重靜音設定）
+      const _pathPrefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
+      const playSound = (src) => {
+        if (globalThis.AppState?.settings?.soundOn === false) return
+        try {
+          const a = new Audio(`${_pathPrefix}/${src}`)
+          a.volume = 0.8
+          a.play().catch(() => {})
+        } catch (_e) {}
+      }
+
       // ── Phase 1：精靈球搖晃動畫（720ms = 6次 × 120ms）──
+      playSound('audio/effects/openball.mp3')
       ball.classList.add('shaking')
       await wait(750)
       ball.classList.remove('shaking')
