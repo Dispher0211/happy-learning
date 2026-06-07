@@ -202,7 +202,16 @@ export class GameEngine {
       await this._addStars(stars)
       this.updateProgress()   // 答對後即時更新 header 星星數字
       if (char) ForgettingCurve.recordResult(char, true, pron).catch(() => {})
-      globalThis.PokedexManager?.checkAndReveal?.('star')
+      await globalThis.PokedexManager?.checkAndReveal?.('star')
+      // 若揭曉佇列有待播放，觸發圖鑑揭曉動畫
+      const _seriesId = globalThis.AppState?.pokedex?.active_series || 'pokemon'
+      const _queueLen = globalThis.PokedexManager?.getRevealQueue?.(_seriesId)?.length || 0
+      if (_queueLen > 0) {
+        // 延遲到動畫解鎖後播放，避免與答題動畫衝突
+        setTimeout(() => {
+          globalThis.UIManager?.showOverlay?.('pokedex_reveal')
+        }, 400)
+      }
     } finally {
       AppState.locks.animation = false
     }
@@ -299,8 +308,8 @@ export class GameEngine {
     const ghRed    = document.getElementById('gh-red')
     const ghBlue   = document.getElementById('gh-blue')
     const ghYellow = document.getElementById('gh-yellow')
-    if (ghRed)    ghRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>×${red}`
-    if (ghBlue)   ghBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>×${blue}`
+    if (ghRed)    ghRed.textContent    = `🔴★×${red}`
+    if (ghBlue)   ghBlue.textContent   = `🔵★×${blue}`
     if (ghYellow) ghYellow.textContent = `⭐×${yellow}`
 
     // 連續答對 bonus 提示
@@ -375,8 +384,8 @@ export class GameEngine {
               font-size:0.8rem; font-weight:700; flex:1;
               justify-content:center;
             ">
-              <span id="gh-red"  style="color:#ef4444;"><img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'>×${red}</span>
-              <span id="gh-blue" style="color:#3b82f6;"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'>×${blue}</span>
+              <span id="gh-red"  style="color:#ef4444;">🔴★×${red}</span>
+              <span id="gh-blue" style="color:#3b82f6;">🔵★×${blue}</span>
               <span id="gh-yellow" style="color:#f59e0b;">⭐×${yellow}</span>
             </div>
 

@@ -440,3 +440,23 @@ export const PokedexManager = {
 
 // 掛到 globalThis 供 stars.js 可選鏈呼叫
 globalThis.PokedexManager = PokedexManager
+
+// ── 開發測試用：Console 直接貼 await globalThis.PokedexManager.debugReveal() ──
+globalThis.PokedexManager.debugReveal = async function() {
+  const seriesId = globalThis.AppState?.pokedex?.active_series || 'pokemon'
+  if (!globalThis.AppState?.pokedex?.[seriesId]) {
+    if (!globalThis.AppState.pokedex) globalThis.AppState.pokedex = {}
+    globalThis.AppState.pokedex[seriesId] = {}
+  }
+  // 強制把 star_count 設為門檻值，直接觸發揭曉
+  globalThis.AppState.pokedex[seriesId].star_count = 100
+  console.log('[debugReveal] star_count 設為 100，呼叫 checkAndReveal...')
+  await PokedexManager.checkAndReveal('star')
+  const queue = PokedexManager.getRevealQueue(seriesId)
+  console.log('[debugReveal] reveal_queue:', queue)
+  if (queue && queue.length > 0) {
+    globalThis.UIManager?.showOverlay?.('pokedex_reveal')
+  } else {
+    console.warn('[debugReveal] 佇列為空，可能 SyncManager 尚未回應')
+  }
+}
