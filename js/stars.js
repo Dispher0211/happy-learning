@@ -6,7 +6,7 @@
  *   - add(amount)：increment 寫入 Firestore，樂觀更新本地，飛星動畫
  *   - spend(amount)：transaction 防負數
  *   - canAfford(amount)：檢查本地 AppState
- *   - merge(type)：合成動畫，'yellow_to_blue'（300→1）或 'blue_to_red'（100→1）
+ *   - merge(type)：合成動畫，'yellow_to_blue'（1000→1）或 'blue_to_red'（1000→1）
  *   - getDisplay(stars)：{ yellowFull, yellowHalf, blue, red }
  *   - _flyStarsAnimation(amount)：星星飛向右上角動畫
  *
@@ -30,10 +30,10 @@ import { FirestoreAPI } from './firebase.js'
 // ─────────────────────────────────────────────────
 
 /** 黃星合成藍星所需數量 */
-const YELLOW_TO_BLUE_COST = 300
+const YELLOW_TO_BLUE_COST = 1000
 
 /** 藍星合成紅星所需數量 */
-const BLUE_TO_RED_COST = 100
+const BLUE_TO_RED_COST = 1000
 
 // ─────────────────────────────────────────────────
 // 私有工具函數
@@ -331,7 +331,7 @@ export const StarsManager = {
   },
 
   /**
-   * 合成動畫（300顆聚集旋轉→💥→1顆新星誕生→飛向右上角）
+   * 合成動畫（1000顆聚集旋轉→💥→1顆新星誕生→飛向右上角）
    * @param {'yellow_to_blue'|'blue_to_red'} type
    * @private
    */

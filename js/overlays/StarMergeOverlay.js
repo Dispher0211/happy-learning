@@ -10,14 +10,16 @@
  *
  * 功能（規格 UI SECTION 2.15 + 流程 SECTION 7.7）：
  *   show()  → 顯示合成面板，讀取目前星星數
- *   merge() → InputGuard 防連點 + StarsManager.merge('yellow_to_blue')
+ *   merge() → InputGuard 防連點 + StarsManager.merge('yellow_to_blue' | 'blue_to_red')
  *             合成後播放動畫，更新數字，star_pokedex_count 不變
  *   hide()  → 清空 #overlay-root
  *
  * 驗收標準：
- *   yellow_total < 300  → 按鈕 disable，顯示進度條
- *   yellow_total ≥ 300  → 按鈕發光，可點擊
- *   合成後 → 300顆聚集旋轉→💥→1顆藍★，數字更新，star_pokedex_count 不受影響
+ *   yellow_total < 1000  → 黃→藍按鈕 disable，顯示進度條
+ *   yellow_total ≥ 1000  → 黃→藍按鈕發光，可點擊
+ *   blue_total < 1000    → 藍→紅按鈕 disable，顯示進度條
+ *   blue_total ≥ 1000    → 藍→紅按鈕發光，可點擊
+ *   合成後 → 1000顆聚集旋轉→💥→1顆新星誕生，數字更新，star_pokedex_count 不受影響
  */
 
 import { StarsManager } from '../stars.js'
@@ -52,7 +54,7 @@ if (!document.getElementById(_CSS_ID)) {
       border: 2px solid #ffd700;
       border-radius: 20px;
       padding: 28px 24px 24px;
-      width: min(340px, 90vw);
+      width: min(360px, 92vw);
       color: #fff;
       position: relative;
       box-shadow: 0 0 40px rgba(255, 215, 0, 0.25);
@@ -84,6 +86,14 @@ if (!document.getElementById(_CSS_ID)) {
       letter-spacing: 2px;
     }
 
+    /* 合成區塊（每個合成一個區塊） */
+    .smo-merge-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 16px 14px 14px;
+      margin-bottom: 16px;
+    }
+
     /* 星星顯示區 */
     .smo-stars-row {
       display: flex;
@@ -94,44 +104,47 @@ if (!document.getElementById(_CSS_ID)) {
       font-size: 15px;
     }
     .smo-star-icon {
-      font-size: 30px;
+      font-size: 28px;
       transition: transform 0.3s;
     }
     .smo-star-count {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: bold;
       color: #ffd700;
       min-width: 60px;
       text-align: center;
       transition: all 0.3s;
     }
+    .smo-star-count.blue  { color: #5bc8f5; }
+    .smo-star-count.red   { color: #ff6b6b; }
     .smo-arrow {
-      font-size: 22px;
+      font-size: 20px;
       color: #aaa;
     }
-    .smo-blue-count {
-      font-size: 32px;
+    .smo-result-count {
+      font-size: 30px;
       font-weight: bold;
-      color: #5bc8f5;
       min-width: 40px;
       text-align: center;
       transition: all 0.3s;
     }
+    .smo-result-count.blue { color: #5bc8f5; }
+    .smo-result-count.red  { color: #ff6b6b; }
 
     /* 進度條區域 */
     .smo-progress-wrap {
-      margin: 8px 0 16px;
+      margin: 6px 0 12px;
     }
     .smo-progress-label {
-      font-size: 13px;
+      font-size: 12px;
       color: #ccc;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
       text-align: center;
     }
     .smo-progress-bar-bg {
       background: rgba(255,255,255,0.12);
       border-radius: 20px;
-      height: 12px;
+      height: 10px;
       overflow: hidden;
     }
     .smo-progress-bar-fill {
@@ -140,23 +153,27 @@ if (!document.getElementById(_CSS_ID)) {
       background: linear-gradient(90deg, #ffc107, #ffd700);
       transition: width 0.5s ease;
     }
+    .smo-progress-bar-fill.blue-fill {
+      background: linear-gradient(90deg, #5bc8f5, #1a9fd4);
+    }
 
-    /* 合成說明文字 */
+    /* 合成公式說明 */
     .smo-formula {
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       color: #bbb;
-      margin-bottom: 18px;
+      margin-bottom: 12px;
     }
     .smo-formula span { color: #ffd700; font-weight: bold; }
+    .smo-formula span.blue { color: #5bc8f5; }
 
     /* 合成按鈕：不可用 */
     .smo-btn-merge {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       border-radius: 14px;
       border: none;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s;
@@ -167,18 +184,31 @@ if (!document.getElementById(_CSS_ID)) {
       color: #666;
       cursor: not-allowed;
     }
-    /* 合成按鈕：可用（發光效果） */
-    .smo-btn-merge.ready {
+    /* 合成按鈕：可用（發光效果） - 黃→藍 */
+    .smo-btn-merge.ready-yellow {
       background: linear-gradient(135deg, #f7b733, #fc4a1a);
       color: #fff;
       box-shadow:
         0 0 12px rgba(247, 183, 51, 0.6),
         0 0 30px rgba(247, 183, 51, 0.3);
-      animation: smo-btn-glow 1.5s ease-in-out infinite alternate;
+      animation: smo-btn-glow-yellow 1.5s ease-in-out infinite alternate;
     }
-    @keyframes smo-btn-glow {
+    @keyframes smo-btn-glow-yellow {
       from { box-shadow: 0 0 12px rgba(247,183,51,0.5), 0 0 20px rgba(247,183,51,0.2); }
       to   { box-shadow: 0 0 20px rgba(247,183,51,0.9), 0 0 40px rgba(247,183,51,0.5); }
+    }
+    /* 合成按鈕：可用（發光效果） - 藍→紅 */
+    .smo-btn-merge.ready-blue {
+      background: linear-gradient(135deg, #5bc8f5, #c850c0);
+      color: #fff;
+      box-shadow:
+        0 0 12px rgba(91, 200, 245, 0.6),
+        0 0 30px rgba(200, 80, 192, 0.3);
+      animation: smo-btn-glow-blue 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes smo-btn-glow-blue {
+      from { box-shadow: 0 0 12px rgba(91,200,245,0.5), 0 0 20px rgba(200,80,192,0.2); }
+      to   { box-shadow: 0 0 20px rgba(91,200,245,0.9), 0 0 40px rgba(200,80,192,0.5); }
     }
 
     /* 合成動畫覆蓋層 */
@@ -258,38 +288,64 @@ export const StarMergeOverlay = {
   },
 
   /**
-   * merge() — 執行合成
+   * mergeYellowToBlue() — 黃星合成藍星
    *   InputGuard 防連點 + StarsManager.merge('yellow_to_blue')
-   *   合成後播放動畫，再更新數字
    */
-  async merge () {
-    const stars = AppState.stars || {}
+  async mergeYellowToBlue () {
+    const stars  = AppState.stars || {}
     const yellow = stars.yellow_total || 0
 
-    // 不足 300 顆：不動作
-    if (yellow < 300) return
+    // 不足 1000 顆：不動作
+    if (yellow < 1000) return
 
-    await InputGuard.guard('star_merge', async () => {
-      // 播放合成動畫
-      const animLayer = this._el?.querySelector('.smo-anim-layer')
+    await InputGuard.guard('star_merge_ytb', async () => {
+      const animLayer = this._el?.querySelector('#smo-anim-ytb')
       if (animLayer) {
         animLayer.classList.add('visible')
         const resultEl = animLayer.querySelector('.smo-anim-result')
         if (resultEl) {
-          // 先顯示旋轉，再爆炸出藍星
           await this._delay(900)
           resultEl.style.display = 'block'
         }
       }
 
-      // 呼叫 StarsManager 執行 transaction
-      // yellow_total -= 300, blue_total += 1, star_pokedex_count 不受影響
+      // transaction: yellow_total -= 1000, blue_total += 1, star_pokedex_count 不受影響
       await StarsManager.merge('yellow_to_blue')
 
-      // 等動畫再久一點
       await this._delay(600)
 
-      // 隱藏動畫層，更新顯示數字
+      if (animLayer) animLayer.classList.remove('visible')
+      this._refresh()
+    })
+  },
+
+  /**
+   * mergeBlueToRed() — 藍星合成紅星
+   *   InputGuard 防連點 + StarsManager.merge('blue_to_red')
+   */
+  async mergeBlueToRed () {
+    const stars = AppState.stars || {}
+    const blue  = stars.blue_total || 0
+
+    // 不足 1000 顆：不動作
+    if (blue < 1000) return
+
+    await InputGuard.guard('star_merge_btr', async () => {
+      const animLayer = this._el?.querySelector('#smo-anim-btr')
+      if (animLayer) {
+        animLayer.classList.add('visible')
+        const resultEl = animLayer.querySelector('.smo-anim-result')
+        if (resultEl) {
+          await this._delay(900)
+          resultEl.style.display = 'block'
+        }
+      }
+
+      // transaction: blue_total -= 1000, red_total += 1, star_pokedex_count 不受影響
+      await StarsManager.merge('blue_to_red')
+
+      await this._delay(600)
+
       if (animLayer) animLayer.classList.remove('visible')
       this._refresh()
     })
@@ -324,38 +380,78 @@ export const StarMergeOverlay = {
         <!-- 標題 -->
         <div class="smo-title">⭐ 星星合成 ⭐</div>
 
-        <!-- 星星數量顯示 -->
-        <div class="smo-stars-row">
-          <span class="smo-star-icon">⭐</span>
-          <span class="smo-star-count" id="smo-yellow">0</span>
-          <span class="smo-arrow">→</span>
-          <span class="smo-star-icon">💙</span>
-          <span class="smo-blue-count" id="smo-blue">0</span>
-        </div>
+        <!-- ===== 黃星 → 藍星 合成區塊 ===== -->
+        <div class="smo-merge-section" style="position:relative;">
+          <div class="smo-stars-row">
+            <span class="smo-star-icon">⭐</span>
+            <span class="smo-star-count" id="smo-yellow">0</span>
+            <span style="font-size:13px;color:#ccc;">/ 1000</span>
+            <span class="smo-arrow">→</span>
+            <span class="smo-star-icon">💙</span>
+            <span class="smo-result-count blue" id="smo-blue">0</span>
+          </div>
 
-        <!-- 進度條 -->
-        <div class="smo-progress-wrap">
-          <div class="smo-progress-label" id="smo-progress-label">收集中...</div>
-          <div class="smo-progress-bar-bg">
-            <div class="smo-progress-bar-fill" id="smo-progress-fill" style="width:0%"></div>
+          <!-- 進度條 -->
+          <div class="smo-progress-wrap">
+            <div class="smo-progress-label" id="smo-progress-label-ytb">收集中...</div>
+            <div class="smo-progress-bar-bg">
+              <div class="smo-progress-bar-fill" id="smo-progress-fill-ytb" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- 合成公式說明 -->
+          <div class="smo-formula">
+            <span>1000</span> 顆黃★ → <span>1</span> 顆藍★
+          </div>
+
+          <!-- 合成按鈕 -->
+          <button class="smo-btn-merge disabled" id="smo-btn-ytb" disabled>
+            收集 1000 顆才能合成
+          </button>
+
+          <!-- 合成動畫層 -->
+          <div class="smo-anim-layer" id="smo-anim-ytb" aria-hidden="true">
+            <div class="smo-anim-stars">⭐⭐⭐</div>
+            <div class="smo-anim-text">合成中...</div>
+            <div class="smo-anim-result" style="display:none">💙</div>
           </div>
         </div>
 
-        <!-- 合成公式說明 -->
-        <div class="smo-formula">
-          <span>300</span> 顆黃★ → <span>1</span> 顆藍★
-        </div>
+        <!-- ===== 藍星 → 紅星 合成區塊 ===== -->
+        <div class="smo-merge-section" style="position:relative;">
+          <div class="smo-stars-row">
+            <span class="smo-star-icon">💙</span>
+            <span class="smo-star-count blue" id="smo-blue2">0</span>
+            <span style="font-size:13px;color:#ccc;">/ 1000</span>
+            <span class="smo-arrow">→</span>
+            <span class="smo-star-icon">❤️</span>
+            <span class="smo-result-count red" id="smo-red">0</span>
+          </div>
 
-        <!-- 合成按鈕 -->
-        <button class="smo-btn-merge disabled" id="smo-btn-merge" disabled>
-          收集 300 顆才能合成
-        </button>
+          <!-- 進度條 -->
+          <div class="smo-progress-wrap">
+            <div class="smo-progress-label" id="smo-progress-label-btr">收集中...</div>
+            <div class="smo-progress-bar-bg">
+              <div class="smo-progress-bar-fill blue-fill" id="smo-progress-fill-btr" style="width:0%"></div>
+            </div>
+          </div>
 
-        <!-- 合成動畫層（絕對定位覆蓋面板） -->
-        <div class="smo-anim-layer" aria-hidden="true">
-          <div class="smo-anim-stars">⭐⭐⭐</div>
-          <div class="smo-anim-text">合成中...</div>
-          <div class="smo-anim-result" style="display:none">💙</div>
+          <!-- 合成公式說明 -->
+          <div class="smo-formula">
+            <span class="blue">1000</span> 顆藍★ → <span>1</span> 顆紅★
+          </div>
+
+          <!-- 合成按鈕 -->
+          <button class="smo-btn-merge disabled" id="smo-btn-btr" disabled>
+            收集 1000 顆藍星才能合成
+          </button>
+
+          <!-- 合成動畫層 -->
+          <div class="smo-anim-layer" id="smo-anim-btr" aria-hidden="true">
+            <div class="smo-anim-stars">💙💙💙</div>
+            <div class="smo-anim-text">合成中...</div>
+            <div class="smo-anim-result" style="display:none">❤️</div>
+          </div>
         </div>
 
       </div>
@@ -371,9 +467,14 @@ export const StarMergeOverlay = {
       this.hide()
     })
 
-    // 合成按鈕
-    backdrop.querySelector('#smo-btn-merge').addEventListener('click', () => {
-      this.merge()
+    // 黃→藍 合成按鈕
+    backdrop.querySelector('#smo-btn-ytb').addEventListener('click', () => {
+      this.mergeYellowToBlue()
+    })
+
+    // 藍→紅 合成按鈕
+    backdrop.querySelector('#smo-btn-btr').addEventListener('click', () => {
+      this.mergeBlueToRed()
     })
 
     return backdrop
@@ -386,38 +487,66 @@ export const StarMergeOverlay = {
     if (!this._el) return
 
     const stars  = AppState.stars || {}
-    const yellow = Math.floor(stars.yellow_total || 0)  // 顯示整數部分
+    const yellow = Math.floor(stars.yellow_total || 0)
     const blue   = stars.blue_total || 0
-    const pct    = Math.min((yellow / 300) * 100, 100)
-    const ready  = yellow >= 300
+    const red    = stars.red_total  || 0
 
-    // 數字
-    const yellowEl = this._el.querySelector('#smo-yellow')
-    const blueEl   = this._el.querySelector('#smo-blue')
+    const pctY = Math.min((yellow / 1000) * 100, 100)
+    const pctB = Math.min((blue   / 1000) * 100, 100)
+    const readyY = yellow >= 1000
+    const readyB = blue   >= 1000
+
+    // ── 黃→藍 區塊 ──
+    const yellowEl  = this._el.querySelector('#smo-yellow')
+    const blueEl    = this._el.querySelector('#smo-blue')
+    const fillYEl   = this._el.querySelector('#smo-progress-fill-ytb')
+    const labelYEl  = this._el.querySelector('#smo-progress-label-ytb')
+    const btnYEl    = this._el.querySelector('#smo-btn-ytb')
+
     if (yellowEl) yellowEl.textContent = yellow
     if (blueEl)   blueEl.textContent   = blue
-
-    // 進度條
-    const fillEl  = this._el.querySelector('#smo-progress-fill')
-    const labelEl = this._el.querySelector('#smo-progress-label')
-    if (fillEl)  fillEl.style.width = `${pct.toFixed(1)}%`
-    if (labelEl) {
-      labelEl.textContent = ready
-        ? `已達 300 顆，可以合成！`
-        : `${yellow} / 300 顆（還差 ${300 - yellow} 顆）`
+    if (fillYEl)  fillYEl.style.width  = `${pctY.toFixed(1)}%`
+    if (labelYEl) {
+      labelYEl.textContent = readyY
+        ? `已達 1000 顆，可以合成！`
+        : `${yellow} / 1000 顆（還差 ${1000 - yellow} 顆）`
+    }
+    if (btnYEl) {
+      if (readyY) {
+        btnYEl.disabled   = false
+        btnYEl.className  = 'smo-btn-merge ready-yellow'
+        btnYEl.textContent = '✨ 立刻合成！1000⭐ → 1💙'
+      } else {
+        btnYEl.disabled   = true
+        btnYEl.className  = 'smo-btn-merge disabled'
+        btnYEl.textContent = `收集 1000 顆才能合成（${yellow}/1000）`
+      }
     }
 
-    // 合成按鈕狀態
-    const btn = this._el.querySelector('#smo-btn-merge')
-    if (btn) {
-      if (ready) {
-        btn.disabled = false
-        btn.className = 'smo-btn-merge ready'
-        btn.textContent = '✨ 立刻合成！300⭐ → 1💙'
+    // ── 藍→紅 區塊 ──
+    const blue2El   = this._el.querySelector('#smo-blue2')
+    const redEl     = this._el.querySelector('#smo-red')
+    const fillBEl   = this._el.querySelector('#smo-progress-fill-btr')
+    const labelBEl  = this._el.querySelector('#smo-progress-label-btr')
+    const btnBEl    = this._el.querySelector('#smo-btn-btr')
+
+    if (blue2El) blue2El.textContent  = blue
+    if (redEl)   redEl.textContent    = red
+    if (fillBEl) fillBEl.style.width  = `${pctB.toFixed(1)}%`
+    if (labelBEl) {
+      labelBEl.textContent = readyB
+        ? `已達 1000 顆，可以合成！`
+        : `${blue} / 1000 顆（還差 ${1000 - blue} 顆）`
+    }
+    if (btnBEl) {
+      if (readyB) {
+        btnBEl.disabled   = false
+        btnBEl.className  = 'smo-btn-merge ready-blue'
+        btnBEl.textContent = '✨ 立刻合成！1000💙 → 1❤️'
       } else {
-        btn.disabled = true
-        btn.className = 'smo-btn-merge disabled'
-        btn.textContent = `收集 300 顆才能合成（${yellow}/300）`
+        btnBEl.disabled   = true
+        btnBEl.className  = 'smo-btn-merge disabled'
+        btnBEl.textContent = `收集 1000 顆藍星才能合成（${blue}/1000）`
       }
     }
   },
