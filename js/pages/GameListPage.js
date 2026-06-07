@@ -182,6 +182,8 @@ export class GameListPage {
   // destroy：清理所有事件監聽，避免 memory leak
   // ──────────────────────────────────────
   destroy () {
+    // 離開遊戲列表時停止背景音樂
+    BgMusic.stop()
     for (const { el, type, fn } of this._handlers) {
       el.removeEventListener(type, fn)
     }
