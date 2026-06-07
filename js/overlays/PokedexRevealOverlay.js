@@ -249,9 +249,17 @@ export const PokedexRevealOverlay = {
     this._isVisible = true
     const total = queue.length
 
+    // consumeRevealQueue 回傳 number[]，統一轉為 { index, seriesId } 格式
+    const _sid = globalThis.AppState?.pokedex?.active_series || 'pokemon'
+    const normalizedQueue = queue.map(item =>
+      (typeof item === 'number' || typeof item === 'string')
+        ? { index: Number(item), seriesId: _sid }
+        : item
+    )
+
     // ── for...of：逐一播放，等用戶點[繼續]才播下一張 ──
     let current = 0
-    for (const item of queue) {
+    for (const item of normalizedQueue) {
       current++
       await this.showOne(item, current, total)
     }
@@ -363,16 +371,17 @@ export const PokedexRevealOverlay = {
       // 音效播放（尊重靜音設定）
       const _pathPrefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
       const playSound = (src) => {
-        if (globalThis.AppState?.settings?.soundOn === false) return
+        if (globalThis.AppState?.settings?.soundOn === false) return null
         try {
           const a = new Audio(`${_pathPrefix}/${src}`)
           a.volume = 0.8
           a.play().catch(() => {})
-        } catch (_e) {}
+          return a
+        } catch (_e) { return null }
       }
 
       // ── Phase 1：精靈球搖晃動畫（720ms = 6次 × 120ms）──
-      playSound('audio/effects/openball.mp3')
+      const _bgSound = playSound('audio/effects/openball.mp3')
       ball.classList.add('shaking')
       await wait(750)
       ball.classList.remove('shaking')
@@ -443,6 +452,8 @@ export const PokedexRevealOverlay = {
       // [加入圖鑑] 與 [繼續遊戲] 都執行 resolve，差異只是動作語意
       // 規格中兩個按鈕都結束本張揭曉
       const handleContinue = () => {
+        // 停止開球音效
+        try { if (_bgSound) { _bgSound.pause(); _bgSound.currentTime = 0 } } catch (_e) {}
         // 解綁防止重複觸發
         btnCollect .removeEventListener('click', handleContinue)
         btnContinue.removeEventListener('click', handleContinue)
