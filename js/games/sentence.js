@@ -701,25 +701,26 @@ export class SentenceGame extends GameEngine {
       ForgettingCurve.recordResult(char, true).catch(() => {})
     }
 
-    // 發星星
+    // 發星星（stars.js 內部已停用 onStarsAdded star 路徑，統一由此處觸發）
     await StarsManager.add(starsEarned)
 
-    // 圖鑑計數：sentence_count +1 → checkAndReveal
-    const uid      = AppState.uid
+    // 圖鑑計數：sentence_count +1（本機樂觀更新 + Firestore 持久化）
     const seriesId = AppState.pokedex?.active_series || 'pokemon'
-    if (uid) {
-      try {
-        await FirestoreAPI.incrementField(
-          `users/${uid}`,
-          `pokedex.${seriesId}.sentence_count`,
-          1
-        )
-      } catch (e) {
-        console.warn('sentence.js: incrementField sentence_count 失敗', e)
-      }
+    if (!AppState.pokedex[seriesId]) AppState.pokedex[seriesId] = {}
+    AppState.pokedex[seriesId].sentence_count =
+      (AppState.pokedex[seriesId].sentence_count || 0) + 1
+    // Firestore 非同步寫入（fire-and-forget，不阻塞 UI）
+    if (AppState.uid) {
+      FirestoreAPI.incrementField(
+        `users/${AppState.uid}`,
+        `pokedex.${seriesId}.sentence_count`,
+        1
+      ).catch(e => console.warn('sentence.js: incrementField sentence_count 失敗', e))
     }
 
-    // 觸發圖鑑揭曉檢查（PokedexManager 後期繫結，避免循環依賴）
+    // 觸發圖鑑揭曉檢查（sentence 路徑，閾值15題）
+    // star 路徑已由 StarsManager.add → onStarsAdded → checkAndReveal('star') 串接
+    // _isRevealing 鎖確保兩條路徑不同時執行
     try {
       await globalThis.PokedexManager?.checkAndReveal?.('sentence')
     } catch (e) {

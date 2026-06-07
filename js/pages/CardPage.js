@@ -130,9 +130,12 @@ export class CardPage {
     const yellowHalf = (yellow % 1) >= 0.5
     const yellowText = yellowHalf ? `${yellowFull}½` : `${yellowFull}`
 
-    // 取已收集寶可夢數量
+    // 取已收集寶可夢數量 + 圖鑑進度
     const seriesId      = AppState.pokedex?.active_series || 'pokemon'
     const pokeCollected = (AppState.pokedex?.[seriesId]?.collected_ids || []).length
+    const starCount     = AppState.pokedex?.[seriesId]?.star_count ?? 0
+    const starThreshold = 100
+    const starPct       = Math.min(100, Math.round((starCount / starThreshold) * 100))
 
     app.innerHTML = `
       <div class="card-page" id="card-page-root">
@@ -147,6 +150,17 @@ export class CardPage {
                 id="stars-blue"><img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> ${blue}</span>
           <span class="card-page__stars-item card-page__stars-item--yellow"
                 id="stars-yellow">★ ${yellowText}</span>
+        </div>
+
+        <!-- 圖鑑解鎖進度條 -->
+        <div class="card-page__poke-progress" id="poke-progress-wrap">
+          <div class="card-page__poke-progress-label">
+            <img src='./icons/pokball.png' class='star-img-icon' alt='寶可夢' style='width:1em;height:1em;vertical-align:middle;margin-right:3px'>
+            <span id="poke-progress-text">再 <strong id="poke-progress-need">${starThreshold - starCount}</strong> 顆★ 解鎖新寶可夢</span>
+          </div>
+          <div class="card-page__poke-progress-bar">
+            <div class="card-page__poke-progress-fill" id="poke-progress-fill" style="width:${starPct}%"></div>
+          </div>
         </div>
 
         <!-- 頂部導覽列 -->

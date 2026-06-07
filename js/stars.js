@@ -159,7 +159,8 @@ export const StarsManager = {
       // ⑤ 檢查合成按鈕狀態
       this._checkMergeButton()
 
-      // ⑥ 通知 PokedexManager（可選鏈，模組尚未載入時不崩潰）
+      // ⑥ 通知 PokedexManager 累積 star_count 並觸發揭曉檢查
+      //    _isRevealing 鎖確保不與 sentence 路徑並發（sentence 的 checkAndReveal 在 await 後執行）
       try {
         const { PokedexManager } = await import('./pokedex.js')
         await PokedexManager?.onStarsAdded?.(amount)

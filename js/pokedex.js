@@ -85,6 +85,9 @@ export const PokedexManager = {
   // 名稱記憶體快取：Map<'seriesId:index', string|null>
   _nameCache: new Map(),
 
+  // 揭曉防並發鎖（同一時間只允許一次 revealPokedex Transaction）
+  _isRevealing: false,
+
   // ─────────────────────────────────────────────
   // init — 從 Firestore 讀取圖鑑狀態
   // ─────────────────────────────────────────────
@@ -135,6 +138,12 @@ export const PokedexManager = {
   async checkAndReveal(triggerType) {
     if (!AppState.uid) return
 
+    // ── 防並發鎖：同一時間只允許一次揭曉 Transaction ──
+    if (this._isRevealing) {
+      console.log('[PokedexManager] checkAndReveal: 揭曉進行中，跳過重複呼叫')
+      return
+    }
+
     const seriesId   = AppState.pokedex?.active_series || 'pokemon'
     const seriesData = AppState.pokedex?.[seriesId]    || {}
     const config     = this.getSeriesConfig(seriesId)
@@ -142,11 +151,11 @@ export const PokedexManager = {
     // ── 取系列總數（隨機抽取需要） ──
     const total = config?.api?.total || 898
 
-    // ── 取門檻值 ──
+    // ── 取門檻值（sentence=15題, star=100顆）──
     const threshold =
       triggerType === 'sentence'
-        ? (config?.reveal_by_sentence ?? seriesData.reveal_by_sentence ?? 10)
-        : (config?.reveal_by_star     ?? seriesData.reveal_by_star     ?? 100)
+        ? (config?.reveal_by_sentence ?? 15)
+        : (config?.reveal_by_star     ?? 100)
 
     const countKey =
       triggerType === 'sentence' ? 'sentence_count' : 'star_count'
@@ -162,6 +171,7 @@ export const PokedexManager = {
       return
     }
 
+    this._isRevealing = true
     try {
       // 傳入 total，讓 SyncManager 在 Transaction 內隨機抽取
       const { result, revealed } = await SyncManager.revealPokedex(
@@ -193,11 +203,23 @@ export const PokedexManager = {
           date:   new Date().toISOString().slice(0, 10),
         }
 
+        // 計數器扣掉門檻（餘數保留）
         const newCount = Math.max(0, current - threshold)
         AppState.pokedex[seriesId][countKey] = newCount
 
-        // 加入揭曉佇列
+        // 同步寫回 Firestore 計數（扣掉門檻後的餘數）
+        try {
+          await FirestoreAPI.update(
+            `users/${AppState.uid}`,
+            { [`pokedex.${seriesId}.${countKey}`]: newCount }
+          )
+        } catch (e) {
+          console.warn('[PokedexManager] 計數餘數寫回 Firestore 失敗:', e)
+        }
+
+        // 加入揭曉佇列並顯示 Overlay
         await RevealQueue.add(revealed, seriesId)
+        globalThis.UIManager?.showOverlay?.('pokedex_reveal')
 
       } else if (result === 'all_collected') {
         globalThis.UIManager?.showToast?.('🎉 所有寶可夢已全數收集！', 'success', 3000)
@@ -205,6 +227,8 @@ export const PokedexManager = {
 
     } catch (e) {
       console.error('PokedexManager.checkAndReveal 失敗:', e)
+    } finally {
+      this._isRevealing = false
     }
   },
 
@@ -225,7 +249,8 @@ export const PokedexManager = {
     const seriesId = AppState.pokedex?.active_series || 'pokemon'
 
     try {
-      // Firestore star_count increment
+      // Firestore star_count increment（只累加，不觸發揭曉）
+      // 揭曉由各遊戲模組在答對後呼叫 checkAndReveal('star') 統一觸發
       await FirestoreAPI.incrementField(
         `users/${AppState.uid}`,
         `pokedex.${seriesId}.star_count`,
@@ -237,7 +262,7 @@ export const PokedexManager = {
       AppState.pokedex[seriesId].star_count =
         (AppState.pokedex[seriesId].star_count || 0) + amount
 
-      // 判斷是否達到揭曉門檻
+      // 觸發星星揭曉檢查（_isRevealing 鎖確保不與 sentence 路徑並發）
       await this.checkAndReveal('star')
 
     } catch (e) {

@@ -491,12 +491,23 @@ const UIManager = {
     if (elBlue)   elBlue.innerHTML     = `<img src='./icons/bluestar.png' class='star-img-icon' alt='藍星'> ${blue_total}`
     if (elRed)    elRed.innerHTML      = `<img src='./icons/redstar.png'  class='star-img-icon' alt='紅星'> ${red_total}`
 
-    // 同步更新寶可夢球計數
+    // 同步更新寶可夢球計數 + 圖鑑進度條
     const elPokeball = document.getElementById('pokeball-count')
+    const sid = AppState.pokedex?.active_series || 'pokemon'
     if (elPokeball) {
-      const sid = AppState.pokedex?.active_series || 'pokemon'
       const pokeCount = (AppState.pokedex?.[sid]?.collected_ids || []).length
       elPokeball.innerHTML = `<img src='./icons/pokball.png' class='star-img-icon' alt='寶可夢'> ${pokeCount}`
+    }
+    // 更新圖鑑進度條（star_count / 100）
+    const elFill = document.getElementById('poke-progress-fill')
+    const elNeed = document.getElementById('poke-progress-need')
+    if (elFill || elNeed) {
+      const starCount = AppState.pokedex?.[sid]?.star_count ?? 0
+      const threshold = 100
+      const pct  = Math.min(100, Math.round((starCount / threshold) * 100))
+      const need = Math.max(0, threshold - starCount)
+      if (elFill) elFill.style.width = pct + '%'
+      if (elNeed) elNeed.textContent = need
     }
 
     // 同步更新遊戲頁 header 星星（GameEngine._setupGameLayout 產生的 gh-* 元素）
