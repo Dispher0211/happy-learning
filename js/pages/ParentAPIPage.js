@@ -28,6 +28,26 @@ export class ParentAPIPage {
   async init(params = {}) {
     const app = document.getElementById('app')
 
+    // 優先從 Firestore 讀取最新 api_keys（確保跨裝置同步）
+    try {
+      if (AppState.uid) {
+        const userData = await FirestoreAPI.read(`users/${AppState.uid}`)
+        if (userData?.settings) {
+          AppState.settings = {
+            ...AppState.settings,
+            ...userData.settings,
+            api_keys: {
+              ...(AppState.settings?.api_keys || {}),
+              ...(userData.settings?.api_keys || {}),
+            },
+          }
+          AppState.save()
+        }
+      }
+    } catch (e) {
+      console.warn('[ParentAPIPage] Firestore api_keys 讀取失敗，使用本機快取', e)
+    }
+
     // 從 AppState 讀取現有 key，用於預填輸入框
     const keys = AppState.settings?.api_keys || {}
     const geminiKeys  = (keys.gemini  || []).join('\n')

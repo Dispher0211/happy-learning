@@ -41,6 +41,29 @@ export const HandwritingManager = {
 
   async recognize(canvas, options = {}) {
     const mode       = options.mode || 'chinese'
+
+    // 若本機 api_keys 為空，嘗試從 Firestore 同步一次
+    const localGemini = (AppState.settings?.api_keys?.gemini || []).filter(k => k?.trim())
+    if (localGemini.length === 0 && AppState.uid) {
+      try {
+        const { FirestoreAPI } = await import('./firebase.js')
+        const userData = await FirestoreAPI.read(`users/${AppState.uid}`)
+        if (userData?.settings?.api_keys) {
+          AppState.settings = {
+            ...AppState.settings,
+            api_keys: {
+              ...(AppState.settings?.api_keys || {}),
+              ...userData.settings.api_keys,
+            },
+          }
+          AppState.save()
+          console.log('[HandwritingManager] api_keys 從 Firestore 補同步成功')
+        }
+      } catch (e) {
+        console.warn('[HandwritingManager] Firestore api_keys 補同步失敗', e)
+      }
+    }
+
     const geminiKeys = (AppState.settings?.api_keys?.gemini   || []).filter(k => k?.trim())
     const msKeys     = (AppState.settings?.api_keys?.myScript || []).filter(k => k?.trim())
     const visionKeys = (AppState.settings?.api_keys?.vision   || []).filter(k => k?.trim())
