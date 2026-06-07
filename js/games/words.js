@@ -220,7 +220,9 @@ export class WordsGame extends GameEngine {
     }
 
     // 若超過 TARGET_QUESTION_COUNT，截斷（生字簿字優先保留）
-    this.questions = questions.slice(0, targetCount);
+    // 洗牌後再截斷，確保每次出題順序不同
+    const shuffled = questions.sort(() => Math.random() - 0.5);
+    this.questions = shuffled.slice(0, targetCount);
     // 同步更新 totalQuestions，讓 header counter 顯示正確
     this.totalQuestions = this.questions.length;
     return this.questions;
@@ -737,7 +739,7 @@ export class WordsGame extends GameEngine {
   // ════════════════════════════════════════════
   _initMode2(q) {
     // 取一個正確詞語，去掉目標字，讓學生選字填空
-    const word = q.words[0] || q.char + '＿';
+    const word = q.words[Math.floor(Math.random() * q.words.length)] || q.char + '＿';
     const charIdx = word.indexOf(q.char);
     const blank = charIdx !== -1
       ? word.substring(0, charIdx) + '＿' + word.substring(charIdx + 1)

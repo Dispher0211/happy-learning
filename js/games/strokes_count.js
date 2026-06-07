@@ -115,7 +115,8 @@ export class StrokesCountGame extends GameEngine {
 
     // 不足 TARGET_Q 題：循環複抽生字簿補足（允許同字重複出題）
     if (questions.length > 0 && questions.length < TARGET_Q) {
-      const basePool = [...questions];
+      // 先洗牌 basePool，補題時順序也不同
+      const basePool = [...questions].sort(() => Math.random() - 0.5);
       let idx = 0;
       while (questions.length < TARGET_Q) {
         questions.push({ ...basePool[idx % basePool.length] });
@@ -123,7 +124,8 @@ export class StrokesCountGame extends GameEngine {
       }
     }
 
-    this.questions = questions.slice(0, TARGET_Q);
+    // 洗牌確保每次出題順序不同
+    this.questions = questions.sort(() => Math.random() - 0.5).slice(0, TARGET_Q);
     this.totalQuestions = this.questions.length;
     return this.questions;
   }

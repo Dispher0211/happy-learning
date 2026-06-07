@@ -104,8 +104,9 @@ export class StrokeGame extends GameEngine {
       });
     }
 
-    this.questions = questions;
-    return questions;
+    // 洗牌確保每次出題順序不同
+    this.questions = questions.sort(() => Math.random() - 0.5);
+    return this.questions;
   }
 
   // ════════════════════════════════════════════

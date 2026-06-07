@@ -76,7 +76,10 @@ export class ListenGame extends GameEngine {
       // 多音字或無詞語都走模式一；有詞語且 40% 機率走模式二
       const mode = (isPolyphone || (!isPolyphone && Math.random() >= 0.6)) && charWords.length > 0
         ? 2 : 1;
-      const correctWord = charWords[0] || char;
+      // 隨機從詞語池選一個正確詞語，增加每次遊戲的變化
+      const correctWord = charWords.length > 0
+        ? charWords[Math.floor(Math.random() * charWords.length)]
+        : char;
 
       baseQuestions.push({
         char,

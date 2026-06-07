@@ -191,7 +191,9 @@ export class PolyphoneGame extends GameEngine {
         for (let i = 0; i < MIN_PER_READING; i++) {
           // 每次從該讀音的詞語中隨機選一個，增加多樣性
           const words = reading.words || [];
-          const exampleWord = words[i % Math.max(words.length, 1)] || char;
+          const exampleWord = words.length > 0
+            ? words[Math.floor(Math.random() * words.length)]
+            : char;
           pool.push({
             char,
             targetPronunciation: reading.zhuyin,

@@ -108,13 +108,13 @@ export class IdiomGame extends GameEngine {
 
     if (candidate.length === 0) return []
 
-    const questions = candidate.map((entry, i) => ({
+    const questions = candidate.map((entry) => ({
       char:        entry.related_characters?.[0] ?? entry.idiom[0],
       idiom:       entry.idiom,
       zhuyin:      entry.zhuyin,
       meaning:     entry.meaning,
       example:     entry.example,
-      mode:        i < Math.round(count * MODE1_RATIO) ? 1 : 2,
+      mode:        Math.random() < MODE1_RATIO ? 1 : 2,
       distractors: this._buildDistractors(entry, candidate),
     }))
 

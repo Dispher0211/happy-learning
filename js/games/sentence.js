@@ -1214,20 +1214,12 @@ export class SentenceGame extends GameEngine {
   }
 
   // ──────────────────────────────────────────────────
-  // 日期 seed 洗牌（使用 UTC 日期，跨時區一致）
+  // 隨機洗牌（Fisher-Yates，每次遊戲皆不同順序）
   // ──────────────────────────────────────────────────
   _seededShuffle(arr) {
-    const copy   = [...arr]
-    const seed   = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    let   s      = parseInt(seed, 10) % 2147483647
-
-    const rand = () => {
-      s = (s * 16807) % 2147483647
-      return s / 2147483647
-    }
-
+    const copy = [...arr]
     for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1))
+      const j = Math.floor(Math.random() * (i + 1))
       ;[copy[i], copy[j]] = [copy[j], copy[i]]
     }
     return copy

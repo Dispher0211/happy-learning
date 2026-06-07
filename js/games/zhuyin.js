@@ -322,7 +322,9 @@ export class ZhuyinGame extends GameEngine {
     const allCharsDict = JSONLoader.get('characters') || []
 
     // questionChars 由 GameEngine.init() 從 AppState.characters 建立（字串陣列）
-    const pool = (this.questionChars || []).slice(0, count * 3)
+    // 先洗牌確保每次出題順序不同
+    const shuffledChars = [...(this.questionChars || [])].sort(() => Math.random() - 0.5)
+    const pool = shuffledChars.slice(0, count * 3)
 
     const questions = []
     for (const entry of pool) {
@@ -546,7 +548,8 @@ export class ZhuyinGame extends GameEngine {
       }
     }
 
-    this.questions = questions.slice(0, count)
+    // 最終洗牌確保每次出題順序不同
+    this.questions = questions.sort(() => Math.random() - 0.5).slice(0, count)
     this.totalQuestions = this.questions.length
     return this.questions
   }
