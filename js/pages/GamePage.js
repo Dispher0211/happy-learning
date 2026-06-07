@@ -16,6 +16,7 @@ import { AppState } from '../state.js'
 import { installTypoHintBridge, removeTypoHintBridge, injectTypoStyles, removeTypoStyles } from '../games/typo.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
+import { BgMusic } from '../audio.js'
 
 // ──────────────────────────────────────────────
 // 遊戲模組對應表（gameId → 模組路徑 + 類別名稱）
@@ -89,6 +90,9 @@ export class GamePage {
       // 呼叫遊戲的 init()，遊戲自行 render 到 #app
       await this._gameInstance.init()
 
+      // 啟動背景音樂
+      BgMusic.start('audio/gamebackmusic.mp3')
+
       // typo 遊戲：注入樣式 + 安裝全域提示橋接
       if (this._gameId === 'typo') {
         injectTypoStyles()
@@ -139,6 +143,9 @@ export class GamePage {
   destroy () {
     if (this._destroyed) return
     this._destroyed = true
+
+    // 停止背景音樂
+    BgMusic.stop()
 
     if (this._gameInstance) {
       try {

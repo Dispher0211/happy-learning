@@ -292,3 +292,90 @@ export const AudioManager = {
 
 // 掛到 window 供非 ES module 的遊戲（radical.js 等）使用
 window.AudioManager = AudioManager
+
+// ══════════════════════════════════════════════════════════════
+// BgMusic — 背景音樂管理（遊戲頁面循環播放，音效播放時自動暫停）
+// ══════════════════════════════════════════════════════════════
+export const BgMusic = {
+  _audio:        null,
+  _active:       false,   // 是否應播放（遊戲進行中）
+  _effectCount:  0,       // 正在播放的音效數量
+
+  /** start(src) — 開始循環播放背景音樂 */
+  start (src) {
+    this.stop()
+    this._active = true
+    if (AppState.settings?.soundOn === false) return
+    const prefix = location.pathname.startsWith('/happy-learning') ? '/happy-learning' : ''
+    const url = src.startsWith('http') ? src : `${prefix}/${src.replace(/^\//, '')}`
+    const audio = new Audio(url)
+    audio.loop   = true
+    audio.volume = 0.35
+    this._audio  = audio
+    if (this._effectCount === 0) {
+      audio.play().catch(() => {})
+    }
+  },
+
+  /** stop() — 停止並釋放 */
+  stop () {
+    this._active = false
+    if (this._audio) {
+      try { this._audio.pause(); this._audio.currentTime = 0 } catch (_e) {}
+      this._audio = null
+    }
+  },
+
+  /** _pauseForEffect() — 音效開始時呼叫 */
+  _pauseForEffect () {
+    this._effectCount++
+    if (this._audio && !this._audio.paused) {
+      try { this._audio.pause() } catch (_e) {}
+    }
+  },
+
+  /** _resumeAfterEffect() — 音效結束時呼叫 */
+  _resumeAfterEffect () {
+    this._effectCount = Math.max(0, this._effectCount - 1)
+    if (this._effectCount === 0 && this._active && this._audio) {
+      if (AppState.settings?.soundOn !== false) {
+        this._audio.play().catch(() => {})
+      }
+    }
+  },
+}
+
+// 包裝 AudioManager.playEffect：音效播放時暫停背景音樂，結束後恢復
+const _origPlayEffect = AudioManager.playEffect.bind(AudioManager)
+AudioManager.playEffect = async function (name) {
+  BgMusic._pauseForEffect()
+  try {
+    await _origPlayEffect(name)
+  } finally {
+    BgMusic._resumeAfterEffect()
+  }
+}
+
+// 包裝 AudioManager.play（注音語音）：播放時暫停背景音樂
+const _origPlay = AudioManager.play.bind(AudioManager)
+AudioManager.play = async function (zhuyin, fallbackWord) {
+  BgMusic._pauseForEffect()
+  try {
+    await _origPlay(zhuyin, fallbackWord)
+  } finally {
+    BgMusic._resumeAfterEffect()
+  }
+}
+
+// 包裝 AudioManager.playWord（TTS 詞語）：播放時暫停背景音樂
+const _origPlayWord = AudioManager.playWord.bind(AudioManager)
+AudioManager.playWord = async function (text) {
+  BgMusic._pauseForEffect()
+  try {
+    await _origPlayWord(text)
+  } finally {
+    BgMusic._resumeAfterEffect()
+  }
+}
+
+window.BgMusic = BgMusic
