@@ -561,6 +561,15 @@
   flex-shrink: 0;
 }
 
+/* 登出 / 切換家長帳號（v1.2.20 新增：危險樣式，與一般選單項目區隔） */
+.parent-sidebar__item--danger {
+  color: rgba(255,150,150,0.85);
+}
+.parent-sidebar__item--danger:hover {
+  color: #fff;
+  background: rgba(239,68,68,0.25);
+}
+
 /* 待審核數量徽章 */
 .parent-sidebar__badge {
   margin-left: auto;
@@ -724,4 +733,15 @@
   margin-bottom: 0;
   font-size: 1rem;
   padding: 14px 10px;
+}
+
+/* 登出 / 切換家長帳號（v1.2.20 新增） */
+.parent-home__btn--danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.parent-home__btn--danger:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
 }

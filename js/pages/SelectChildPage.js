@@ -315,6 +315,29 @@ export class SelectChildPage {
   }
 
   // ─────────────────────────────────────────
+  // 登出 / 切換家長帳號（v1.2.20 新增）
+  // ─────────────────────────────────────────
+
+  /**
+   * 登出目前家長帳號，導回登入頁，
+   * 讓使用者可重新用其他 Google 帳號登入（即「切換家長」）。
+   * 與 ParentPokedexPage 既有刪除確認一致，使用原生 confirm()。
+   */
+  async logout() {
+    const ok = confirm('確定要登出嗎？\n登出後可重新登入，切換為其他家長帳號。');
+    if (!ok) return;
+
+    try {
+      await Auth.signOut();
+      // Auth.signOut() 內已會 AppState.reset() 並 navigate 到 LOGIN 頁，
+      // 此處不需再額外導頁
+    } catch (err) {
+      console.error('[SelectChildPage] 登出失敗', err);
+      UIManager.showToast('登出失敗，請稍後再試', 'error', 2000);
+    }
+  }
+
+  // ─────────────────────────────────────────
   // 私有方法：讀取資料
   // ─────────────────────────────────────────
 
@@ -351,6 +374,11 @@ export class SelectChildPage {
     if (!this._container) return;
     this._container.innerHTML = `
       <div class="scp-page">
+        <!-- 登出 / 切換家長帳號（v1.2.20 新增）-->
+        <button class="scp-logout-btn" data-action="logout" title="登出，可切換為其他家長帳號">
+          🚪 登出
+        </button>
+
         <div class="scp-header">
           <div class="scp-title">你好！請選擇小朋友：</div>
         </div>
@@ -510,6 +538,11 @@ export class SelectChildPage {
       // ── 新增子帳號按鈕 ──
       case 'add-child':
         this.addChild();
+        break;
+
+      // ── 登出 / 切換家長帳號（v1.2.20 新增）──
+      case 'logout':
+        this.logout();
         break;
 
       // ── 進入家長模式 ──
@@ -751,6 +784,33 @@ export class SelectChildPage {
         color: #4a3f6b;
         text-align: center;
       }
+      /* 登出按鈕（v1.2.20 新增）：固定於畫面右上角，不干擾原本置中版面 */
+      .scp-logout-btn {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: rgba(255,255,255,0.85);
+        color: #6b5a8f;
+        border: 1.5px solid #d5c9f0;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 10px rgba(100,80,180,0.12);
+        transition: background 0.15s, transform 0.1s;
+      }
+      .scp-logout-btn:hover {
+        background: #fff0f0;
+        border-color: #f3a8a8;
+        color: #c0392b;
+      }
+      .scp-logout-btn:active { transform: scale(0.96); }
       .scp-children-grid {
         display: flex;
         flex-wrap: wrap;

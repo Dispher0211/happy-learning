@@ -12,6 +12,7 @@ import { FirestoreAPI } from '../firebase.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
 import { AppState } from '../state.js'
+import { Auth } from '../auth.js'
 
 export class ParentHomePage {
   constructor () {
@@ -119,6 +120,13 @@ export class ParentHomePage {
             API 金鑰
           </button>
 
+          <!-- 登出 / 切換家長帳號（v1.2.20 新增）-->
+          <div class="parent-sidebar__section-label">帳號</div>
+          <button class="parent-sidebar__item parent-sidebar__item--danger" id="sidebarLogout">
+            <span class="parent-sidebar__item__icon">🚪</span>
+            登出 / 切換家長帳號
+          </button>
+
         </aside>
 
         <!-- ══ 右欄：主內容區 ══ -->
@@ -162,6 +170,14 @@ export class ParentHomePage {
               <button class="parent-home__btn" id="btnPokedex">🎴 圖鑑設定</button>
               <button class="parent-home__btn" id="btnApi">🔑 API 金鑰</button>
             </div>
+          </section>
+
+          <!-- 帳號（v1.2.20 新增：登出 / 切換家長帳號）-->
+          <section class="parent-home__section">
+            <h2 class="parent-home__section-title">👤 帳號</h2>
+            <button class="parent-home__btn parent-home__btn--danger" id="btnLogout">
+              🚪 登出 / 切換家長帳號
+            </button>
           </section>
 
         </main>
@@ -213,6 +229,20 @@ export class ParentHomePage {
     const goApi = () => UIManager.navigate(PAGES.PARENT_API)
     this._addListener('btnApi',    'click', goApi)
     this._addListener('sidebarApi','click', goApi)
+
+    // ── 登出 / 切換家長帳號（v1.2.20 新增）──
+    const doLogout = async () => {
+      const ok = confirm('確定要登出嗎？\n登出後可重新登入，切換為其他家長帳號。')
+      if (!ok) return
+      try {
+        await Auth.signOut()
+      } catch (err) {
+        console.error('[ParentHomePage] 登出失敗', err)
+        UIManager.showToast('登出失敗，請稍後再試', 'error', 2000)
+      }
+    }
+    this._addListener('btnLogout',    'click', doLogout)
+    this._addListener('sidebarLogout','click', doLogout)
   }
 
   // ─────────────────────────────────────
