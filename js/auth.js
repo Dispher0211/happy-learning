@@ -10,6 +10,18 @@
  *   verifyParentPassword(pin)       — 驗證家長 PIN
  *   setParentPassword(pin)          — 寫入新 PIN 雜湊到 Firestore
  *   resetParentPin()（v4 新增）     — 重新驗證 Google 後重設 PIN
+ *
+ * 🐞 v1.2.20 修正（重大）：「隔天重開星星變零」根因
+ *   問題：init() 原本完全忽略 app.js 傳入的 callback 參數，內部自行寫了一套
+ *         簡化版邏輯（只呼叫 PokedexManager.init / WrongQueue.dailyDecay 就直接
+ *         導頁），導致 app.js 的 handleAuthStateChanged()（內含
+ *         StarsManager.syncFromFirestore() 修正星星同步、Firestore settings
+ *         同步、sentence patterns 同步）從未被執行。
+ *         AppState.stars 因此只能依賴 localStorage debounce 快取，一旦快取
+ *         未及寫入或被清除（換裝置、隔天重開等），畫面星星就會顯示為 0，
+ *         即使 Firestore 上的星星數值其實持續正確累加、從未消失。
+ *   修正：init(callback) 改為確實呼叫傳入的 callback，由 callback 負責後續
+ *         所有初始化與同步流程；未傳入 callback 時才使用備援邏輯（向後相容）。
  */
 
 import {
@@ -47,8 +59,16 @@ export const Auth = {
    * 初始化 Auth 模組
    * 啟動 Firebase Auth 狀態監聽，依狀態路由
    * 由 app.js 的步驟 7 呼叫
+   *
+   * @param {Function} [onAuthStateChangedCallback] — 由呼叫端（app.js）傳入，
+   *        接收 (user|null)，負責後續所有初始化與同步流程
+   *        （PokedexManager.init、StarsManager.syncFromFirestore、
+   *          Firestore settings 同步、WrongQueue.dailyDecay、頁面導航等）。
+   *        🐞 v1.2.20 修正：先前完全忽略此參數，造成 app.js 內含星星同步修正的
+   *        handleAuthStateChanged() 從未執行，是「隔天重開星星變零」的根因。
+   *        若未傳入 callback（保留向後相容），才使用下方內建簡化邏輯。
    */
-  async init() {
+  async init(onAuthStateChangedCallback) {
     // 取得與 firebase.js 共用的 app 的 auth 實例
     // 透過 globalThis.__firebaseApp 取得（firebase.js 需 expose）
     _auth = getAuth(globalThis.__firebaseApp)
@@ -60,7 +80,26 @@ export const Auth = {
         AppState.uid = user.uid
         AppState.userEmail = user.email
         AppState.displayName = user.displayName
+      } else {
+        // ── 未登入 ──────────────────────────────────────
+        AppState.uid = null
+        AppState.userEmail = null
+        AppState.displayName = null
+      }
 
+      // v1.2.20 修正：優先委派給呼叫端傳入的 callback，
+      // 確保 app.js 的完整初始化流程（含星星 Firestore 同步）一定會被執行
+      if (typeof onAuthStateChangedCallback === 'function') {
+        try {
+          await onAuthStateChangedCallback(user)
+        } catch (e) {
+          console.error('auth: onAuthStateChangedCallback 執行失敗', e)
+        }
+        return
+      }
+
+      // ── 向後相容：未傳入 callback 時的內建簡化邏輯 ──────────
+      if (user) {
         // v4 規範：PokedexManager.init() 與 WrongQueue.dailyDecay() 在此 callback 內執行
         try {
           await globalThis.PokedexManager?.init?.()
@@ -79,11 +118,6 @@ export const Auth = {
         globalThis.UIManager?.navigate(PAGES.SELECT_CHILD)
 
       } else {
-        // ── 未登入 ──────────────────────────────────────
-        AppState.uid = null
-        AppState.userEmail = null
-        AppState.displayName = null
-
         const { PAGES } = await import('./ui/pages.js')
         globalThis.UIManager?.navigate(PAGES.LOGIN)
       }

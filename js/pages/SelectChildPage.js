@@ -136,18 +136,14 @@ export class SelectChildPage {
     AppState.childAvatar = child.avatar;
     AppState.mode        = 'child';
 
-    // 讀取該子帳號的個人進度（載入 stars、pokedex 等）
-    try {
-      const uid  = AppState.uid;
-      const data = await FirestoreAPI.read(`users/${uid}/children/${childId}`);
-      if (data) {
-        AppState.stars   = data.stars   || { yellow_total: 0, blue_total: 0, red_total: 0, star_pokedex_count: 0 };
-        AppState.pokedex = data.pokedex || {};
-      }
-    } catch (err) {
-      console.error('[SelectChildPage] 讀取子帳號進度失敗', err);
-      // 不阻擋進入主頁，使用預設值
-    }
+    // 🐞 v1.2.20 修正：移除讀取 users/{uid}/children/{childId} 的程式碼。
+    // 原因：此路徑從未被任何程式碼寫入（子帳號清單實際存於 users/{uid}.children
+    // 陣列欄位，stars / pokedex 則存於 users/{uid} 文件本身，由 app.js 的
+    // handleAuthStateChanged()（StarsManager.syncFromFirestore、
+    // PokedexManager.init）在登入時就已正確同步到 AppState）。
+    // 原碼一旦該不存在的子路徑文件意外被建立，會用其中（不存在的）
+    // stars / pokedex 欄位覆寫成全 0，是潛在的星星歸零風險，故直接移除，
+    // 不在此重複讀取或覆寫 AppState.stars / AppState.pokedex。
 
     // 修正：從 Firestore 讀取家長設定的 my_characters / my_words / my_idioms
     // 原因：頁面關閉重開後 localStorage 快取可能是空陣列
