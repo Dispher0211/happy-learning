@@ -70,4 +70,7 @@ export const PAGES = Object.freeze({
   /** 家長端：API 金鑰設定頁 */
   PARENT_API:      'parent_api',
 
+  /** 家長端：句型設定頁（v4.2 新增） */
+  PARENT_SENTENCE_PATTERNS: 'parent_sentence_patterns',
+
 });

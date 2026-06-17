@@ -103,6 +103,10 @@ export class ParentHomePage {
             <span class="parent-sidebar__item__icon">🀄</span>
             成語簿
           </button>
+          <button class="parent-sidebar__item" id="sidebarSentencePatterns">
+            <span class="parent-sidebar__item__icon">✍️</span>
+            句型設定
+          </button>
 
           <!-- 進階設定 -->
           <div class="parent-sidebar__section-label">進階設定</div>
@@ -147,6 +151,7 @@ export class ParentHomePage {
               <button class="parent-home__btn" id="btnChars">🈶 生字簿</button>
               <button class="parent-home__btn" id="btnWords">📋 詞語簿</button>
               <button class="parent-home__btn" id="btnIdioms">🀄 成語簿</button>
+              <button class="parent-home__btn" id="btnSentencePatterns">✍️ 句型設定</button>
             </div>
           </section>
 
@@ -193,6 +198,11 @@ export class ParentHomePage {
     const goIdioms = () => UIManager.navigate(PAGES.PARENT_IDIOMS)
     this._addListener('btnIdioms',    'click', goIdioms)
     this._addListener('sidebarIdioms','click', goIdioms)
+
+    // ── 句型設定（v4.2 新增）──
+    const goSentencePatterns = () => UIManager.navigate(PAGES.PARENT_SENTENCE_PATTERNS)
+    this._addListener('btnSentencePatterns',    'click', goSentencePatterns)
+    this._addListener('sidebarSentencePatterns','click', goSentencePatterns)
 
     // ── 圖鑑設定 ──
     const goPokedex = () => UIManager.navigate(PAGES.PARENT_POKEDEX)

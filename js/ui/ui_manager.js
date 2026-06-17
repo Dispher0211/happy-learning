@@ -248,6 +248,13 @@ const UIManager = {
           break
         }
 
+        case PAGES.PARENT_SENTENCE_PATTERNS: {
+          // v4.2 新增
+          const { ParentSentencePatternsPage } = await import('../pages/ParentSentencePatternsPage.js')
+          page = new ParentSentencePatternsPage()
+          break
+        }
+
         // Overlay 類頁面 → 轉交 showOverlay 處理
         case PAGES.STROKE_ORDER:
         case PAGES.STAR_MERGE:

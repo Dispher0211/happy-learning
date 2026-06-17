@@ -139,8 +139,25 @@ export const StarsManager = {
 
     try {
       // ① Firestore increment（原子操作，不覆蓋）
-      await FirestoreAPI.incrementField(_userPath(), 'stars.yellow_total', amount)
-      await FirestoreAPI.incrementField(_userPath(), 'stars.star_pokedex_count', amount)
+      // v4.2 修正：若使用者文件尚不存在，updateDoc/increment 會擲出
+      // 「No document to update」而靜默失敗 → Firestore 端星星未真正寫入，
+      // 但本地樂觀更新仍顯示成功；下次 syncFromFirestore 會讀回 0，
+      // 造成「隔天重開星星變零」。改為偵測失敗後 fallback 用 write(merge:true) 建立文件。
+      try {
+        await FirestoreAPI.incrementField(_userPath(), 'stars.yellow_total', amount)
+        await FirestoreAPI.incrementField(_userPath(), 'stars.star_pokedex_count', amount)
+      } catch (incErr) {
+        console.warn('[StarsManager] incrementField 失敗，嘗試以 write 建立使用者文件', incErr)
+        const existing = await FirestoreAPI.read(_userPath())
+        const baseStars = existing?.stars || { yellow_total: 0, blue_total: 0, red_total: 0, star_pokedex_count: 0 }
+        await FirestoreAPI.write(_userPath(), {
+          stars: {
+            ...baseStars,
+            yellow_total:       Math.round(((baseStars.yellow_total       || 0) + amount) * 10) / 10,
+            star_pokedex_count: Math.round(((baseStars.star_pokedex_count || 0) + amount) * 10) / 10,
+          },
+        }, true)
+      }
 
       // ② 樂觀更新本地 AppState（不等 Firestore 確認）
       const current = AppState.stars || { yellow_total: 0, blue_total: 0, red_total: 0, star_pokedex_count: 0 }
@@ -149,6 +166,9 @@ export const StarsManager = {
         yellow_total:       Math.round((current.yellow_total + amount) * 10) / 10,
         star_pokedex_count: Math.round((current.star_pokedex_count + amount) * 10) / 10,
       }
+
+      // ②.5 v4.2 修正：立即持久化到 localStorage（防止關閉頁面早於 debounce 導致星星遺失）
+      AppState.save()
 
       // ③ UIManager 更新星星顯示（Proxy 自動觸發）
       // AppState.stars 的 setter 會呼叫 UIManager?.updateStarsDisplay
@@ -221,6 +241,7 @@ export const StarsManager = {
           ...current,
           yellow_total: Math.round(((current.yellow_total || 0) - amount) * 10) / 10,
         }
+        AppState.save()
         this._checkMergeButton()
       }
 
@@ -299,6 +320,7 @@ export const StarsManager = {
         [fromKey]: Math.round(((current[fromKey] || 0) - cost) * 10) / 10,
         [toKey]:   (current[toKey] || 0) + 1,
       }
+      AppState.save()
 
       // 播放合成動畫
       this._playMergeAnimation(type)

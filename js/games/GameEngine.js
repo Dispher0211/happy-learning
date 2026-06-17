@@ -532,6 +532,7 @@ export class GameEngine {
           yellow_total:       (AppState.stars.yellow_total       || 0) + amount,
           star_pokedex_count: (AppState.stars.star_pokedex_count || 0) + amount,
         }
+        AppState.save()
         SyncManager.saveOfflineAction({
           type:      'add_stars',
           amount,

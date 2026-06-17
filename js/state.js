@@ -53,6 +53,7 @@ const _AppState = {
   characters: [],   // 家長設定的生字清單
   idioms:     [],   // 家長設定的成語清單
   words:      [],   // 家長設定的詞語清單
+  sentencePatterns: [],   // 家長自訂的句型清單（{ id, template, example } 物件陣列，空=使用 sentences_pattern.json）
 
   // ── 設定（含 v4 新增 soundOn）──
   settings: {
@@ -109,6 +110,7 @@ const _AppState = {
           characters:    this.characters,
           idioms:        this.idioms,
           words:         this.words,
+          sentencePatterns: this.sentencePatterns,
           settings:      this.settings,
           apiUsage:      this.apiUsage,
           _version:      APP_VERSION,  // 版本號，供 load() 遷移判斷
@@ -153,6 +155,7 @@ const _AppState = {
       this.characters = Array.isArray(data.characters) ? data.characters : []
       this.idioms     = Array.isArray(data.idioms)     ? data.idioms     : []
       this.words      = Array.isArray(data.words)      ? data.words      : []
+      this.sentencePatterns = Array.isArray(data.sentencePatterns) ? data.sentencePatterns : []
 
       // ── settings：深度合併，確保 v4 新欄位有預設值 ──
       const savedSettings = data.settings || {}
@@ -227,6 +230,7 @@ const _AppState = {
     this.characters   = []
     this.idioms       = []
     this.words        = []
+    this.sentencePatterns = []
     this.locks = {
       submit_answer: false,
       hint:          false,

@@ -106,7 +106,12 @@ export class SentenceGame extends GameEngine {
     }
 
     // 句型庫（模式3）：與 character 無關，整體取
-    const patternPool = (JSONLoader.get('sentences_pattern') || []).map(p => ({
+    // 家長自訂句型（my_sentence_patterns）優先；若家長未新增任何句型，才使用 sentences_pattern.json
+    const customPatterns = AppState.sentencePatterns || []
+    const patternSource = customPatterns.length > 0
+      ? customPatterns
+      : (JSONLoader.get('sentences_pattern') || [])
+    const patternPool = patternSource.map(p => ({
       ...p,
       _type:           'pattern',
       character:       p.character || '',

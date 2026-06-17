@@ -111,6 +111,18 @@ async function handleAuthStateChanged(user) {
     console.error('[App] PokedexManager.init() 失敗：', err)
   }
 
+  // v4.2 修正：登入後從 Firestore 同步星星資料（Firestore 為唯一可信來源）
+  // 修正「隔天重開星星變零」問題：原本只靠 AppState.load()（localStorage debounce 300ms），
+  // 若關閉頁面早於 debounce 完成，本地快取會是舊值，需以 Firestore 覆蓋
+  try {
+    const { StarsManager } = await import('./stars.js')
+    await StarsManager.syncFromFirestore()
+    AppState.save()
+    console.log('[App] StarsManager.syncFromFirestore() 完成，AppState.stars：', AppState.stars)
+  } catch (err) {
+    console.error('[App] StarsManager.syncFromFirestore() 失敗：', err)
+  }
+
   // 從 Firestore 同步 settings（含 api_keys），確保跨裝置一致
   // localStorage 只存本機快取，Firestore 才是跨裝置來源
   try {
@@ -128,6 +140,13 @@ async function handleAuthStateChanged(user) {
       }
       AppState.save()
       console.log('[App] Firestore settings 同步完成（含 api_keys）')
+    }
+    // v4.2 新增：同步家長設定的句型清單（my_sentence_patterns）
+    // 空陣列／未設定 = 使用系統內建 sentences_pattern.json，與 sentence.js 篩選邏輯一致
+    if (Array.isArray(userData?.my_sentence_patterns)) {
+      AppState.sentencePatterns = userData.my_sentence_patterns
+      AppState.save()
+      console.log('[App] Firestore my_sentence_patterns 同步完成')
     }
   } catch (err) {
     console.warn('[App] Firestore settings 同步失敗，使用本機快取：', err)
