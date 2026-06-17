@@ -27,6 +27,7 @@
 import { GameEngine } from './GameEngine.js';
 import { AppState } from '../state.js'
 import { JSONLoader } from '../json_loader.js';
+import { toTextArray, shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ─────────────────────────────────────────────
 // 2車道固定 X 位置（%）
@@ -131,7 +132,8 @@ export class WordsGame extends GameEngine {
     // 從 characters.json 全字典查詢完整資料（AppState.characters 只有簡單 {字,zhuyin}）
     const allChars = JSONLoader.get('characters') || [];
     // my_words 優先（家長自訂）；AppState.words 是家長設定的詞語清單
-    const myWords = AppState.words || [];
+    // v4.3：過濾「暫停」詞語；「優先」詞語排在最前面
+    const myWords = toTextArray(AppState.words || [], ['word']);
     const questions = [];
 
     // ── 建立單一字的題目資料 ──
@@ -220,8 +222,8 @@ export class WordsGame extends GameEngine {
     }
 
     // 若超過 TARGET_QUESTION_COUNT，截斷（生字簿字優先保留）
-    // 洗牌後再截斷，確保每次出題順序不同
-    const shuffled = questions.sort(() => Math.random() - 0.5);
+    // 洗牌後再截斷，確保每次出題順序不同；「優先」生字優先排在前面
+    const shuffled = shuffleWithPriorityFirst(questions, this.priorityChars, q => q.char);
     this.questions = shuffled.slice(0, targetCount);
     // 同步更新 totalQuestions，讓 header counter 顯示正確
     this.totalQuestions = this.questions.length;

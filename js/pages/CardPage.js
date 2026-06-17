@@ -12,6 +12,7 @@ import { HanziWriterManager }   from '../hanzi_writer_manager.js'
 import { UIManager }            from '../ui/ui_manager.js'
 import { PAGES }                from '../ui/pages.js'
 import { JSONLoader }           from '../json_loader.js'
+import { getActiveItems }       from '../content_filter.js'
 
 // ─────────────────────────────────────────
 // 常數定義
@@ -498,6 +499,15 @@ export class CardPage {
     let word, definition, example
     if (typeof wordObj === 'string') {
       word = wordObj
+    } else {
+      word       = wordObj['詞語'] || wordObj.word || ''
+      definition = wordObj['解釋'] || wordObj.definition || ''
+      example    = wordObj['例句'] || wordObj.example || ''
+    }
+
+    // v4.3：my_words 已改為物件格式 { word, enabled, priority }，本身不含解釋／例句，
+    // 與舊版純字串格式相同，皆需從 characters.json 反查詞義
+    if (!definition) {
       // 從 characters.json 反查：找包含此詞語的 definitions.ex 群組，取正確意思
       const allChars = JSONLoader.get('characters') || []
       let foundDef = null
@@ -525,11 +535,7 @@ export class CardPage {
       } else {
         definition = foundDef.sense || ''
       }
-      example = ''
-    } else {
-      word       = wordObj['詞語'] || wordObj.word || ''
-      definition = wordObj['解釋'] || wordObj.definition || ''
-      example    = wordObj['例句'] || wordObj.example || ''
+      example = example || ''
     }
 
     // 找出詞語中的破音字及其所有讀音（供 poly-bar 使用）
@@ -897,18 +903,18 @@ export class CardPage {
   // 10. 輔助：資料存取
   // ═══════════════════════════════════════
 
-  /** 取得當前卡片類型對應的清單 */
+  /** 取得當前卡片類型對應的清單（v4.3：過濾「暫停」項目，「優先」項目排最前） */
   _getList() {
     switch (this._cardType) {
-      case CARD_TYPES.WORD:  return AppState.words  || []
-      case CARD_TYPES.IDIOM: return AppState.idioms || []
-      default:               return AppState.characters || []
+      case CARD_TYPES.WORD:  return getActiveItems(AppState.words  || [])
+      case CARD_TYPES.IDIOM: return getActiveItems(AppState.idioms || [])
+      default:               return getActiveItems(AppState.characters || [])
     }
   }
 
-  /** 根據字串找到 AppState.characters 中的索引 */
+  /** 根據字串找到目前清單（已過濾＋優先排序）中的索引 */
   _findCharIndex(char) {
-    const chars = AppState.characters || []
+    const chars = this._getList()
     const idx = chars.findIndex(c => (c['字'] || c.char) === char)
     return idx >= 0 ? idx : 0
   }
@@ -1039,7 +1045,7 @@ export class CardPage {
   /** 預讀前 5 張卡片的遺忘等級，放入 _levelCache */
   async _preloadLevels() {
     if (this._cardType !== CARD_TYPES.CHARACTER) return
-    const chars = AppState.characters || []
+    const chars = this._getList()
     const start = Math.max(0, this._index - 1)
     const end   = Math.min(chars.length, this._index + 4)
 
@@ -1116,7 +1122,7 @@ export class CardPage {
 
   /** 預載下一個字的 HanziWriter 資料 */
   _preloadNextChar() {
-    const chars = AppState.characters || []
+    const chars = this._getList()
     const next  = chars[this._index + 1]
     if (next) {
       const nextChar = next['字'] || next.char
@@ -1403,9 +1409,9 @@ export class CardPage {
     return this._renderMixedWord(str)
   }
 
-  /** 判斷是否為生字簿字 */
+  /** 判斷是否為生字簿字（已啟用） */
   _isMyChar(char) {
-    return (AppState.characters || []).some(c => (c['字'] || c.char) === char)
+    return getActiveItems(AppState.characters || []).some(c => (c['字'] || c.char) === char)
   }
 
   /**

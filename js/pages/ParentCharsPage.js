@@ -14,13 +14,14 @@ import { FirestoreAPI } from '../firebase.js'
 import { arrayUnion, arrayRemove } from '../firebase.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
+import { isItemEnabled, isItemPriority } from '../content_filter.js'
 
 export class ParentCharsPage {
   constructor() {
     // 事件監聽器參照（destroy 時移除用）
     this._onAddClick     = null
     this._onInputKeyup   = null
-    this._onDeleteClick  = null
+    this._onListClick    = null
     this._onBackClick    = null
     this._onClearAllClick = null
   }
@@ -129,15 +130,29 @@ export class ParentCharsPage {
     }
     input?.addEventListener('keyup', this._onInputKeyup)
 
-    // 清單點擊（事件代理：刪除按鈕）
+    // 清單點擊（事件代理：刪除／啟用切換／優先切換）
     const list = document.getElementById('pcpList')
-    this._onDeleteClick = (e) => {
-      const btn = e.target.closest('[data-delete-char]')
-      if (!btn) return
-      const char = btn.getAttribute('data-delete-char')
-      if (char) this._handleDelete(char)
+    this._onListClick = (e) => {
+      const deleteBtn = e.target.closest('[data-delete-char]')
+      if (deleteBtn) {
+        const char = deleteBtn.getAttribute('data-delete-char')
+        if (char) this._handleDelete(char)
+        return
+      }
+      const toggleBtn = e.target.closest('[data-toggle-char]')
+      if (toggleBtn) {
+        const char = toggleBtn.getAttribute('data-toggle-char')
+        if (char) this._handleToggleEnabled(char)
+        return
+      }
+      const priorityBtn = e.target.closest('[data-priority-char]')
+      if (priorityBtn) {
+        const char = priorityBtn.getAttribute('data-priority-char')
+        if (char) this._handleTogglePriority(char)
+        return
+      }
     }
-    list?.addEventListener('click', this._onDeleteClick)
+    list?.addEventListener('click', this._onListClick)
 
     // 一鍵刪除全部生字
     const clearAllBtn = document.getElementById('pcpClearAllBtn')
@@ -197,18 +212,31 @@ export class ParentCharsPage {
 
     // 渲染清單項目
     list.innerHTML = chars.map((item, idx) => {
-      // my_characters 的元素可能是物件 { 字, zhuyin } 或純字串
+      // my_characters 的元素可能是物件 { 字, zhuyin, enabled, priority } 或純字串
       const char   = (typeof item === 'object') ? (item['字'] || item.char || '') : String(item)
       const zhuyin = (typeof item === 'object') ? (item.zhuyin || item['注音'] || '') : ''
       const safeChar   = this._escapeHTML(char)
       const safeZhuyin = this._escapeHTML(zhuyin)
+      const enabled  = isItemEnabled(item)
+      const priority = isItemPriority(item)
 
       return `
-        <li class="pcp-item" data-char="${safeChar}" style="animation-delay:${idx * 30}ms">
+        <li class="pcp-item ${enabled ? '' : 'pcp-item--disabled'}" data-char="${safeChar}" style="animation-delay:${idx * 30}ms">
+          <button
+            class="pcp-priority-btn ${priority ? 'pcp-priority-btn--active' : ''}"
+            data-priority-char="${safeChar}"
+            title="${priority ? '取消優先' : '設為優先（更常出現在學習與考題中）'}"
+            aria-label="${priority ? `取消優先：${safeChar}` : `設為優先：${safeChar}`}"
+          >★</button>
           <div class="pcp-item-char">
             <span class="pcp-char-display">${safeChar}</span>
             ${zhuyin ? `<span class="pcp-char-zhuyin">${safeZhuyin}</span>` : ''}
           </div>
+          <button
+            class="pcp-toggle-btn ${enabled ? '' : 'pcp-toggle-btn--off'}"
+            data-toggle-char="${safeChar}"
+            title="${enabled ? '點擊暫停（暫停後不會出現在學習與考題中）' : '點擊恢復啟用'}"
+          >${enabled ? '啟用中' : '已暫停'}</button>
           <button
             class="pcp-delete-btn"
             data-delete-char="${safeChar}"
@@ -344,6 +372,71 @@ export class ParentCharsPage {
     } catch (err) {
       console.error('[ParentCharsPage] 刪除生字失敗', err)
       // 回復：重新讀取
+      await this._loadAndRender()
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 切換啟用／暫停狀態
+  // ─────────────────────────────────────────
+  async _handleToggleEnabled(char) {
+    const existing = AppState.characters || []
+    const idx = existing.findIndex(item => {
+      const c = (typeof item === 'object') ? (item['字'] || item.char || '') : String(item)
+      return c === char
+    })
+    if (idx === -1) return
+
+    const current = existing[idx]
+    const newItem = (typeof current === 'object' && current !== null)
+      ? { ...current, enabled: !isItemEnabled(current) }
+      : { 字: char, zhuyin: '', enabled: false }
+
+    const updated = [...existing]
+    updated[idx] = newItem
+
+    // 樂觀更新：立即反映在畫面上
+    AppState.characters = updated
+    this._renderList(updated)
+
+    try {
+      const uid = AppState.uid
+      if (!uid) return
+      await FirestoreAPI.update(`users/${uid}`, { my_characters: updated })
+    } catch (err) {
+      console.error('[ParentCharsPage] 切換啟用狀態失敗', err)
+      await this._loadAndRender()
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 切換優先狀態
+  // ─────────────────────────────────────────
+  async _handleTogglePriority(char) {
+    const existing = AppState.characters || []
+    const idx = existing.findIndex(item => {
+      const c = (typeof item === 'object') ? (item['字'] || item.char || '') : String(item)
+      return c === char
+    })
+    if (idx === -1) return
+
+    const current = existing[idx]
+    const newItem = (typeof current === 'object' && current !== null)
+      ? { ...current, priority: !isItemPriority(current) }
+      : { 字: char, zhuyin: '', priority: true }
+
+    const updated = [...existing]
+    updated[idx] = newItem
+
+    AppState.characters = updated
+    this._renderList(updated)
+
+    try {
+      const uid = AppState.uid
+      if (!uid) return
+      await FirestoreAPI.update(`users/${uid}`, { my_characters: updated })
+    } catch (err) {
+      console.error('[ParentCharsPage] 切換優先狀態失敗', err)
       await this._loadAndRender()
     }
   }
@@ -673,6 +766,53 @@ export class ParentCharsPage {
         to   { opacity: 1; transform: scale(1)   translateY(0);   }
       }
 
+      /* 暫停（停用）狀態：整張卡片淡化 */
+      .pcp-item--disabled {
+        opacity: .45;
+      }
+
+      /* 優先按鈕（左上角星號） */
+      .pcp-priority-btn {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 22px;
+        height: 22px;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        color: #d8dde6;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color .15s, background .15s;
+        z-index: 1;
+      }
+      .pcp-priority-btn:hover { background: #fff7e0; }
+      .pcp-priority-btn--active { color: #f5a623; }
+
+      /* 啟用／暫停切換按鈕 */
+      .pcp-toggle-btn {
+        margin-top: 6px;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid #cfe8d8;
+        background: #eafaf0;
+        color: #2e9e5b;
+        cursor: pointer;
+        font-weight: 600;
+        letter-spacing: .5px;
+        transition: background .15s;
+      }
+      .pcp-toggle-btn--off {
+        border-color: #e3e6ec;
+        background: #f0f2f5;
+        color: #93a0b0;
+      }
+
       .pcp-item-char {
         display: flex;
         flex-direction: column;
@@ -742,8 +882,8 @@ export class ParentCharsPage {
     if (input && this._onInputKeyup) {
       input.removeEventListener('keyup', this._onInputKeyup)
     }
-    if (list && this._onDeleteClick) {
-      list.removeEventListener('click', this._onDeleteClick)
+    if (list && this._onListClick) {
+      list.removeEventListener('click', this._onListClick)
     }
     if (clearAllBtn && this._onClearAllClick) {
       clearAllBtn.removeEventListener('click', this._onClearAllClick)
@@ -752,7 +892,7 @@ export class ParentCharsPage {
     this._onBackClick    = null
     this._onAddClick     = null
     this._onInputKeyup   = null
-    this._onDeleteClick  = null
+    this._onListClick    = null
     this._onClearAllClick = null
   }
 }

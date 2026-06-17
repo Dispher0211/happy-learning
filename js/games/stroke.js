@@ -16,6 +16,7 @@ import { AppState } from '../state.js';
 import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
 import { HanziWriterManager } from '../hanzi_writer_manager.js';
+import { shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ─────────────────────────────────────────────
 // HanziWriterManager 直接從模組匯入（不透過 window）
@@ -104,8 +105,8 @@ export class StrokeGame extends GameEngine {
       });
     }
 
-    // 洗牌確保每次出題順序不同
-    this.questions = questions.sort(() => Math.random() - 0.5);
+    // 洗牌確保每次出題順序不同；「優先」生字優先排在前面
+    this.questions = shuffleWithPriorityFirst(questions, this.priorityChars, q => q.char);
     return this.questions;
   }
 

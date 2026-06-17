@@ -20,6 +20,7 @@ import { WrongQueue }      from '../wrong_queue.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { SyncManager }     from '../sync.js'
 import { getGameConfig }   from './GameConfig.js'
+import { getActiveItems, getPriorityKeySet } from '../content_filter.js'
 
 // ── 星星發放規則 ──
 const GAME_STARS = {
@@ -57,6 +58,8 @@ export class GameEngine {
     this._gameCompleted    = false
     this._gameStars        = GAME_STARS[gameId] || { first: 1, retry: 0.5 }
     this._listeners        = []
+    // v4.3：優先生字鍵值集合（由 init() 從 AppState.characters 計算）
+    this.priorityChars     = new Set()
   }
 
   // ─────────────────────────────────────────────
@@ -69,11 +72,14 @@ export class GameEngine {
     // ── questionChars 自動建立 ──────────────────────────────────────
     // 若外部未傳入 config.chars，從 AppState.characters 取字元列表
     // AppState.characters 是 my_characters Firestore 陣列，每項含 {字/char} 欄位
+    // v4.3：過濾「暫停」生字；「優先」生字排在最前面，並記錄優先字集合供加權出題
     if (!this.questionChars || this.questionChars.length === 0) {
       const src = config.chars || globalThis.AppState?.characters || []
-      this.questionChars = src
+      const activeSrc = getActiveItems(src)
+      this.questionChars = activeSrc
         .map(c => c['字'] || c.char || '')
         .filter(Boolean)
+      this.priorityChars = getPriorityKeySet(src, ['字', 'char'])
     }
 
     try {

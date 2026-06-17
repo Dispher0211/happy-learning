@@ -22,6 +22,7 @@ import { AppState } from '../state.js';
 import { AudioManager } from '../audio.js';
 import { ForgettingCurve } from '../forgetting.js';
 import { JSONLoader } from '../json_loader.js';
+import { shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ─────────────────────────────────────────────
 // 靶移動速度對應表（毫秒/遍歷一輪）
@@ -115,8 +116,8 @@ export class StrokesCountGame extends GameEngine {
 
     // 不足 TARGET_Q 題：循環複抽生字簿補足（允許同字重複出題）
     if (questions.length > 0 && questions.length < TARGET_Q) {
-      // 先洗牌 basePool，補題時順序也不同
-      const basePool = [...questions].sort(() => Math.random() - 0.5);
+      // 先洗牌 basePool，補題時順序也不同；「優先」生字優先排在前面
+      const basePool = shuffleWithPriorityFirst(questions, this.priorityChars, q => q.char);
       let idx = 0;
       while (questions.length < TARGET_Q) {
         questions.push({ ...basePool[idx % basePool.length] });
@@ -124,8 +125,8 @@ export class StrokesCountGame extends GameEngine {
       }
     }
 
-    // 洗牌確保每次出題順序不同
-    this.questions = questions.sort(() => Math.random() - 0.5).slice(0, TARGET_Q);
+    // 洗牌確保每次出題順序不同；「優先」生字優先排在前面
+    this.questions = shuffleWithPriorityFirst(questions, this.priorityChars, q => q.char).slice(0, TARGET_Q);
     this.totalQuestions = this.questions.length;
     return this.questions;
   }

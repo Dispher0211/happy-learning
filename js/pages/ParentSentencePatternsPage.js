@@ -15,6 +15,7 @@
 import { FirestoreAPI } from '../firebase.js'
 import { AppState }     from '../state.js'
 import { UIManager }    from '../ui/ui_manager.js'
+import { isItemEnabled, isItemPriority } from '../content_filter.js'
 
 export class ParentSentencePatternsPage {
 
@@ -108,27 +109,34 @@ export class ParentSentencePatternsPage {
       return
     }
 
-    list.innerHTML = patterns.map(p => `
-      <li class="psp-item" data-id="${this._escapeHtml(p.id)}">
+    list.innerHTML = patterns.map(p => {
+      const enabled  = isItemEnabled(p)
+      const priority = isItemPriority(p)
+      const safeId   = this._escapeHtml(p.id)
+
+      return `
+      <li class="psp-item ${enabled ? '' : 'psp-item--disabled'}" data-id="${safeId}">
+        <button
+          class="psp-priority-btn ${priority ? 'psp-priority-btn--active' : ''}"
+          data-priority-id="${safeId}"
+          title="${priority ? '取消優先' : '設為優先（更常出現在學習與考題中）'}"
+        >★</button>
         <div class="psp-content">
           <div class="psp-template">${this._escapeHtml(p.template || '')}</div>
           <div class="psp-example">${this._escapeHtml(p.example || '')}</div>
         </div>
-        <button class="psp-delete-btn" data-id="${this._escapeHtml(p.id)}" aria-label="刪除">
+        <button
+          class="psp-toggle-btn ${enabled ? '' : 'psp-toggle-btn--off'}"
+          data-toggle-id="${safeId}"
+          title="${enabled ? '點擊暫停（暫停後不會出現在學習與考題中）' : '點擊恢復啟用'}"
+        >${enabled ? '啟用中' : '已暫停'}</button>
+        <button class="psp-delete-btn" data-delete-id="${safeId}" aria-label="刪除">
           🗑️
         </button>
       </li>
-    `).join('')
-
-    // 綁定每個刪除按鈕
-    list.querySelectorAll('.psp-delete-btn').forEach(btn => {
-      const handler = (e) => {
-        const id = e.currentTarget.dataset.id
-        this._deletePattern(id)
-      }
-      btn.addEventListener('click', handler)
-      this._listeners.push({ el: btn, type: 'click', fn: handler })
-    })
+      `
+    }).join('')
+    // 事件委派：由 _bindEvents() 中統一監聽，不在此重複綁定
   }
 
   // ─────────────────────────────────────
@@ -154,6 +162,30 @@ export class ParentSentencePatternsPage {
       const handler = () => this._clearAllPatterns()
       clearAllBtn.addEventListener('click', handler)
       this._listeners.push({ el: clearAllBtn, type: 'click', fn: handler })
+    }
+
+    // 清單點擊（事件代理：刪除／啟用切換／優先切換）
+    const list = document.getElementById('psp-list')
+    if (list) {
+      const listHandler = (e) => {
+        const deleteBtn = e.target.closest('[data-delete-id]')
+        if (deleteBtn) {
+          this._deletePattern(deleteBtn.getAttribute('data-delete-id'))
+          return
+        }
+        const toggleBtn = e.target.closest('[data-toggle-id]')
+        if (toggleBtn) {
+          this._toggleEnabled(toggleBtn.getAttribute('data-toggle-id'))
+          return
+        }
+        const priorityBtn = e.target.closest('[data-priority-id]')
+        if (priorityBtn) {
+          this._togglePriority(priorityBtn.getAttribute('data-priority-id'))
+          return
+        }
+      }
+      list.addEventListener('click', listHandler)
+      this._listeners.push({ el: list, type: 'click', fn: listHandler })
     }
   }
 
@@ -189,6 +221,8 @@ export class ParentSentencePatternsPage {
       example,
       example_alt: '',
       character: '',
+      enabled: true,
+      priority: false,
     }
 
     try {
@@ -241,6 +275,56 @@ export class ParentSentencePatternsPage {
     } catch (e) {
       console.error('[ParentSentencePatternsPage] 刪除句型失敗', e)
       UIManager.showToast('刪除失敗，請稍後再試', 'error', 2000)
+    }
+  }
+
+  // ─────────────────────────────────────
+  // 切換句型的啟用／暫停狀態
+  // ─────────────────────────────────────
+  async _toggleEnabled (id) {
+    const existing = Array.isArray(AppState.sentencePatterns) ? AppState.sentencePatterns : []
+    const idx = existing.findIndex(p => p.id === id)
+    if (idx === -1) return
+
+    const current = existing[idx]
+    const updated = [...existing]
+    updated[idx] = { ...current, enabled: !isItemEnabled(current) }
+
+    AppState.sentencePatterns = updated
+    AppState.save()
+    this._renderList(updated)
+
+    try {
+      const uid = AppState.uid
+      await FirestoreAPI.write(`users/${uid}`, { my_sentence_patterns: updated })
+    } catch (e) {
+      console.error('[ParentSentencePatternsPage] 切換啟用狀態失敗', e)
+      UIManager.showToast('更新失敗，請稍後再試', 'error', 2000)
+    }
+  }
+
+  // ─────────────────────────────────────
+  // 切換句型的優先狀態
+  // ─────────────────────────────────────
+  async _togglePriority (id) {
+    const existing = Array.isArray(AppState.sentencePatterns) ? AppState.sentencePatterns : []
+    const idx = existing.findIndex(p => p.id === id)
+    if (idx === -1) return
+
+    const current = existing[idx]
+    const updated = [...existing]
+    updated[idx] = { ...current, priority: !isItemPriority(current) }
+
+    AppState.sentencePatterns = updated
+    AppState.save()
+    this._renderList(updated)
+
+    try {
+      const uid = AppState.uid
+      await FirestoreAPI.write(`users/${uid}`, { my_sentence_patterns: updated })
+    } catch (e) {
+      console.error('[ParentSentencePatternsPage] 切換優先狀態失敗', e)
+      UIManager.showToast('更新失敗，請稍後再試', 'error', 2000)
     }
   }
 
@@ -448,18 +532,58 @@ export class ParentSentencePatternsPage {
       .psp-item {
         display: flex;
         align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
         padding: 12px 16px;
         margin-bottom: 8px;
         background: #f8f9fa;
         border-radius: 10px;
         border: 1px solid #e9ecef;
-        transition: background 0.15s;
+        transition: background 0.15s, opacity 0.15s;
       }
 
       .psp-item:hover {
         background: #f0f4ff;
+      }
+
+      .psp-item--disabled {
+        opacity: .5;
+      }
+
+      .psp-priority-btn {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        font-size: 16px;
+        color: #d8dde6;
+        cursor: pointer;
+        padding: 2px 2px;
+        line-height: 1.4;
+        transition: color 0.15s;
+      }
+
+      .psp-priority-btn--active {
+        color: #f5a623;
+      }
+
+      .psp-toggle-btn {
+        flex-shrink: 0;
+        margin-top: 2px;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 10px;
+        border: 1px solid #cfe8d8;
+        background: #eafaf0;
+        color: #2e9e5b;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+
+      .psp-toggle-btn--off {
+        border-color: #e3e6ec;
+        background: #f0f2f5;
+        color: #93a0b0;
       }
 
       .psp-content {

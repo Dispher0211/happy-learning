@@ -5,8 +5,9 @@
  * 依賴：firebase.js（T05）、state.js（T02）、ui_manager.js（T28）
  */
 
-import { FirestoreAPI, arrayRemove, arrayUnion } from '../firebase.js';
+import { FirestoreAPI } from '../firebase.js';
 import { AppState } from '../state.js';
+import { getItemText, isItemEnabled, isItemPriority } from '../content_filter.js';
 
 export class ParentIdiomsPage {
 
@@ -136,7 +137,7 @@ export class ParentIdiomsPage {
 
   /**
    * 渲染成語清單 DOM
-   * @param {string[]} idioms
+   * @param {Array<string|Object>} idioms - 純字串或 { idiom, enabled, priority } 物件
    */
   _renderList(idioms) {
     if (!this._listEl) return;
@@ -150,24 +151,51 @@ export class ParentIdiomsPage {
       return;
     }
 
-    this._listEl.innerHTML = idioms.map((idiom) => `
-      <div class="idiom-item" data-idiom="${idiom}" style="
-        display:flex; align-items:center; justify-content:space-between;
-        background:#fff; border:1px solid #eee; border-radius:10px;
-        padding:12px 14px;
-      ">
-        <span style="font-size:18px; letter-spacing:2px;">${idiom}</span>
-        <button
-          class="idiom-delete-btn"
-          data-idiom="${idiom}"
-          style="
-            background:none; border:none; color:#e53935;
-            font-size:20px; cursor:pointer; padding:0 4px;
-          "
-          title="刪除「${idiom}」"
-        >🗑</button>
-      </div>
-    `).join('');
+    this._listEl.innerHTML = idioms.map((item) => {
+      const idiom    = getItemText(item, ['idiom']);
+      const enabled  = isItemEnabled(item);
+      const priority = isItemPriority(item);
+
+      return `
+        <div class="idiom-item" data-idiom="${idiom}" style="
+          display:flex; align-items:center; gap:8px;
+          background:#fff; border:1px solid #eee; border-radius:10px;
+          padding:12px 14px; opacity:${enabled ? '1' : '.5'};
+        ">
+          <button
+            class="idiom-priority-btn"
+            data-priority-idiom="${idiom}"
+            title="${priority ? '取消優先' : '設為優先（更常出現在學習與考題中）'}"
+            style="
+              background:none; border:none; font-size:16px; cursor:pointer;
+              padding:0 2px; color:${priority ? '#f5a623' : '#d8dde6'};
+            "
+          >★</button>
+          <span style="flex:1; font-size:18px; letter-spacing:2px;">${idiom}</span>
+          <button
+            class="idiom-toggle-btn"
+            data-toggle-idiom="${idiom}"
+            title="${enabled ? '點擊暫停（暫停後不會出現在學習與考題中）' : '點擊恢復啟用'}"
+            style="
+              flex-shrink:0; font-size:11px; padding:3px 10px; border-radius:10px;
+              border:1px solid ${enabled ? '#cfe8d8' : '#e3e6ec'};
+              background:${enabled ? '#eafaf0' : '#f0f2f5'};
+              color:${enabled ? '#2e9e5b' : '#93a0b0'};
+              cursor:pointer; font-weight:600; white-space:nowrap;
+            "
+          >${enabled ? '啟用中' : '已暫停'}</button>
+          <button
+            class="idiom-delete-btn"
+            data-idiom="${idiom}"
+            style="
+              background:none; border:none; color:#e53935;
+              font-size:20px; cursor:pointer; padding:0 4px;
+            "
+            title="刪除「${idiom}」"
+          >🗑</button>
+        </div>
+      `;
+    }).join('');
     // 事件委派：由 _bindEvents() 中統一監聽，不在此重複綁定
   }
 
@@ -196,12 +224,25 @@ export class ParentIdiomsPage {
     };
     backBtn.addEventListener('click', this._onBackClick);
 
-    // 刪除按鈕事件委派（統一監聽 _listEl，不在 _renderList 重複綁定）
+    // 刪除／啟用切換／優先切換事件委派（統一監聽 _listEl，不在 _renderList 重複綁定）
     this._onListClick = (e) => {
-      const btn = e.target.closest('.idiom-delete-btn');
-      if (btn) {
-        const idiom = btn.dataset.idiom;
+      const deleteBtn = e.target.closest('.idiom-delete-btn');
+      if (deleteBtn) {
+        const idiom = deleteBtn.dataset.idiom;
         if (idiom) this._deleteIdiom(idiom);
+        return;
+      }
+      const toggleBtn = e.target.closest('.idiom-toggle-btn');
+      if (toggleBtn) {
+        const idiom = toggleBtn.getAttribute('data-toggle-idiom');
+        if (idiom) this._toggleEnabled(idiom);
+        return;
+      }
+      const priorityBtn = e.target.closest('.idiom-priority-btn');
+      if (priorityBtn) {
+        const idiom = priorityBtn.getAttribute('data-priority-idiom');
+        if (idiom) this._togglePriority(idiom);
+        return;
       }
     };
     this._listEl.addEventListener('click', this._onListClick);
@@ -213,7 +254,7 @@ export class ParentIdiomsPage {
   }
 
   /**
-   * 新增成語：格式驗證 → arrayUnion 寫入 Firestore → 同步 AppState → 重繪清單
+   * 新增成語：格式驗證 → 加入清單 → 整陣列覆寫 Firestore → 同步 AppState → 重繪清單
    */
   async _addIdiom() {
     const raw = this._inputEl.value.trim();
@@ -229,20 +270,28 @@ export class ParentIdiomsPage {
     const uid = AppState.uid;
     if (!uid) return;
 
+    // 防止重複（純字串或物件格式皆比對文字內容）
+    const existing = AppState.idioms || [];
+    const alreadyIn = existing.some(item => getItemText(item, ['idiom']) === raw);
+    if (alreadyIn) {
+      this._showError(`「${raw}」已在成語簿中`);
+      return;
+    }
+
     // 防止 UI 重複點擊
     const addBtn = this._container.querySelector('#idiom-add-btn');
     addBtn.disabled = true;
 
     try {
-      // 寫入 Firestore（arrayUnion 自動防重複）
-      // ⚠️ 必須用 update() 而非 write()，write() 內部 spread {...data} 會破壞 arrayUnion FieldValue
-      await FirestoreAPI.update(`users/${uid}`, { my_idioms: arrayUnion(raw) });
+      const newEntry = { idiom: raw, enabled: true, priority: false };
+      const updated  = [...existing, newEntry];
 
-      // 同步 AppState（本機去重）
-      if (!AppState.idioms) AppState.idioms = [];
-      if (!AppState.idioms.includes(raw)) {
-        AppState.idioms = [...AppState.idioms, raw];
-      }
+      // 整陣列覆寫，確保新格式與舊格式項目皆能正確保存
+      // ⚠️ 必須用 update() 而非 write()，write() 內部 spread {...data} 可能造成非預期合併
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: updated });
+
+      // 同步 AppState
+      AppState.idioms = updated;
 
       // 清空輸入框並重繪清單
       this._inputEl.value = '';
@@ -258,7 +307,7 @@ export class ParentIdiomsPage {
   }
 
   /**
-   * 刪除成語：arrayRemove 移除 Firestore → 同步 AppState → 重繪清單
+   * 刪除成語：依文字比對從清單移除 → 整陣列覆寫 Firestore → 同步 AppState → 重繪清單
    * @param {string} idiom - 要刪除的成語
    */
   async _deleteIdiom(idiom) {
@@ -266,12 +315,13 @@ export class ParentIdiomsPage {
     if (!uid) return;
 
     try {
-      // 從 Firestore 移除
-      // ⚠️ 必須用 update() 而非 write()，write() 內部 spread {...data} 會破壞 arrayRemove FieldValue
-      await FirestoreAPI.update(`users/${uid}`, { my_idioms: arrayRemove(idiom) });
+      const existing = AppState.idioms || [];
+      const updated  = existing.filter((item) => getItemText(item, ['idiom']) !== idiom);
+
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: updated });
 
       // 同步 AppState
-      AppState.idioms = (AppState.idioms || []).filter((i) => i !== idiom);
+      AppState.idioms = updated;
 
       // 重繪清單
       this._renderList(AppState.idioms);
@@ -279,6 +329,66 @@ export class ParentIdiomsPage {
     } catch (err) {
       console.error('[ParentIdiomsPage] 刪除成語失敗：', err);
       this._showError('刪除失敗，請稍後再試');
+    }
+  }
+
+  /**
+   * 切換成語的啟用／暫停狀態
+   * @param {string} idiom
+   */
+  async _toggleEnabled(idiom) {
+    const existing = AppState.idioms || [];
+    const idx = existing.findIndex((item) => getItemText(item, ['idiom']) === idiom);
+    if (idx === -1) return;
+
+    const current = existing[idx];
+    const newItem = (current && typeof current === 'object')
+      ? { ...current, idiom: getItemText(current, ['idiom']), enabled: !isItemEnabled(current) }
+      : { idiom, enabled: false, priority: false };
+
+    const updated = [...existing];
+    updated[idx] = newItem;
+
+    AppState.idioms = updated;
+    this._renderList(updated);
+
+    const uid = AppState.uid;
+    if (!uid) return;
+    try {
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: updated });
+    } catch (err) {
+      console.error('[ParentIdiomsPage] 切換啟用狀態失敗：', err);
+      this._showError('更新失敗，請稍後再試');
+    }
+  }
+
+  /**
+   * 切換成語的優先狀態
+   * @param {string} idiom
+   */
+  async _togglePriority(idiom) {
+    const existing = AppState.idioms || [];
+    const idx = existing.findIndex((item) => getItemText(item, ['idiom']) === idiom);
+    if (idx === -1) return;
+
+    const current = existing[idx];
+    const newItem = (current && typeof current === 'object')
+      ? { ...current, idiom: getItemText(current, ['idiom']), priority: !isItemPriority(current) }
+      : { idiom, enabled: true, priority: true };
+
+    const updated = [...existing];
+    updated[idx] = newItem;
+
+    AppState.idioms = updated;
+    this._renderList(updated);
+
+    const uid = AppState.uid;
+    if (!uid) return;
+    try {
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: updated });
+    } catch (err) {
+      console.error('[ParentIdiomsPage] 切換優先狀態失敗：', err);
+      this._showError('更新失敗，請稍後再試');
     }
   }
 

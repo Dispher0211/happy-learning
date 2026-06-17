@@ -18,6 +18,7 @@ import { GameConfig }   from './GameConfig.js'
 import { AppState }     from '../state.js'
 import { AudioManager } from '../audio.js'
 import { JSONLoader }   from '../json_loader.js'
+import { toTextArray, getPriorityKeySet, shuffleWithPriorityFirst } from '../content_filter.js'
 
 // ═══════════════════════════════════════════════════════
 //  常數
@@ -82,7 +83,9 @@ export class IdiomGame extends GameEngine {
     const allIdioms = JSONLoader.get('idioms') ?? []
 
     // ── 1. 從成語簿（家長設定）取得完整資料 ──
-    const myIdioms       = AppState.idioms ?? []
+    // v4.3：過濾「暫停」成語；「優先」成語加權，更容易被選中
+    const myIdioms        = toTextArray(AppState.idioms ?? [], ['idiom'])
+    const priorityIdioms  = getPriorityKeySet(AppState.idioms ?? [], ['idiom'])
     const myIdiomEntries = myIdioms
       .map(str => allIdioms.find(e => e.idiom === str))
       .filter(Boolean)
@@ -93,8 +96,11 @@ export class IdiomGame extends GameEngine {
       allIdioms.filter(e => !mySet.has(e.idiom) && e.meaning)
     )
 
-    // 合併：成語簿優先，不足再補全庫
-    const pool = [...this._shuffle(myIdiomEntries), ...extra]
+    // 合併：成語簿優先（其中「優先」成語排最前），不足再補全庫
+    const pool = [
+      ...shuffleWithPriorityFirst(myIdiomEntries, priorityIdioms, e => e.idiom),
+      ...extra,
+    ]
 
     const seen      = new Set()
     const candidate = []

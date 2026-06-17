@@ -25,6 +25,7 @@ import { GameEngine } from './GameEngine.js';
 import { AppState } from '../state.js';
 import { AudioManager } from '../audio.js';
 import { JSONLoader } from '../json_loader.js';
+import { shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ─────────────────────────────────────────────
 // 飛機移動速度（px/ms，依遺忘等級）
@@ -205,17 +206,14 @@ export class PolyphoneGame extends GameEngine {
       }
     }
 
-    // 打亂題庫
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
+    // 打亂題庫；「優先」生字優先排在前面，提高被選中機率
+    const shuffledPool = shuffleWithPriorityFirst(pool, this.priorityChars, item => item.char);
 
     // 若不足 TOTAL 題，循環補足
     const questions = [];
     let idx = 0;
     while (questions.length < TOTAL) {
-      questions.push({ ...pool[idx % pool.length] });
+      questions.push({ ...shuffledPool[idx % shuffledPool.length] });
       idx++;
     }
     questions.length = TOTAL;

@@ -12,6 +12,7 @@ import { GameEngine } from './GameEngine.js';
 import { AppState }   from '../state.js';
 import { JSONLoader } from '../json_loader.js';
 import { AudioManager } from '../audio.js';
+import { shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ─── 魚游速度（毫秒/完整來回）hard慢 easy_plus快 ───
 const FISH_SPEEDS = { hard: 8000, medium: 6500, easy: 5000, easy_plus: 4000 };
@@ -116,23 +117,16 @@ export class ListenGame extends GameEngine {
     }
 
     // ── Step 3：合併，打亂，截取 target 題 ──
-    const shuffle = arr => {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    };
+    // v4.3：「優先」生字優先排在前面，提高被選中機率
+    const shuffle = arr => shuffleWithPriorityFirst(arr, this.priorityChars, q => q.char);
 
-    shuffle(baseQuestions);
-    shuffle(extraPool);
-
-    let questions = [...baseQuestions];
+    let questions = shuffle(baseQuestions);
+    const extraPoolShuffled = shuffle(extraPool);
 
     // 用 extraPool 補到 target 題
     let ei = 0;
-    while (questions.length < target && extraPool.length > 0) {
-      questions.push(extraPool[ei % extraPool.length]);
+    while (questions.length < target && extraPoolShuffled.length > 0) {
+      questions.push(extraPoolShuffled[ei % extraPoolShuffled.length]);
       ei++;
     }
 

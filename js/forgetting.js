@@ -135,17 +135,24 @@ export const ForgettingCurve = {
   },
 
   /**
-   * getSortedQueue(characters, count)
+   * getSortedQueue(characters, count, priorityChars)
    * 依遺忘曲線排序字列，整合 WrongQueue 優先插隊
    *
    * v4：seed = AppState.uid + new Date().toISOString().slice(0,10)（UTC）
+   * v4.3：新增 priorityChars（家長標記為「優先」的生字），
+   *       加重其出現頻率並排在非錯題/未挑戰字之前
    *
-   * @param {string[]} characters  所有候選生字
-   * @param {number}   count       需要幾題
+   * @param {string[]} characters     所有候選生字（呼叫端須已過濾「暫停」生字）
+   * @param {number}   count          需要幾題
+   * @param {Set|string[]} [priorityChars] 優先生字鍵值集合
    * @returns {Promise<string[]>}  排序後的字陣列
    */
-  async getSortedQueue(characters, count) {
+  async getSortedQueue(characters, count, priorityChars = null) {
     if (!AppState.uid || !characters.length) return []
+
+    const prioritySet = priorityChars instanceof Set
+      ? priorityChars
+      : new Set(Array.isArray(priorityChars) ? priorityChars : [])
 
     try {
       // ── 批次讀取 progress（避免 N+1）──
@@ -170,18 +177,22 @@ export const ForgettingCurve = {
         const prog = progressMap.get(key)
         return {
           char,
-          level:     prog?.system_level    ?? 'medium',
-          fail_rate: prog?.fail_rate        ?? 0,
-          untried:   !prog,                             // 未挑戰過優先
-          inWrong:   wrongPriorityChars.includes(char), // 錯題優先
+          level:      prog?.system_level    ?? 'medium',
+          fail_rate:  prog?.fail_rate        ?? 0,
+          untried:    !prog,                             // 未挑戰過優先
+          inWrong:    wrongPriorityChars.includes(char), // 錯題優先
+          inPriority: prioritySet.has(char),             // v4.3：家長標記優先
         }
       })
 
       // ── 建立頻率佇列（加權複製：hard=4份, medium=2份, easy=1份, easy_plus=1份）──
+      // v4.3：「優先」生字額外 +2 份權重，提高在佇列中出現的頻率
       const WEIGHT_MAP = { hard: 4, medium: 2, easy: 1, easy_plus: 1 }
       const pool = []
       for (const info of charInfos) {
-        const weight = WEIGHT_MAP[info.level] || 2
+        const baseWeight  = WEIGHT_MAP[info.level] || 2
+        const extraWeight = info.inPriority ? 2 : 0
+        const weight      = baseWeight + extraWeight
         for (let i = 0; i < weight; i++) pool.push(info)
       }
 
@@ -218,10 +229,21 @@ export const ForgettingCurve = {
       const wrongFirst  = deduped.filter(i => i.inWrong)
       const wrongOthers = deduped.filter(i => !i.inWrong)
 
-      // ── 未挑戰過的字（untried）次優先 ──
-      const untriedOthers = wrongOthers.filter(i => i.untried)
-      const triedOthers   = wrongOthers.filter(i => !i.untried)
-      const finalOrder    = [...wrongFirst, ...untriedOthers, ...triedOthers]
+      // ── v4.3：「優先」字次優先（僅次於錯題）──
+      const priorityOthers = wrongOthers.filter(i => i.inPriority)
+      const normalOthers   = wrongOthers.filter(i => !i.inPriority)
+
+      // ── 未挑戰過的字（untried）在各群組內再優先 ──
+      const untriedPriority = priorityOthers.filter(i => i.untried)
+      const triedPriority    = priorityOthers.filter(i => !i.untried)
+      const untriedNormal   = normalOthers.filter(i => i.untried)
+      const triedNormal      = normalOthers.filter(i => !i.untried)
+
+      const finalOrder = [
+        ...wrongFirst,
+        ...untriedPriority, ...triedPriority,
+        ...untriedNormal,   ...triedNormal,
+      ]
 
       return finalOrder.slice(0, count).map(i => i.char)
     } catch (e) {

@@ -71,9 +71,12 @@ export class WritingGame extends GameEngine {
     const count = config?.count ?? 10
 
     // 從遺忘曲線取排序生字（整合 WrongQueue，前置高遺忘字）
+    // v4.3：改用 this.questionChars（已由 GameEngine 過濾「暫停」生字、保留啟用清單）
+    //       並傳入 this.priorityChars 讓「優先」生字加重出現頻率
     const sorted = await ForgettingCurve.getSortedQueue(
-      AppState.characters,
-      count
+      this.questionChars,
+      count,
+      this.priorityChars
     )
 
     // 從完整字典（characters.json）建立查詢字典

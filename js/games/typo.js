@@ -37,6 +37,7 @@ import { AppState } from '../state.js';
 import { JSONLoader } from '../json_loader.js';
 import { HandwritingManager } from '../handwriting.js';
 import { GeminiManager } from '../gemini.js';
+import { toTextArray, getPriorityKeySet } from '../content_filter.js';
 
 // HandwritingManager 透過 globalThis 存取（避免循環依賴）
 // globalThis.HandwritingManager 由 handwriting.js 掛載
@@ -144,28 +145,35 @@ export class TypoGame extends GameEngine {
     }
 
     // 生字簿過濾
+    // v4.3：過濾「暫停」生字；額外標記「優先」生字，三層分類出題
     const myChars = new Set(
-      (AppState.characters ?? []).map(c => c.char ?? c['字'] ?? '')
+      toTextArray(AppState.characters ?? [], ['字', 'char'])
     );
+    const priorityChars = getPriorityKeySet(AppState.characters ?? [], ['字', 'char']);
 
+    let priorityItems = [];
     let prioritized = [];
     let rest = [];
 
     for (const item of this._allConfusables) {
       // 支援新格式（sentences[]）與舊格式（wrong）取出所有可能的錯字
       const wrongs = _extractWrongs(item);
+      const isRelatedToPriority = priorityChars.has(item.correct) || wrongs.some(w => priorityChars.has(w));
       const isRelated = myChars.has(item.correct) || wrongs.some(w => myChars.has(w));
-      if (isRelated) prioritized.push(item);
+      if (isRelatedToPriority) priorityItems.push(item);
+      else if (isRelated) prioritized.push(item);
       else rest.push(item);
     }
 
     let pool;
-    if (myChars.size > 0 && prioritized.length >= count) {
-      pool = _shuffle(prioritized);
-    } else if (myChars.size > 0 && prioritized.length > 0) {
-      pool = [..._shuffle(prioritized), ..._shuffle(rest)];
+    if (myChars.size > 0 && priorityItems.length >= count) {
+      pool = _shuffle(priorityItems);
+    } else if (myChars.size > 0 && (priorityItems.length + prioritized.length) >= count) {
+      pool = [..._shuffle(priorityItems), ..._shuffle(prioritized)];
+    } else if (myChars.size > 0 && (priorityItems.length + prioritized.length) > 0) {
+      pool = [..._shuffle(priorityItems), ..._shuffle(prioritized), ..._shuffle(rest)];
     } else {
-      pool = _shuffle([...prioritized, ...rest]);
+      pool = _shuffle([...priorityItems, ...prioritized, ...rest]);
     }
     // ── 動態補題：生字簿中不在 confusables 的字，動態從 characters.json 生成 ──
     const coveredChars = new Set(this._allConfusables.map(i => i.correct));

@@ -27,6 +27,7 @@ import { StarsManager }      from '../stars.js'
 import { ForgettingCurve }   from '../forgetting.js'
 import { JSONLoader }         from '../json_loader.js'
 import { AudioManager }       from '../audio.js'
+import { toTextArray, getActiveItems, getPriorityKeySet } from '../content_filter.js'
 
 // ─────────────────────────────────────────────
 // 星星設定（參考 SECTION 3.3 GAME_STARS）
@@ -75,8 +76,9 @@ export class SentenceGame extends GameEngine {
 
     // 2. 確定要用哪些字（生字簿優先，否則用索引全部字）
     // AppState.characters 可能是字串陣列或物件陣列 { 字, zhuyin }，統一取純字串
-    const _rawChars = AppState.characters || []
-    const myChars = _rawChars.map(c => (typeof c === 'object' && c !== null) ? (c['字'] || c.char || '') : String(c)).filter(Boolean)
+    // v4.3：過濾「暫停」生字；「優先」生字排在最前面
+    const myChars = toTextArray(AppState.characters || [], ['字', 'char'])
+    const priorityCharSet = getPriorityKeySet(AppState.characters || [], ['字', 'char'])
     const indexData = JSONLoader.get('sentences')
     const allIndexChars = Object.keys(indexData?.char_book || {})
     const targetChars = myChars.length > 0
@@ -107,7 +109,9 @@ export class SentenceGame extends GameEngine {
 
     // 句型庫（模式3）：與 character 無關，整體取
     // 家長自訂句型（my_sentence_patterns）優先；若家長未新增任何句型，才使用 sentences_pattern.json
-    const customPatterns = AppState.sentencePatterns || []
+    // v4.3：過濾「暫停」句型；「優先」句型排在最前面
+    const customPatterns = getActiveItems(AppState.sentencePatterns || [])
+    const priorityPatternIds = getPriorityKeySet(AppState.sentencePatterns || [], ['id'])
     const patternSource = customPatterns.length > 0
       ? customPatterns
       : (JSONLoader.get('sentences_pattern') || [])
@@ -137,16 +141,26 @@ export class SentenceGame extends GameEngine {
       n4 = count - n1 - n2 - n3                    // 模式4 compose
     }
 
-    const pick = (pool, n) => {
+    const pick = (pool, n, prioritySet = null, keyFn = (x) => x.character) => {
       if (pool.length === 0) return []
+      // v4.3：有優先項目時，優先項目（分別洗牌後）排在前面，提高被選中機率
+      if (prioritySet && prioritySet.size > 0) {
+        const priorityItems = pool.filter(item => prioritySet.has(keyFn(item)))
+        const normalItems   = pool.filter(item => !prioritySet.has(keyFn(item)))
+        const s = [
+          ...this._seededShuffle([...priorityItems]),
+          ...this._seededShuffle([...normalItems]),
+        ]
+        return s.slice(0, Math.min(n, s.length))
+      }
       const s = this._seededShuffle([...pool])
       return s.slice(0, Math.min(n, s.length))
     }
 
-    const mode1q = pick(fillPool, n1).map(q => ({ ...q, _mode: 1 }))
-    const mode2q = pick(fillPool, n2).map(q => ({ ...q, _mode: 2 }))
-    const mode3q = pick(patternPool, n3).map(q => ({ ...q, _mode: 3 }))
-    const mode4q = pick(composePool, n4).map(q => ({ ...q, _mode: 4 }))
+    const mode1q = pick(fillPool, n1, priorityCharSet, q => q.character).map(q => ({ ...q, _mode: 1 }))
+    const mode2q = pick(fillPool, n2, priorityCharSet, q => q.character).map(q => ({ ...q, _mode: 2 }))
+    const mode3q = pick(patternPool, n3, priorityPatternIds, q => q.id).map(q => ({ ...q, _mode: 3 }))
+    const mode4q = pick(composePool, n4, priorityCharSet, q => q.character).map(q => ({ ...q, _mode: 4 }))
 
     // 合併並洗牌
     const combined = this._seededShuffle([...mode1q, ...mode2q, ...mode3q, ...mode4q])

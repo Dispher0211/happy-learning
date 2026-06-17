@@ -12,6 +12,7 @@ import { AppState } from '../state.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { UIManager } from '../ui/ui_manager.js'
 import { PAGES } from '../ui/pages.js'
+import { getActiveItems } from '../content_filter.js'
 
 export class ForgetRankPage {
   constructor() {
@@ -56,8 +57,8 @@ export class ForgetRankPage {
     // 注入 CSS（含去重複保護）
     this._injectCSS()
 
-    // 取得當前孩子的生字清單
-    const characters = AppState.characters || []
+    // 取得當前孩子的生字清單（v4.3：過濾「暫停」生字，不列入排名）
+    const characters = getActiveItems(AppState.characters || [])
     if (characters.length === 0) {
       this._renderEmpty()
       return

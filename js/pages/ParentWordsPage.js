@@ -5,9 +5,10 @@
  * 依賴：firebase.js（T05）、state.js（T02）、ui_manager.js（T28）
  */
 
-import { FirestoreAPI, arrayUnion, arrayRemove } from '../firebase.js';
+import { FirestoreAPI } from '../firebase.js';
 import { AppState } from '../state.js';
 import { UIManager } from '../ui/ui_manager.js';
+import { getItemText, isItemEnabled, isItemPriority } from '../content_filter.js';
 
 export class ParentWordsPage {
 
@@ -82,7 +83,7 @@ export class ParentWordsPage {
 
   /**
    * 將詞語陣列渲染到清單容器
-   * @param {string[]} words - 詞語陣列
+   * @param {Array<string|Object>} words - 詞語陣列（純字串或 { word, enabled, priority } 物件）
    */
   _renderList(words) {
     const list = document.getElementById('pw-list');
@@ -93,25 +94,33 @@ export class ParentWordsPage {
       return;
     }
 
-    list.innerHTML = words.map(word => `
-      <li class="pw-item" data-word="${this._escapeHtml(word)}">
-        <span class="pw-word-text">${this._escapeHtml(word)}</span>
-        <button class="pw-delete-btn" data-word="${this._escapeHtml(word)}" aria-label="刪除 ${this._escapeHtml(word)}">
-          🗑️
-        </button>
-      </li>
-    `).join('');
+    list.innerHTML = words.map(item => {
+      const word     = getItemText(item, ['word']);
+      const safeWord = this._escapeHtml(word);
+      const enabled  = isItemEnabled(item);
+      const priority = isItemPriority(item);
 
-    // 綁定每個刪除按鈕的事件
-    list.querySelectorAll('.pw-delete-btn').forEach(btn => {
-      const handler = (e) => {
-        const word = e.currentTarget.dataset.word;
-        this._deleteWord(word);
-      };
-      btn.addEventListener('click', handler);
-      // 記錄以供 destroy() 移除
-      this._listeners.push({ el: btn, type: 'click', fn: handler });
-    });
+      return `
+        <li class="pw-item ${enabled ? '' : 'pw-item--disabled'}" data-word="${safeWord}">
+          <button
+            class="pw-priority-btn ${priority ? 'pw-priority-btn--active' : ''}"
+            data-priority-word="${safeWord}"
+            title="${priority ? '取消優先' : '設為優先（更常出現在學習與考題中）'}"
+          >★</button>
+          <span class="pw-word-text">${safeWord}</span>
+          <button
+            class="pw-toggle-btn ${enabled ? '' : 'pw-toggle-btn--off'}"
+            data-toggle-word="${safeWord}"
+            title="${enabled ? '點擊暫停（暫停後不會出現在學習與考題中）' : '點擊恢復啟用'}"
+          >${enabled ? '啟用中' : '已暫停'}</button>
+          <button class="pw-delete-btn" data-word="${safeWord}" aria-label="刪除 ${safeWord}">
+            🗑️
+          </button>
+        </li>
+      `;
+    }).join('');
+
+    // 事件委派：刪除／啟用切換／優先切換統一交給 list 監聽（見 _bindEvents）
   }
 
   /**
@@ -151,10 +160,34 @@ export class ParentWordsPage {
       clearAllBtn.addEventListener('click', clearAllHandler);
       this._listeners.push({ el: clearAllBtn, type: 'click', fn: clearAllHandler });
     }
+
+    // 清單點擊（事件代理：刪除／啟用切換／優先切換）
+    const list = document.getElementById('pw-list');
+    if (list) {
+      const listHandler = (e) => {
+        const deleteBtn = e.target.closest('.pw-delete-btn');
+        if (deleteBtn) {
+          this._deleteWord(deleteBtn.getAttribute('data-word'));
+          return;
+        }
+        const toggleBtn = e.target.closest('.pw-toggle-btn');
+        if (toggleBtn) {
+          this._toggleEnabled(toggleBtn.getAttribute('data-toggle-word'));
+          return;
+        }
+        const priorityBtn = e.target.closest('.pw-priority-btn');
+        if (priorityBtn) {
+          this._togglePriority(priorityBtn.getAttribute('data-priority-word'));
+          return;
+        }
+      };
+      list.addEventListener('click', listHandler);
+      this._listeners.push({ el: list, type: 'click', fn: listHandler });
+    }
   }
 
   /**
-   * 新增詞語：讀取輸入框 → 驗證 → arrayUnion 寫入 Firestore → 同步 AppState
+   * 新增詞語：讀取輸入框 → 驗證 → 加入清單 → 整陣列覆寫 Firestore → 同步 AppState
    */
   async _addWord() {
     const input = document.getElementById('pw-input');
@@ -172,8 +205,10 @@ export class ParentWordsPage {
       return;
     }
 
-    // 防止重複（先做 UI 層快速檢查）
-    if (AppState.words && AppState.words.includes(word)) {
+    // 防止重複（純字串或物件格式皆比對文字內容）
+    const existing = Array.isArray(AppState.words) ? AppState.words : [];
+    const alreadyIn = existing.some(item => getItemText(item, ['word']) === word);
+    if (alreadyIn) {
       errorEl.textContent = '此詞語已存在';
       input.value = '';
       return;
@@ -185,21 +220,20 @@ export class ParentWordsPage {
 
     try {
       const uid = AppState.uid;
-      // arrayUnion 確保 Firestore 層級也不重複
+      const newEntry = { word, enabled: true, priority: false };
+      const updated  = [...existing, newEntry];
+
+      // 整陣列覆寫，確保新格式與舊格式項目皆能正確保存
       await FirestoreAPI.update(`users/${uid}`, {
-        my_words: arrayUnion(word)
+        my_words: updated
       });
 
       // 同步更新 AppState
-      if (!Array.isArray(AppState.words)) AppState.words = [];
-      if (!AppState.words.includes(word)) {
-        AppState.words = [...AppState.words, word];
-      }
+      AppState.words = updated;
 
       // 清空輸入框並重新渲染清單
       input.value = '';
       this._renderList(AppState.words);
-      // 重新綁定刪除事件（renderList 內含）
 
       UIManager.showToast(`已新增「${word}」`, 'success', 2000);
     } catch (e) {
@@ -211,20 +245,21 @@ export class ParentWordsPage {
   }
 
   /**
-   * 刪除詞語：arrayRemove 從 Firestore 移除 → 同步 AppState → 重新渲染
+   * 刪除詞語：依文字比對從清單移除 → 整陣列覆寫 Firestore → 同步 AppState → 重新渲染
    * @param {string} word - 要刪除的詞語
    */
   async _deleteWord(word) {
     try {
       const uid = AppState.uid;
+      const existing = Array.isArray(AppState.words) ? AppState.words : [];
+      const updated  = existing.filter(item => getItemText(item, ['word']) !== word);
+
       await FirestoreAPI.update(`users/${uid}`, {
-        my_words: arrayRemove(word)
+        my_words: updated
       });
 
       // 同步更新 AppState
-      if (Array.isArray(AppState.words)) {
-        AppState.words = AppState.words.filter(w => w !== word);
-      }
+      AppState.words = updated;
 
       // 重新渲染清單
       this._renderList(AppState.words);
@@ -233,6 +268,65 @@ export class ParentWordsPage {
     } catch (e) {
       console.error('[ParentWordsPage] 刪除詞語失敗', e);
       UIManager.showToast('刪除失敗，請稍後再試', 'error', 2000);
+    }
+  }
+
+  /**
+   * 切換詞語的啟用／暫停狀態
+   * @param {string} word
+   */
+  async _toggleEnabled(word) {
+    const existing = Array.isArray(AppState.words) ? AppState.words : [];
+    const idx = existing.findIndex(item => getItemText(item, ['word']) === word);
+    if (idx === -1) return;
+
+    const current = existing[idx];
+    const newItem = (current && typeof current === 'object')
+      ? { ...current, word: getItemText(current, ['word']), enabled: !isItemEnabled(current) }
+      : { word, enabled: false, priority: false };
+
+    const updated = [...existing];
+    updated[idx] = newItem;
+
+    // 樂觀更新
+    AppState.words = updated;
+    this._renderList(updated);
+
+    try {
+      const uid = AppState.uid;
+      await FirestoreAPI.update(`users/${uid}`, { my_words: updated });
+    } catch (e) {
+      console.error('[ParentWordsPage] 切換啟用狀態失敗', e);
+      UIManager.showToast('更新失敗，請稍後再試', 'error', 2000);
+    }
+  }
+
+  /**
+   * 切換詞語的優先狀態
+   * @param {string} word
+   */
+  async _togglePriority(word) {
+    const existing = Array.isArray(AppState.words) ? AppState.words : [];
+    const idx = existing.findIndex(item => getItemText(item, ['word']) === word);
+    if (idx === -1) return;
+
+    const current = existing[idx];
+    const newItem = (current && typeof current === 'object')
+      ? { ...current, word: getItemText(current, ['word']), priority: !isItemPriority(current) }
+      : { word, enabled: true, priority: true };
+
+    const updated = [...existing];
+    updated[idx] = newItem;
+
+    AppState.words = updated;
+    this._renderList(updated);
+
+    try {
+      const uid = AppState.uid;
+      await FirestoreAPI.update(`users/${uid}`, { my_words: updated });
+    } catch (e) {
+      console.error('[ParentWordsPage] 切換優先狀態失敗', e);
+      UIManager.showToast('更新失敗，請稍後再試', 'error', 2000);
     }
   }
 
@@ -413,24 +507,65 @@ export class ParentWordsPage {
       .pw-item {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
+        gap: 10px;
+        padding: 10px 16px;
         margin-bottom: 8px;
         background: #f8f9fa;
         border-radius: 10px;
         border: 1px solid #e9ecef;
-        transition: background 0.15s;
+        transition: background 0.15s, opacity 0.15s;
       }
 
       .pw-item:hover {
         background: #f0f4ff;
       }
 
+      .pw-item--disabled {
+        opacity: .5;
+      }
+
+      .pw-priority-btn {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        font-size: 17px;
+        color: #d8dde6;
+        cursor: pointer;
+        padding: 2px 4px;
+        line-height: 1;
+        transition: color 0.15s;
+      }
+
+      .pw-priority-btn--active {
+        color: #f5a623;
+      }
+
       .pw-word-text {
+        flex: 1;
         font-size: 18px;
         color: #2c2c2c;
         font-weight: 500;
         letter-spacing: 1px;
+      }
+
+      .pw-toggle-btn {
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 10px;
+        border: 1px solid #cfe8d8;
+        background: #eafaf0;
+        color: #2e9e5b;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+
+      .pw-toggle-btn--off {
+        border-color: #e3e6ec;
+        background: #f0f2f5;
+        color: #93a0b0;
       }
 
       .pw-delete-btn {

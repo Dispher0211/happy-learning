@@ -34,6 +34,7 @@
 import { GameEngine } from './GameEngine.js';
 import { GameConfig } from './GameConfig.js';
 import { AppState } from '../state.js';
+import { getActiveItems, getPriorityKeySet, shuffleWithPriorityFirst } from '../content_filter.js';
 
 // ────────────────────────────────────────────────
 // 部首注音對照表（常用部首）
@@ -296,13 +297,14 @@ export class RadicalGame extends GameEngine {
     const { JSONLoader } = await import('../json_loader.js');
     const allCharsDict = JSONLoader.get('characters') || [];
 
-    const myChars = AppState.characters || [];
+    const myChars = getActiveItems(AppState.characters || []);
     if (myChars.length === 0) {
       this.questions = [];
       return this.questions;
     }
 
     const count = config?.count || 10;
+    const priorityKeySet = getPriorityKeySet(AppState.characters || [], ['字', 'char']);
 
     const myCharKeys = myChars.map(c => c['字'] || c.char || '').filter(Boolean);
     const myMapped = myCharKeys
@@ -336,7 +338,7 @@ export class RadicalGame extends GameEngine {
       if (c.radical) allRadicals.set(c.radical, this._lookupZhuyin(c.radical));
     }
 
-    const shuffled = this._shuffle(myMapped).slice(0, count);
+    const shuffled = shuffleWithPriorityFirst(myMapped, priorityKeySet, q => q.char).slice(0, count);
     this.questions = shuffled.map(q => ({
       ...q,
       options: this._buildOptions(q.correctRadical, q.correctZhuyin, allRadicals),

@@ -42,6 +42,7 @@ import { JSONLoader } from '../json_loader.js'
 import { ForgettingCurve } from '../forgetting.js'
 import { AudioManager } from '../audio.js'
 import { HandwritingManager } from '../handwriting.js'
+import { shuffleWithPriorityFirst } from '../content_filter.js'
 
 // ─── 注音鍵盤佈局定義 ───────────────────────────────────────────────────────
 
@@ -321,9 +322,9 @@ export class ZhuyinGame extends GameEngine {
     // 從 characters.json 全字典查詢完整資料（部首、字義等）
     const allCharsDict = JSONLoader.get('characters') || []
 
-    // questionChars 由 GameEngine.init() 從 AppState.characters 建立（字串陣列）
-    // 先洗牌確保每次出題順序不同
-    const shuffledChars = [...(this.questionChars || [])].sort(() => Math.random() - 0.5)
+    // questionChars 由 GameEngine.init() 從 AppState.characters 建立（字串陣列，已過濾「暫停」生字）
+    // 先洗牌確保每次出題順序不同；「優先」生字優先排在前面
+    const shuffledChars = shuffleWithPriorityFirst(this.questionChars || [], this.priorityChars)
     const pool = shuffledChars.slice(0, count * 3)
 
     const questions = []
