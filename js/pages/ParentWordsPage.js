@@ -58,6 +58,9 @@ export class ParentWordsPage {
         <div class="pw-header">
           <button class="pw-back-btn" id="pw-back-btn">&#8592;</button>
           <h1 class="pw-title">📋 詞語簿設定</h1>
+          <button class="pw-clear-all-btn" id="pw-clear-all-btn" title="一鍵刪除所有詞語">
+            🗑️ 清空
+          </button>
         </div>
 
         <div class="pw-add-bar">
@@ -139,6 +142,14 @@ export class ParentWordsPage {
       const backHandler = () => UIManager.back();
       backBtn.addEventListener('click', backHandler);
       this._listeners.push({ el: backBtn, type: 'click', fn: backHandler });
+    }
+
+    // 一鍵刪除全部詞語
+    const clearAllBtn = document.getElementById('pw-clear-all-btn');
+    if (clearAllBtn) {
+      const clearAllHandler = () => this._clearAllWords();
+      clearAllBtn.addEventListener('click', clearAllHandler);
+      this._listeners.push({ el: clearAllBtn, type: 'click', fn: clearAllHandler });
     }
   }
 
@@ -226,6 +237,43 @@ export class ParentWordsPage {
   }
 
   /**
+   * 一鍵刪除全部詞語：覆寫 my_words 為空陣列 → 同步 AppState → 重新渲染
+   */
+  async _clearAllWords() {
+    const current = Array.isArray(AppState.words) ? AppState.words : [];
+
+    if (current.length === 0) {
+      UIManager.showToast('目前沒有詞語可刪除', 'info', 2000);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ 確定要刪除全部 ${current.length} 個詞語嗎？\n\n這個動作無法復原！`
+    );
+    if (!confirmed) return;
+
+    const clearAllBtn = document.getElementById('pw-clear-all-btn');
+    if (clearAllBtn) clearAllBtn.disabled = true;
+
+    try {
+      const uid = AppState.uid;
+      await FirestoreAPI.update(`users/${uid}`, {
+        my_words: []
+      });
+
+      AppState.words = [];
+      this._renderList([]);
+
+      UIManager.showToast('已清空所有詞語', 'success', 2000);
+    } catch (e) {
+      console.error('[ParentWordsPage] 一鍵刪除詞語失敗', e);
+      UIManager.showToast('刪除失敗，請稍後再試', 'error', 2000);
+    } finally {
+      if (clearAllBtn) clearAllBtn.disabled = false;
+    }
+  }
+
+  /**
    * 注入頁面所需 CSS（含重複注入防護）
    */
   _injectStyles() {
@@ -249,6 +297,32 @@ export class ParentWordsPage {
         align-items: center;
         gap: 12px;
         margin-bottom: 20px;
+      }
+
+      .pw-clear-all-btn {
+        margin-left: auto;
+        flex-shrink: 0;
+        height: 32px;
+        padding: 0 12px;
+        background: #fdecea;
+        color: #e53935;
+        border: 1.5px solid #f5c6c2;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s, opacity 0.15s;
+        font-family: 'Noto Sans TC', sans-serif;
+      }
+
+      .pw-clear-all-btn:hover:not(:disabled) {
+        background: #fbdad7;
+      }
+
+      .pw-clear-all-btn:disabled {
+        opacity: .55;
+        cursor: not-allowed;
       }
 
       .pw-back-btn {

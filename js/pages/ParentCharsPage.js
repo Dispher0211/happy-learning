@@ -18,10 +18,11 @@ import { PAGES } from '../ui/pages.js'
 export class ParentCharsPage {
   constructor() {
     // 事件監聽器參照（destroy 時移除用）
-    this._onAddClick    = null
-    this._onInputKeyup  = null
-    this._onDeleteClick = null
-    this._onBackClick   = null
+    this._onAddClick     = null
+    this._onInputKeyup   = null
+    this._onDeleteClick  = null
+    this._onBackClick    = null
+    this._onClearAllClick = null
   }
 
   // ─────────────────────────────────────────
@@ -48,7 +49,14 @@ export class ParentCharsPage {
             </svg>
           </button>
           <h1 class="pcp-title">📚 生字簿管理</h1>
-          <div class="pcp-header-space"></div>
+          <button
+            class="pcp-clear-all-btn"
+            id="pcpClearAllBtn"
+            title="一鍵刪除所有生字"
+            aria-label="一鍵刪除所有生字"
+          >
+            🗑️ 清空
+          </button>
         </header>
 
         <!-- 新增生字區 -->
@@ -130,6 +138,11 @@ export class ParentCharsPage {
       if (char) this._handleDelete(char)
     }
     list?.addEventListener('click', this._onDeleteClick)
+
+    // 一鍵刪除全部生字
+    const clearAllBtn = document.getElementById('pcpClearAllBtn')
+    this._onClearAllClick = () => this._handleClearAll()
+    clearAllBtn?.addEventListener('click', this._onClearAllClick)
   }
 
   // ─────────────────────────────────────────
@@ -336,6 +349,53 @@ export class ParentCharsPage {
   }
 
   // ─────────────────────────────────────────
+  // 一鍵刪除全部生字
+  // ─────────────────────────────────────────
+  async _handleClearAll() {
+    const existing = AppState.characters || []
+
+    if (existing.length === 0) {
+      this._flashSuccess('目前沒有生字可刪除')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ 確定要刪除全部 ${existing.length} 個生字嗎？\n\n這個動作無法復原！`
+    )
+    if (!confirmed) return
+
+    const clearBtn = document.getElementById('pcpClearAllBtn')
+    if (clearBtn) {
+      clearBtn.disabled = true
+      clearBtn.textContent = '刪除中…'
+    }
+
+    try {
+      const uid = AppState.uid
+      if (!uid) throw new Error('未登入')
+
+      // 整欄位覆寫為空陣列
+      await FirestoreAPI.update(`users/${uid}`, {
+        my_characters: []
+      })
+
+      // 同步 AppState 並重新渲染
+      AppState.characters = []
+      this._renderList([])
+
+      this._flashSuccess('已清空所有生字')
+    } catch (err) {
+      console.error('[ParentCharsPage] 一鍵刪除生字失敗', err)
+      this._showError('刪除失敗，請稍後再試')
+    } finally {
+      if (clearBtn) {
+        clearBtn.disabled = false
+        clearBtn.textContent = '🗑️ 清空'
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────
   // 工具：從已載入的 characters 資料查找注音
   // ─────────────────────────────────────────
   _findCharData(char) {
@@ -439,7 +499,24 @@ export class ParentCharsPage {
         flex: 1;
         letter-spacing: 0.5px;
       }
-      .pcp-header-space { width: 36px; }
+
+      /* ──── 一鍵刪除按鈕 ──── */
+      .pcp-clear-all-btn {
+        flex-shrink: 0;
+        height: 32px;
+        padding: 0 12px;
+        background: #fdecea;
+        color: #e05252;
+        border: 1.5px solid #f5c6c2;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s, opacity .15s;
+      }
+      .pcp-clear-all-btn:hover:not(:disabled) { background: #fbdad7; }
+      .pcp-clear-all-btn:disabled { opacity: .55; cursor: not-allowed; }
 
       /* ──── 新增區 ──── */
       .pcp-add-section {
@@ -654,6 +731,7 @@ export class ParentCharsPage {
     const addBtn  = document.getElementById('pcpAddBtn')
     const input   = document.getElementById('pcpInput')
     const list    = document.getElementById('pcpList')
+    const clearAllBtn = document.getElementById('pcpClearAllBtn')
 
     if (backBtn && this._onBackClick) {
       backBtn.removeEventListener('click', this._onBackClick)
@@ -667,10 +745,14 @@ export class ParentCharsPage {
     if (list && this._onDeleteClick) {
       list.removeEventListener('click', this._onDeleteClick)
     }
+    if (clearAllBtn && this._onClearAllClick) {
+      clearAllBtn.removeEventListener('click', this._onClearAllClick)
+    }
 
-    this._onBackClick   = null
-    this._onAddClick    = null
-    this._onInputKeyup  = null
-    this._onDeleteClick = null
+    this._onBackClick    = null
+    this._onAddClick     = null
+    this._onInputKeyup   = null
+    this._onDeleteClick  = null
+    this._onClearAllClick = null
   }
 }

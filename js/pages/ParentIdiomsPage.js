@@ -25,6 +25,8 @@ export class ParentIdiomsPage {
     this._onInputKeydown = null;
     /** 清單事件委派處理器 */
     this._onListClick = null;
+    /** 一鍵刪除按鈕的點擊處理器 */
+    this._onClearAllClick = null;
   }
 
   /**
@@ -68,7 +70,13 @@ export class ParentIdiomsPage {
           <button id="idioms-back-btn" style="
             background:none; border:none; font-size:22px; cursor:pointer;
           ">←</button>
-          <h2 style="margin:0; font-size:20px;">🀄 成語簿設定</h2>
+          <h2 style="margin:0; font-size:20px; flex:1;">🀄 成語簿設定</h2>
+          <button id="idioms-clear-all-btn" title="一鍵刪除所有成語" style="
+            flex-shrink:0; height:32px; padding:0 12px;
+            background:#fdecea; color:#e53935; border:1.5px solid #f5c6c2;
+            border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;
+            white-space:nowrap;
+          ">🗑️ 清空</button>
         </div>
 
         <!-- 新增成語區塊 -->
@@ -197,6 +205,11 @@ export class ParentIdiomsPage {
       }
     };
     this._listEl.addEventListener('click', this._onListClick);
+
+    // 一鍵刪除全部成語
+    const clearAllBtn = this._container.querySelector('#idioms-clear-all-btn');
+    this._onClearAllClick = () => this._clearAllIdioms();
+    clearAllBtn.addEventListener('click', this._onClearAllClick);
   }
 
   /**
@@ -270,6 +283,42 @@ export class ParentIdiomsPage {
   }
 
   /**
+   * 一鍵刪除全部成語：覆寫 my_idioms 為空陣列 → 同步 AppState → 重繪清單
+   */
+  async _clearAllIdioms() {
+    const current = Array.isArray(AppState.idioms) ? AppState.idioms : [];
+
+    if (current.length === 0) {
+      this._showError('目前沒有成語可刪除');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ 確定要刪除全部 ${current.length} 個成語嗎？\n\n這個動作無法復原！`
+    );
+    if (!confirmed) return;
+
+    const uid = AppState.uid;
+    if (!uid) return;
+
+    const clearAllBtn = this._container?.querySelector('#idioms-clear-all-btn');
+    if (clearAllBtn) clearAllBtn.disabled = true;
+
+    try {
+      await FirestoreAPI.update(`users/${uid}`, { my_idioms: [] });
+
+      AppState.idioms = [];
+      this._renderList([]);
+
+    } catch (err) {
+      console.error('[ParentIdiomsPage] 一鍵刪除成語失敗：', err);
+      this._showError('刪除失敗，請稍後再試');
+    } finally {
+      if (clearAllBtn) clearAllBtn.disabled = false;
+    }
+  }
+
+  /**
    * 顯示格式錯誤訊息
    * @param {string} msg
    */
@@ -292,6 +341,7 @@ export class ParentIdiomsPage {
   destroy() {
     const addBtn  = this._container?.querySelector('#idiom-add-btn');
     const backBtn = this._container?.querySelector('#idioms-back-btn');
+    const clearAllBtn = this._container?.querySelector('#idioms-clear-all-btn');
 
     if (addBtn && this._onAddClick) {
       addBtn.removeEventListener('click', this._onAddClick);
@@ -305,6 +355,9 @@ export class ParentIdiomsPage {
     if (this._listEl && this._onListClick) {
       this._listEl.removeEventListener('click', this._onListClick);
     }
+    if (clearAllBtn && this._onClearAllClick) {
+      clearAllBtn.removeEventListener('click', this._onClearAllClick);
+    }
 
     // 清空刪除按鈕的監聽（移除 DOM 即可，GC 自動回收）
     this._container  = null;
@@ -315,5 +368,6 @@ export class ParentIdiomsPage {
     this._onInputKeydown = null;
     this._onBackClick    = null;
     this._onListClick    = null;
+    this._onClearAllClick = null;
   }
 }

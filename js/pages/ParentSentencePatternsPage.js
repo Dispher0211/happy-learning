@@ -57,6 +57,9 @@ export class ParentSentencePatternsPage {
         <div class="psp-header">
           <button class="psp-back-btn" id="psp-back-btn">&#8592;</button>
           <h1 class="psp-title">✍️ 句型設定</h1>
+          <button class="psp-clear-all-btn" id="psp-clear-all-btn" title="一鍵刪除所有自訂句型">
+            🗑️ 清空
+          </button>
         </div>
 
         <p class="psp-desc">
@@ -144,6 +147,13 @@ export class ParentSentencePatternsPage {
       const handler = () => UIManager.back()
       backBtn.addEventListener('click', handler)
       this._listeners.push({ el: backBtn, type: 'click', fn: handler })
+    }
+
+    const clearAllBtn = document.getElementById('psp-clear-all-btn')
+    if (clearAllBtn) {
+      const handler = () => this._clearAllPatterns()
+      clearAllBtn.addEventListener('click', handler)
+      this._listeners.push({ el: clearAllBtn, type: 'click', fn: handler })
     }
   }
 
@@ -235,6 +245,46 @@ export class ParentSentencePatternsPage {
   }
 
   // ─────────────────────────────────────
+  // 一鍵刪除全部自訂句型：覆寫為空陣列 → 同步 AppState
+  // ─────────────────────────────────────
+  async _clearAllPatterns () {
+    const current = Array.isArray(AppState.sentencePatterns) ? AppState.sentencePatterns : []
+
+    if (current.length === 0) {
+      UIManager.showToast('目前沒有自訂句型可刪除', 'info', 2000)
+      return
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ 確定要刪除全部 ${current.length} 個自訂句型嗎？\n\n刪除後遊戲將改用系統內建句型庫，此動作無法復原！`
+    )
+    if (!confirmed) return
+
+    const clearAllBtn = document.getElementById('psp-clear-all-btn')
+    if (clearAllBtn) clearAllBtn.disabled = true
+
+    try {
+      const uid = AppState.uid
+
+      await FirestoreAPI.write(`users/${uid}`, {
+        my_sentence_patterns: []
+      })
+
+      AppState.sentencePatterns = []
+      AppState.save()
+
+      this._renderList([])
+
+      UIManager.showToast('已清空所有自訂句型', 'success', 2000)
+    } catch (e) {
+      console.error('[ParentSentencePatternsPage] 一鍵刪除句型失敗', e)
+      UIManager.showToast('刪除失敗，請稍後再試', 'error', 2000)
+    } finally {
+      if (clearAllBtn) clearAllBtn.disabled = false
+    }
+  }
+
+  // ─────────────────────────────────────
   // CSS 注入
   // ─────────────────────────────────────
   _injectStyles () {
@@ -258,6 +308,32 @@ export class ParentSentencePatternsPage {
         align-items: center;
         gap: 12px;
         margin-bottom: 12px;
+      }
+
+      .psp-clear-all-btn {
+        margin-left: auto;
+        flex-shrink: 0;
+        height: 32px;
+        padding: 0 12px;
+        background: #fdecea;
+        color: #e53935;
+        border: 1.5px solid #f5c6c2;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s, opacity 0.15s;
+        font-family: 'Noto Sans TC', sans-serif;
+      }
+
+      .psp-clear-all-btn:hover:not(:disabled) {
+        background: #fbdad7;
+      }
+
+      .psp-clear-all-btn:disabled {
+        opacity: .55;
+        cursor: not-allowed;
       }
 
       .psp-back-btn {
