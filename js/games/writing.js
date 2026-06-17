@@ -106,43 +106,72 @@ export class WritingGame extends GameEngine {
       return null
     }
 
-    const isPolyphone = dictEntry.pronunciations && dictEntry.pronunciations.length > 1
+    const allProns = dictEntry.pronunciations ?? []
+    if (allProns.length === 0) {
+      console.warn(`[WritingGame] 「${char}」沒有讀音資料，跳過此題`)
+      return null
+    }
 
-    // 選擇出題用的讀音（fail_rate 最高者，若無則取第一個）
-    const targetPron = dictEntry.pronunciations?.[0]
+    const isPolyphone = allProns.length > 1
 
-    // 選出包含該字的詞語：從 definitions.ex 取（含正確注音），隨機選取增加變化
-    const allExCandidates = []
-    for (const d of (targetPron?.definitions ?? [])) {
-      for (const ex of (d.ex ?? [])) {
-        if (ex.w?.includes(char) && ex.w.length >= 2 && ex.w.length <= 6) {
-          allExCandidates.push(ex)
+    /**
+     * 取詞語策略（修正既有 bug）：
+     * 原本只查「第一個讀音」的詞語，若該讀音剛好沒有 words / ex 資料，
+     * 就會直接捏造「字+字」這種根本不存在的假詞語（例如「□字」），
+     * 小朋友只能靠注音猜測，常常猜不出來要寫哪個字。
+     * 修正後：依序嘗試每個讀音的 definitions.ex → words 陣列，
+     * 找到「真實存在」的詞語才採用，盡量避免假詞語出現。
+     */
+    const pickWordFromPron = (pron) => {
+      const exCandidates = []
+      for (const d of (pron.definitions ?? [])) {
+        for (const ex of (d.ex ?? [])) {
+          if (ex.w?.includes(char) && ex.w.length >= 2 && ex.w.length <= 6) {
+            exCandidates.push(ex)
+          }
         }
+      }
+      if (exCandidates.length > 0) {
+        const chosen = exCandidates[Math.floor(Math.random() * exCandidates.length)]
+        return { word: chosen.w, zhuyinList: chosen.chars }
+      }
+      const validWords = (pron.words ?? []).filter(w => w.includes(char))
+      if (validWords.length > 0) {
+        return { word: validWords[Math.floor(Math.random() * validWords.length)], zhuyinList: null }
+      }
+      return null
+    }
+
+    // 出題用讀音：優先第一個讀音（維持原設計），其餘讀音作為備援查詢順序
+    let targetPron = allProns[0]
+    let selectedWord = null
+    let selectedWordZhuyinList = null
+
+    for (const pron of allProns) {
+      const picked = pickWordFromPron(pron)
+      if (picked) {
+        targetPron = pron
+        selectedWord = picked.word
+        selectedWordZhuyinList = picked.zhuyinList
+        break
       }
     }
 
-    let selectedWord = null
-    let selectedWordZhuyinList = null
-    if (allExCandidates.length > 0) {
-      // 隨機選一個候選詞（增加每次玩題目的變化性）
-      const chosen = allExCandidates[Math.floor(Math.random() * allExCandidates.length)]
-      selectedWord = chosen.w
-      selectedWordZhuyinList = chosen.chars
-    } else {
-      // fallback：從 words 陣列取
-      const words = targetPron?.words ?? []
-      const valid = words.filter(w => w.includes(char))
-      selectedWord = valid.length > 0
-        ? valid[Math.floor(Math.random() * valid.length)]
-        : (char + '字')
+    // 所有讀音都查不到任何真實詞語：絕不捏造假詞語（如「字+字」），
+    // 改用「只出單字」，至少不會誤導學生以為有詞語線索可循
+    if (!selectedWord) {
+      console.warn(`[WritingGame] 「${char}」所有讀音皆無詞語/例句資料，改用單字出題`)
+      targetPron = allProns[0]
+      selectedWord = char
+      selectedWordZhuyinList = null
     }
 
     // 計算該字在詞語中的位置，以顯示□
     const charIndex = selectedWord.indexOf(char)
 
-    // 組合其他讀音的詞語（用於多音字提示一）
+    // 組合其他讀音的詞語（用於多音字提示一）：以實際選用的讀音為基準
     const otherPronWords = isPolyphone
-      ? dictEntry.pronunciations
+      ? allProns
           .filter(p => p !== targetPron)
           .flatMap(p => p.words ?? [])
       : []
@@ -194,6 +223,12 @@ export class WritingGame extends GameEngine {
     // 建立詞語顯示 HTML（□=手寫佔位符，其餘字依注音規則）
     const wordDisplayHTML = this._buildWordDisplayHTML(question)
 
+    // 字典完全沒有詞語資料時（word 只剩單字本身），說明文字改為「寫出這個字」，
+    // 避免文字寫「看詞語」但畫面其實沒有詞語可看，造成困惑
+    const instructionText = (question.word?.length ?? 0) <= 1
+      ? '請寫出這個字：'
+      : '看詞語，寫出□的國字：'
+
     const gameArea = this._getContainer()
     if (!gameArea) return
 
@@ -201,7 +236,7 @@ export class WritingGame extends GameEngine {
       <div class="writing-game" id="writing-game-container">
 
         <!-- 遊戲說明 -->
-        <p class="writing-instruction">看詞語，寫出□的國字：</p>
+        <p class="writing-instruction">${instructionText}</p>
 
         <!-- 詞語顯示區（含□） -->
         <div class="writing-word-display" id="writing-word-display">

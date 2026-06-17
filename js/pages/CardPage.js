@@ -311,8 +311,8 @@ export class CardPage {
       '部首': charObj['部首'] || dictEntry.radical || '',
       // 總筆畫（characters.json 用 total_strokes）
       '總筆畫數': charObj['總筆畫數'] || dictEntry.total_strokes || '',
-      // 部首外筆畫（characters.json 用 radical_strokes）
-      '部首外筆畫': charObj['部首外筆畫'] || dictEntry.radical_strokes || '',
+      // 部首外筆畫（characters.json 用 radical_strokes；自部首字此值為 0，須用 ?? 保留 0）
+      '部首外筆畫': (charObj['部首外筆畫'] ?? dictEntry.radical_strokes ?? ''),
       // 注音：優先 polyphones.json 第一音，再 my_characters，再 characters.json
       '注音': charObj['注音'] || charObj.zhuyin ||
         (mergedPronunciations?.[0]?.zhuyin) ||
@@ -367,7 +367,16 @@ export class CardPage {
     const radical     = enriched['部首'] || enriched.radical || ''
     const radicalPron = this._getRadicalPron(radical)
     const strokesAll  = enriched['總筆畫數'] || enriched.totalStrokes || ''
-    const strokesRad  = enriched['部首外筆畫'] || enriched.radicalStrokes || ''
+    // characters.json 的 radical_strokes 欄位實際存的是「部首外筆畫」（剩餘筆畫），
+    // 不是「部首本身筆畫」。自部首字（字本身即部首，如「自」）此值合法為 0，
+    // 故用 ?? 而非 || 取值，避免 0 被誤判為缺值。
+    const strokesOutsideRadical = enriched['部首外筆畫'] ?? enriched.radicalStrokes ?? ''
+    // 部首本身筆劃 = 總筆劃 - 部首外筆畫（與 radical.js 的換算公式一致）
+    const hasStrokeData = strokesAll !== '' && strokesAll != null &&
+      strokesOutsideRadical !== '' && strokesOutsideRadical != null
+    const strokesRadicalOwn = hasStrokeData
+      ? Number(strokesAll) - Number(strokesOutsideRadical)
+      : ''
     const isPolyphonic = this._pronunciations.length > 1
 
     const wrap = document.getElementById('card-wrap')
@@ -427,11 +436,11 @@ export class CardPage {
           </div>
           <div class="char-card__info-cell">
             <span class="char-card__info-label">部首筆劃</span>
-            <span class="char-card__info-value">${this._escapeHtml(String(strokesRad))}</span>
+            <span class="char-card__info-value">${strokesRadicalOwn !== '' ? this._escapeHtml(String(strokesRadicalOwn)) : '—'}</span>
           </div>
           <div class="char-card__info-cell">
             <span class="char-card__info-label">剩餘筆劃</span>
-            <span class="char-card__info-value">${strokesAll && strokesRad ? this._escapeHtml(String(Number(strokesAll) - Number(strokesRad))) : '—'}</span>
+            <span class="char-card__info-value">${strokesOutsideRadical !== '' ? this._escapeHtml(String(strokesOutsideRadical)) : '—'}</span>
           </div>
         </div>
 
